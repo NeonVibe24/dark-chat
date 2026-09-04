@@ -2,12 +2,12 @@ const API = "/api";
 
 let currentUser = null;
 let selectedUser = null;
+
 let messageTimer = null;
 
-
-// ============================================================
-// CALL STATE
-// ============================================================
+/* ============================================================
+   CALL STATE
+============================================================ */
 
 let peerConnection = null;
 let localStream = null;
@@ -28,96 +28,143 @@ let isMuted = false;
 let isCameraOff = false;
 
 let lastIncomingSignalTime = Date.now() - 15000;
-
 let pendingIncomingCall = null;
 
 const processedSignalIds = new Set();
 
 
-// ============================================================
-// ELEMENTS
-// ============================================================
+/* ============================================================
+   ELEMENTS
+============================================================ */
 
-const authScreen =
-  document.getElementById("authScreen");
+const authScreen = document.getElementById("authScreen");
+const chatScreen = document.getElementById("chatScreen");
 
-const chatScreen =
-  document.getElementById("chatScreen");
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
 
-const loginForm =
-  document.getElementById("loginForm");
+const showRegister = document.getElementById("showRegister");
+const showLogin = document.getElementById("showLogin");
 
-const registerForm =
-  document.getElementById("registerForm");
+const loginError = document.getElementById("loginError");
+const registerError = document.getElementById("registerError");
 
-const showRegister =
-  document.getElementById("showRegister");
+const usersList = document.getElementById("usersList");
+const emptyChat = document.getElementById("emptyChat");
+const activeChat = document.getElementById("activeChat");
 
-const showLogin =
-  document.getElementById("showLogin");
+const messagesBox = document.getElementById("messages");
+const messageForm = document.getElementById("messageForm");
+const messageInput = document.getElementById("messageInput");
 
-const loginError =
-  document.getElementById("loginError");
+const myUsername = document.getElementById("myUsername");
+const myAvatar = document.getElementById("myAvatar");
 
-const registerError =
-  document.getElementById("registerError");
+const chatUsername = document.getElementById("chatUsername");
+const chatAvatar = document.getElementById("chatAvatar");
+const chatStatus = document.getElementById("chatStatus");
 
-const usersList =
-  document.getElementById("usersList");
+const logoutBtn = document.getElementById("logoutBtn");
+const refreshUsers = document.getElementById("refreshUsers");
+const reloadMessages = document.getElementById("reloadMessages");
 
-const emptyChat =
-  document.getElementById("emptyChat");
-
-const activeChat =
-  document.getElementById("activeChat");
-
-const messagesBox =
-  document.getElementById("messages");
-
-const messageForm =
-  document.getElementById("messageForm");
-
-const messageInput =
-  document.getElementById("messageInput");
-
-const myUsername =
-  document.getElementById("myUsername");
-
-const myAvatar =
-  document.getElementById("myAvatar");
-
-const chatUsername =
-  document.getElementById("chatUsername");
-
-const chatAvatar =
-  document.getElementById("chatAvatar");
-
-const chatStatus =
-  document.getElementById("chatStatus");
-
-const logoutBtn =
-  document.getElementById("logoutBtn");
-
-const refreshUsers =
-  document.getElementById("refreshUsers");
-
-const reloadMessages =
-  document.getElementById("reloadMessages");
-
-const toast =
-  document.getElementById("toast");
+const toast = document.getElementById("toast");
 
 
-// ============================================================
-// PROFILE ELEMENTS
-// ============================================================
+/* ============================================================
+   CALL BUTTONS
+   IMPORTANT:
+   Do NOT recreate them.
+   Use the buttons already present in index.html.
+============================================================ */
 
-const myAvatarBtn =
-  document.getElementById("myAvatarBtn");
+function getVoiceCallButton() {
+  return document.getElementById("voiceCallBtn");
+}
 
-const profilePanel =
-  document.getElementById("profilePanel");
+function getVideoCallButton() {
+  return document.getElementById("videoCallBtn");
+}
 
+function fixCallButtons() {
+  const actions = document.querySelector(".chat-header .chat-actions");
+  const voice = getVoiceCallButton();
+  const video = getVideoCallButton();
+
+  if (!actions || !voice || !video) return;
+
+  actions.style.setProperty("display", "flex", "important");
+  actions.style.setProperty("align-items", "center", "important");
+  actions.style.setProperty("justify-content", "flex-end", "important");
+  actions.style.setProperty("visibility", "visible", "important");
+  actions.style.setProperty("opacity", "1", "important");
+  actions.style.setProperty("flex-shrink", "0", "important");
+  actions.style.setProperty("position", "relative", "important");
+  actions.style.setProperty("z-index", "50", "important");
+
+  [voice, video].forEach(button => {
+    button.style.setProperty("display", "flex", "important");
+    button.style.setProperty("visibility", "visible", "important");
+    button.style.setProperty("opacity", "1", "important");
+    button.style.setProperty("flex", "0 0 auto", "important");
+    button.style.setProperty("pointer-events", "auto", "important");
+    button.style.setProperty("position", "relative", "important");
+    button.style.setProperty("z-index", "51", "important");
+  });
+}
+
+
+/* ============================================================
+   CALL BUTTON EVENTS
+   Event delegation = listeners won't disappear if DOM changes.
+============================================================ */
+
+document.addEventListener("click", event => {
+  const voice = event.target.closest("#voiceCallBtn");
+  const video = event.target.closest("#videoCallBtn");
+
+  if (!voice && !video) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (!selectedUser) {
+    showToast("Select a user first");
+    return;
+  }
+
+  if (voice) {
+    startCall("voice");
+  }
+
+  if (video) {
+    startCall("video");
+  }
+});
+
+
+/* ============================================================
+   KEEP BUTTONS VISIBLE
+   No MutationObserver.
+============================================================ */
+
+window.addEventListener("resize", fixCallButtons);
+
+document.addEventListener("DOMContentLoaded", () => {
+  fixCallButtons();
+
+  setTimeout(fixCallButtons, 100);
+  setTimeout(fixCallButtons, 500);
+});
+
+
+/* ============================================================
+   PROFILE ELEMENTS
+============================================================ */
+
+const myAvatarBtn = document.getElementById("myAvatarBtn");
+
+const profilePanel = document.getElementById("profilePanel");
 const profilePanelBackdrop =
   document.getElementById("profilePanelBackdrop");
 
@@ -146,12 +193,9 @@ const removeProfilePhoto =
   document.getElementById("removeProfilePhoto");
 
 
-// ============================================================
-// CALL ELEMENTS
-// ============================================================
-
-let voiceCallBtn = null;
-let videoCallBtn = null;
+/* ============================================================
+   CALL ELEMENTS
+============================================================ */
 
 const incomingCall =
   document.getElementById("incomingCall");
@@ -217,32 +261,23 @@ const ringtone =
   document.getElementById("ringtone");
 
 
-// ============================================================
-// HELPERS
-// ============================================================
+/* ============================================================
+   HELPERS
+============================================================ */
 
 function getToken() {
   return localStorage.getItem("dark_chat_token");
 }
 
-
 function setToken(token) {
-  localStorage.setItem(
-    "dark_chat_token",
-    token
-  );
+  localStorage.setItem("dark_chat_token", token);
 }
-
 
 function removeToken() {
-  localStorage.removeItem(
-    "dark_chat_token"
-  );
+  localStorage.removeItem("dark_chat_token");
 }
 
-
 function headers() {
-
   const token = getToken();
 
   const result = {
@@ -250,1828 +285,639 @@ function headers() {
   };
 
   if (token) {
-    result.Authorization =
-      `Bearer ${token}`;
+    result.Authorization = `Bearer ${token}`;
   }
 
   return result;
 }
 
-
 async function api(path, options = {}) {
+  const response = await fetch(API + path, {
+    ...options,
+    headers: {
+      ...headers(),
+      ...(options.headers || {})
+    }
+  });
 
-  const response =
-    await fetch(
-      API + path,
-      {
-        ...options,
-
-        headers: {
-          ...headers(),
-          ...(options.headers || {})
-        }
-      }
-    );
-
-
-  let data;
+  let data = {};
 
   try {
-
-    data =
-      await response.json();
-
-  } catch {
-
-    data = {};
-  }
-
+    data = await response.json();
+  } catch {}
 
   if (!response.ok) {
-
     throw new Error(
-      data.error ||
-      "Something went wrong"
+      data.error || "Something went wrong"
     );
   }
-
 
   return data;
 }
 
-
 function avatarLetter(name) {
-
   return String(name || "U")
     .trim()
     .charAt(0)
     .toUpperCase();
 }
 
-
 function showToast(text) {
+  if (!toast) return;
 
-  if (!toast) {
-    return;
-  }
+  toast.textContent = text;
+  toast.classList.add("show");
 
-
-  toast.textContent =
-    text;
-
-
-  toast.classList.add(
-    "show"
-  );
-
-
-  setTimeout(
-    () => {
-      toast.classList.remove(
-        "show"
-      );
-    },
-    2500
-  );
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2500);
 }
-
 
 function formatTime(dateString) {
+  if (!dateString) return "";
 
-  if (!dateString) {
-    return "";
-  }
-
-
-  const date =
-    new Date(
-      dateString.replace(
-        " ",
-        "T"
-      ) + "Z"
-    );
-
+  let value = String(dateString);
 
   if (
-    Number.isNaN(
-      date.getTime()
-    )
+    !value.endsWith("Z") &&
+    !value.includes("+")
   ) {
+    value = value.replace(" ", "T") + "Z";
+  }
 
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
     return "";
   }
 
-
-  return date.toLocaleTimeString(
-    [],
-    {
-      hour: "2-digit",
-      minute: "2-digit"
-    }
-  );
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 
+function setAvatar(element, user) {
+  if (!element) return;
 
-function setAvatar(
-  element,
-  user
-) {
+  element.textContent = "";
+  element.style.backgroundImage = "";
 
-  if (!element) {
-    return;
-  }
-
-
-  element.textContent =
-    "";
-
-  element.style.backgroundImage =
-    "";
-
-
-  if (
-    user &&
-    user.profile_photo
-  ) {
-
+  if (user?.profile_photo) {
     element.style.backgroundImage =
       `url("${user.profile_photo}")`;
 
-    element.style.backgroundSize =
-      "cover";
-
-    element.style.backgroundPosition =
-      "center";
-
-    element.style.backgroundRepeat =
-      "no-repeat";
+    element.style.backgroundSize = "cover";
+    element.style.backgroundPosition = "center";
+    element.style.backgroundRepeat = "no-repeat";
 
     return;
   }
 
-
-  element.textContent =
-    avatarLetter(
-      user?.username
-    );
+  element.textContent = avatarLetter(user?.username);
 }
 
+function setAvatarData(element, username, photo) {
+  if (!element) return;
 
-function setAvatarData(
-  element,
-  username,
-  photo
-) {
-
-  if (!element) {
-    return;
-  }
-
-
-  element.textContent =
-    "";
-
-  element.style.backgroundImage =
-    "";
-
+  element.textContent = "";
+  element.style.backgroundImage = "";
 
   if (photo) {
-
     element.style.backgroundImage =
       `url("${photo}")`;
 
-    element.style.backgroundSize =
-      "cover";
-
-    element.style.backgroundPosition =
-      "center";
-
-    element.style.backgroundRepeat =
-      "no-repeat";
-
+    element.style.backgroundSize = "cover";
+    element.style.backgroundPosition = "center";
+    element.style.backgroundRepeat = "no-repeat";
   } else {
-
-    element.textContent =
-      avatarLetter(
-        username
-      );
+    element.textContent = avatarLetter(username);
   }
 }
 
-
-// ============================================================
-// CALL BUTTON PROTECTION
-// ============================================================
-
-let callButtonsReady = false;
-let callObserverStarted = false;
-
-
-function ensureCallButtons() {
-
-  const active =
-    document.getElementById(
-      "activeChat"
-    );
-
-
-  const header =
-    active?.querySelector(
-      ".chat-header"
-    ) ||
-    document.querySelector(
-      ".chat-header"
-    );
-
-
-  if (!header) {
-    return;
-  }
-
-
-  // ----------------------------------------------------------
-  // ACTION CONTAINER
-  // ----------------------------------------------------------
-
-  let actions =
-    header.querySelector(
-      ".chat-actions"
-    );
-
-
-  if (!actions) {
-
-    actions =
-      document.createElement(
-        "div"
-      );
-
-    actions.className =
-      "chat-actions";
-
-    header.appendChild(
-      actions
-    );
-  }
-
-
-  // ----------------------------------------------------------
-  // VOICE BUTTON
-  // ----------------------------------------------------------
-
-  let voice =
-    actions.querySelector(
-      "#voiceCallBtn"
-    );
-
-
-  if (!voice) {
-
-    voice =
-      document.createElement(
-        "button"
-      );
-
-    voice.id =
-      "voiceCallBtn";
-
-    voice.type =
-      "button";
-
-    voice.className =
-      "call-btn";
-
-    voice.title =
-      "Voice call";
-
-    voice.setAttribute(
-      "aria-label",
-      "Voice call"
-    );
-
-    voice.textContent =
-      "☎";
-
-    actions.insertBefore(
-      voice,
-      actions.firstChild
-    );
-  }
-
-
-  // ----------------------------------------------------------
-  // VIDEO BUTTON
-  // ----------------------------------------------------------
-
-  let video =
-    actions.querySelector(
-      "#videoCallBtn"
-    );
-
-
-  if (!video) {
-
-    video =
-      document.createElement(
-        "button"
-      );
-
-    video.id =
-      "videoCallBtn";
-
-    video.type =
-      "button";
-
-    video.className =
-      "call-btn";
-
-    video.title =
-      "Video call";
-
-    video.setAttribute(
-      "aria-label",
-      "Video call"
-    );
-
-    video.textContent =
-      "▣";
-
-
-    const refresh =
-      actions.querySelector(
-        "#reloadMessages"
-      );
-
-
-    if (refresh) {
-
-      actions.insertBefore(
-        video,
-        refresh
-      );
-
-    } else {
-
-      actions.appendChild(
-        video
-      );
-    }
-  }
-
-
-  // ----------------------------------------------------------
-  // KEEP CORRECT ORDER
-  // ----------------------------------------------------------
-
-  actions.insertBefore(
-    voice,
-    actions.firstChild
-  );
-
-
-  const refresh =
-    actions.querySelector(
-      "#reloadMessages"
-    );
-
-
-  if (refresh) {
-
-    actions.insertBefore(
-      video,
-      refresh
-    );
-  }
-
-
-  // ----------------------------------------------------------
-  // ACTION AREA STYLE
-  // ----------------------------------------------------------
-
-  actions.style.setProperty(
-    "display",
-    "flex",
-    "important"
-  );
-
-  actions.style.setProperty(
-    "align-items",
-    "center",
-    "important"
-  );
-
-  actions.style.setProperty(
-    "justify-content",
-    "flex-end",
-    "important"
-  );
-
-  actions.style.setProperty(
-    "gap",
-    window.innerWidth <= 390
-      ? "1px"
-      : "4px",
-    "important"
-  );
-
-  actions.style.setProperty(
-    "visibility",
-    "visible",
-    "important"
-  );
-
-  actions.style.setProperty(
-    "opacity",
-    "1",
-    "important"
-  );
-
-  actions.style.setProperty(
-    "flex-shrink",
-    "0",
-    "important"
-  );
-
-  actions.style.setProperty(
-    "position",
-    "relative",
-    "important"
-  );
-
-  actions.style.setProperty(
-    "z-index",
-    "20",
-    "important"
-  );
-
-
-  // ----------------------------------------------------------
-  // BUTTON STYLE
-  // ----------------------------------------------------------
-
-  const width =
-    window.innerWidth <= 390
-      ? "33px"
-      : window.innerWidth <= 700
-        ? "35px"
-        : "38px";
-
-
-  [voice, video].forEach(
-    button => {
-
-      button.classList.add(
-        "call-btn"
-      );
-
-
-      button.style.setProperty(
-        "display",
-        "flex",
-        "important"
-      );
-
-      button.style.setProperty(
-        "visibility",
-        "visible",
-        "important"
-      );
-
-      button.style.setProperty(
-        "opacity",
-        "1",
-        "important"
-      );
-
-      button.style.setProperty(
-        "width",
-        width,
-        "important"
-      );
-
-      button.style.setProperty(
-        "height",
-        width,
-        "important"
-      );
-
-      button.style.setProperty(
-        "min-width",
-        width,
-        "important"
-      );
-
-      button.style.setProperty(
-        "min-height",
-        width,
-        "important"
-      );
-
-      button.style.setProperty(
-        "max-width",
-        width,
-        "important"
-      );
-
-      button.style.setProperty(
-        "max-height",
-        width,
-        "important"
-      );
-
-      button.style.setProperty(
-        "flex",
-        "0 0 auto",
-        "important"
-      );
-
-      button.style.setProperty(
-        "align-items",
-        "center",
-        "important"
-      );
-
-      button.style.setProperty(
-        "justify-content",
-        "center",
-        "important"
-      );
-
-      button.style.setProperty(
-        "pointer-events",
-        "auto",
-        "important"
-      );
-
-      button.style.setProperty(
-        "cursor",
-        "pointer",
-        "important"
-      );
-
-      button.style.setProperty(
-        "position",
-        "relative",
-        "important"
-      );
-
-      button.style.setProperty(
-        "z-index",
-        "30",
-        "important"
-      );
-    }
-  );
-
-
-  voiceCallBtn =
-    voice;
-
-  videoCallBtn =
-    video;
-
-
-  // ----------------------------------------------------------
-  // EVENTS
-  // ----------------------------------------------------------
-
-  if (
-    voice.dataset.callListener !==
-    "true"
-  ) {
-
-    voice.addEventListener(
-      "click",
-      event => {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-
-        if (!selectedUser) {
-
-          showToast(
-            "Select a user first"
-          );
-
-          return;
-        }
-
-
-        startCall(
-          "voice"
-        );
-      }
-    );
-
-
-    voice.dataset.callListener =
-      "true";
-  }
-
-
-  if (
-    video.dataset.callListener !==
-    "true"
-  ) {
-
-    video.addEventListener(
-      "click",
-      event => {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-
-        if (!selectedUser) {
-
-          showToast(
-            "Select a user first"
-          );
-
-          return;
-        }
-
-
-        startCall(
-          "video"
-        );
-      }
-    );
-
-
-    video.dataset.callListener =
-      "true";
-  }
-
-
-  callButtonsReady = true;
+function escapeHTML(value) {
+  const div = document.createElement("div");
+  div.textContent = String(value ?? "");
+  return div.innerHTML;
 }
 
 
-// ============================================================
-// CALL BUTTON OBSERVER
-// ============================================================
-
-function startCallButtonObserver() {
-
-  if (callObserverStarted) {
-    return;
-  }
-
-
-  const chatArea =
-    document.querySelector(
-      ".chat-area"
-    );
-
-
-  if (!chatArea) {
-    return;
-  }
-
-
-  callObserverStarted =
-    true;
-
-
-  const observer =
-    new MutationObserver(
-      mutations => {
-
-        let needsCheck =
-          false;
-
-
-        for (
-          const mutation of mutations
-        ) {
-
-          if (
-            mutation.type !==
-            "childList"
-          ) {
-
-            continue;
-          }
-
-
-          const nodes = [
-            ...Array.from(
-              mutation.addedNodes
-            ),
-            ...Array.from(
-              mutation.removedNodes
-            )
-          ];
-
-
-          for (
-            const node of nodes
-          ) {
-
-            if (
-              node.nodeType !==
-              Node.ELEMENT_NODE
-            ) {
-
-              continue;
-            }
-
-
-            if (
-              node.matches?.(
-                ".chat-header, .chat-actions, #voiceCallBtn, #videoCallBtn"
-              )
-            ) {
-
-              needsCheck =
-                true;
-
-              break;
-            }
-
-
-            if (
-              node.querySelector?.(
-                ".chat-header, .chat-actions, #voiceCallBtn, #videoCallBtn"
-              )
-            ) {
-
-              needsCheck =
-                true;
-
-              break;
-            }
-          }
-
-
-          if (needsCheck) {
-            break;
-          }
-        }
-
-
-        if (needsCheck) {
-
-          requestAnimationFrame(
-            ensureCallButtons
-          );
-        }
-      }
-    );
-
-
-  observer.observe(
-    chatArea,
-    {
-      childList: true,
-      subtree: true
-    }
-  );
-}
-
-
-// ============================================================
-// RESIZE
-// ============================================================
-
-window.addEventListener(
-  "resize",
-  () => {
-
-    if (callButtonsReady) {
-      ensureCallButtons();
-    }
-  }
-);
-
-
-// ============================================================
-// INITIAL CALL BUTTON SETUP
-// ============================================================
-
-function initCallButtons() {
-
-  ensureCallButtons();
-
-  startCallButtonObserver();
-
-
-  setTimeout(
-    ensureCallButtons,
-    100
-  );
-
-  setTimeout(
-    ensureCallButtons,
-    500
-  );
-
-  setTimeout(
-    ensureCallButtons,
-    1000
-  );
-}
-
-
-// ============================================================
-// AUTH SCREEN
-// ============================================================
+/* ============================================================
+   AUTH SCREEN
+============================================================ */
 
 if (showRegister) {
+  showRegister.addEventListener("click", () => {
+    loginForm.classList.add("hidden");
+    registerForm.classList.remove("hidden");
 
-  showRegister.addEventListener(
-    "click",
-    () => {
-
-      loginForm.classList.add(
-        "hidden"
-      );
-
-      registerForm.classList.remove(
-        "hidden"
-      );
-
-      loginError.textContent =
-        "";
-
-      registerError.textContent =
-        "";
-    }
-  );
+    loginError.textContent = "";
+    registerError.textContent = "";
+  });
 }
-
 
 if (showLogin) {
+  showLogin.addEventListener("click", () => {
+    registerForm.classList.add("hidden");
+    loginForm.classList.remove("hidden");
 
-  showLogin.addEventListener(
-    "click",
-    () => {
-
-      registerForm.classList.add(
-        "hidden"
-      );
-
-      loginForm.classList.remove(
-        "hidden"
-      );
-
-      loginError.textContent =
-        "";
-
-      registerError.textContent =
-        "";
-    }
-  );
+    loginError.textContent = "";
+    registerError.textContent = "";
+  });
 }
 
 
-// ============================================================
-// REGISTER
-// ============================================================
+/* ============================================================
+   REGISTER
+============================================================ */
 
 if (registerForm) {
+  registerForm.addEventListener("submit", async event => {
+    event.preventDefault();
 
-  registerForm.addEventListener(
-    "submit",
-    async event => {
+    registerError.textContent = "";
 
-      event.preventDefault();
+    const username =
+      document.getElementById("registerUsername").value.trim();
 
-      registerError.textContent =
-        "";
+    const email =
+      document.getElementById("registerEmail").value.trim();
 
+    const password =
+      document.getElementById("registerPassword").value;
 
-      const username =
-        document
-          .getElementById(
-            "registerUsername"
-          )
-          .value
-          .trim();
+    try {
+      await api("/register", {
+        method: "POST",
+        body: JSON.stringify({
+          username,
+          email,
+          password
+        })
+      });
 
+      showToast("Account created");
 
-      const email =
-        document
-          .getElementById(
-            "registerEmail"
-          )
-          .value
-          .trim();
+      registerForm.reset();
 
+      registerForm.classList.add("hidden");
+      loginForm.classList.remove("hidden");
 
-      const password =
-        document
-          .getElementById(
-            "registerPassword"
-          )
-          .value;
+      document.getElementById("loginEmail").value = email;
 
-
-      try {
-
-        await api(
-          "/register",
-          {
-            method: "POST",
-
-            body:
-              JSON.stringify({
-                username,
-                email,
-                password
-              })
-          }
-        );
-
-
-        showToast(
-          "Account created"
-        );
-
-
-        registerForm.reset();
-
-
-        registerForm.classList.add(
-          "hidden"
-        );
-
-        loginForm.classList.remove(
-          "hidden"
-        );
-
-
-        document
-          .getElementById(
-            "loginEmail"
-          )
-          .value =
-          email;
-
-      } catch (error) {
-
-        registerError.textContent =
-          error.message;
-      }
+    } catch (error) {
+      registerError.textContent = error.message;
     }
-  );
+  });
 }
 
 
-// ============================================================
-// LOGIN
-// ============================================================
+/* ============================================================
+   LOGIN
+============================================================ */
 
 if (loginForm) {
+  loginForm.addEventListener("submit", async event => {
+    event.preventDefault();
 
-  loginForm.addEventListener(
-    "submit",
-    async event => {
+    loginError.textContent = "";
 
-      event.preventDefault();
+    const email =
+      document.getElementById("loginEmail").value.trim();
 
-      loginError.textContent =
-        "";
+    const password =
+      document.getElementById("loginPassword").value;
 
+    try {
+      const data = await api("/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password
+        })
+      });
 
-      const email =
-        document
-          .getElementById(
-            "loginEmail"
-          )
-          .value
-          .trim();
+      setToken(data.token);
+      currentUser = data.user;
 
+      loginForm.reset();
 
-      const password =
-        document
-          .getElementById(
-            "loginPassword"
-          )
-          .value;
+      openChatApp();
 
-
-      try {
-
-        const data =
-          await api(
-            "/login",
-            {
-              method: "POST",
-
-              body:
-                JSON.stringify({
-                  email,
-                  password
-                })
-            }
-          );
-
-
-        setToken(
-          data.token
-        );
-
-
-        currentUser =
-          data.user;
-
-
-        loginForm.reset();
-
-
-        openChatApp();
-
-      } catch (error) {
-
-        loginError.textContent =
-          error.message;
-      }
+    } catch (error) {
+      loginError.textContent = error.message;
     }
-  );
+  });
 }
 
 
-// ============================================================
-// START APP
-// ============================================================
+/* ============================================================
+   APP START
+============================================================ */
 
 async function startApp() {
+  fixCallButtons();
 
-  initCallButtons();
-
-
-  const token =
-    getToken();
-
+  const token = getToken();
 
   if (!token) {
-
     showAuth();
-
     return;
   }
 
-
   try {
+    const data = await api("/me");
 
-    const data =
-      await api(
-        "/me"
-      );
-
-
-    currentUser =
-      data.user;
-
+    currentUser = data.user;
 
     openChatApp();
 
   } catch {
-
     removeToken();
-
     showAuth();
   }
 }
 
-
 function showAuth() {
-
   stopMessageRefresh();
-
   stopIncomingCallPolling();
 
-
-  authScreen.classList.remove(
-    "hidden"
-  );
-
-
-  chatScreen.classList.add(
-    "hidden"
-  );
+  authScreen.classList.remove("hidden");
+  chatScreen.classList.add("hidden");
 }
 
-
 function openChatApp() {
+  authScreen.classList.add("hidden");
+  chatScreen.classList.remove("hidden");
 
-  authScreen.classList.add(
-    "hidden"
-  );
+  myUsername.textContent = currentUser.username;
 
-
-  chatScreen.classList.remove(
-    "hidden"
-  );
-
-
-  myUsername.textContent =
-    currentUser.username;
-
-
-  setAvatar(
-    myAvatar,
-    currentUser
-  );
-
+  setAvatar(myAvatar, currentUser);
 
   updateProfilePanel();
 
-
   loadUsers();
-
 
   startIncomingCallPolling();
 
+  fixCallButtons();
 
-  setTimeout(
-    ensureCallButtons,
-    0
-  );
-
-
-  setTimeout(
-    ensureCallButtons,
-    100
-  );
-
-
-  setTimeout(
-    ensureCallButtons,
-    500
-  );
+  setTimeout(fixCallButtons, 100);
+  setTimeout(fixCallButtons, 500);
 }
 
 
-// ============================================================
-// USERS
-// ============================================================
+/* ============================================================
+   USERS
+============================================================ */
 
 async function loadUsers() {
-
   usersList.innerHTML = `
-    <div class="loading">
-      Loading users...
-    </div>
+    <div class="loading">Loading users...</div>
   `;
 
-
   try {
+    const data = await api("/users");
 
-    const data =
-      await api(
-        "/users"
-      );
-
-
-    renderUsers(
-      data.users || []
-    );
+    renderUsers(data.users || []);
 
   } catch (error) {
-
     usersList.innerHTML = `
       <div class="loading">
-        ${escapeHTML(
-          error.message
-        )}
+        ${escapeHTML(error.message)}
       </div>
     `;
   }
 }
 
-
 function renderUsers(users) {
+  usersList.innerHTML = "";
 
-  usersList.innerHTML =
-    "";
-
-
-  const otherUsers =
-    users.filter(
-      user =>
-        !currentUser ||
-        user.id !==
-          currentUser.id
-    );
-
+  const otherUsers = users.filter(
+    user =>
+      !currentUser ||
+      user.id !== currentUser.id
+  );
 
   if (!otherUsers.length) {
-
     usersList.innerHTML = `
       <div class="loading">
         No other users yet.
       </div>
     `;
-
     return;
   }
 
+  otherUsers.forEach(user => {
+    const item = document.createElement("div");
 
-  otherUsers.forEach(
-    user => {
+    item.className = "user-item";
 
-      const item =
-        document.createElement(
-          "div"
-        );
-
-
-      item.className =
-        "user-item";
-
-
-      if (
-        selectedUser &&
-        selectedUser.id ===
-          user.id
-      ) {
-
-        item.classList.add(
-          "active"
-        );
-      }
-
-
-      const avatar =
-        document.createElement(
-          "div"
-        );
-
-
-      avatar.className =
-        "avatar";
-
-
-      setAvatar(
-        avatar,
-        user
-      );
-
-
-      const info =
-        document.createElement(
-          "div"
-        );
-
-
-      info.className =
-        "user-info";
-
-
-      const name =
-        document.createElement(
-          "strong"
-        );
-
-
-      name.textContent =
-        user.username;
-
-
-      const email =
-        document.createElement(
-          "span"
-        );
-
-
-      email.textContent =
-        user.email;
-
-
-      info.appendChild(
-        name
-      );
-
-      info.appendChild(
-        email
-      );
-
-
-      item.appendChild(
-        avatar
-      );
-
-      item.appendChild(
-        info
-      );
-
-
-      item.addEventListener(
-        "click",
-        () =>
-          selectUser(
-            user
-          )
-      );
-
-
-      usersList.appendChild(
-        item
-      );
+    if (
+      selectedUser &&
+      selectedUser.id === user.id
+    ) {
+      item.classList.add("active");
     }
-  );
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+
+    setAvatar(avatar, user);
+
+    const info = document.createElement("div");
+    info.className = "user-info";
+
+    const name = document.createElement("strong");
+    name.textContent = user.username;
+
+    const email = document.createElement("span");
+    email.textContent = user.email;
+
+    info.appendChild(name);
+    info.appendChild(email);
+
+    item.appendChild(avatar);
+    item.appendChild(info);
+
+    item.addEventListener("click", () => {
+      selectUser(user);
+    });
+
+    usersList.appendChild(item);
+  });
 }
 
 
-// ============================================================
-// SELECT USER
-// ============================================================
+/* ============================================================
+   SELECT USER
+============================================================ */
 
 async function selectUser(user) {
+  selectedUser = user;
 
-  selectedUser =
-    user;
+  chatScreen.classList.add("chat-open");
 
+  emptyChat.classList.add("hidden");
+  activeChat.classList.remove("hidden");
 
-  chatScreen.classList.add(
-    "chat-open"
-  );
+  chatUsername.textContent = user.username;
 
+  setAvatar(chatAvatar, user);
 
-  emptyChat.classList.add(
-    "hidden"
-  );
+  chatStatus.textContent = "Available";
 
-
-  activeChat.classList.remove(
-    "hidden"
-  );
-
-
-  chatUsername.textContent =
-    user.username;
-
-
-  setAvatar(
-    chatAvatar,
-    user
-  );
-
-
-  chatStatus.textContent =
-    "Available";
-
-
-  ensureCallButtons();
-
+  /* IMPORTANT:
+     Do not rebuild header or buttons here.
+  */
+  fixCallButtons();
 
   await loadMessages();
 
-
   messageInput.focus();
-
 
   startMessageRefresh();
 
-
-  setTimeout(
-    ensureCallButtons,
-    0
-  );
-
-  setTimeout(
-    ensureCallButtons,
-    100
-  );
+  setTimeout(fixCallButtons, 100);
 }
 
 
-// ============================================================
-// LOAD MESSAGES
-// ============================================================
+/* ============================================================
+   MESSAGES
+============================================================ */
 
 async function loadMessages() {
-
-  if (!selectedUser) {
-    return;
-  }
-
+  if (!selectedUser) return;
 
   try {
-
-    const data =
-      await api(
-        `/messages?user_id=${selectedUser.id}`
-      );
-
-
-    renderMessages(
-      data.messages || []
+    const data = await api(
+      `/messages?user_id=${selectedUser.id}`
     );
 
-  } catch (error) {
+    renderMessages(data.messages || []);
 
+  } catch (error) {
     messagesBox.innerHTML = `
       <div class="loading">
-        ${escapeHTML(
-          error.message
-        )}
+        ${escapeHTML(error.message)}
       </div>
     `;
   }
 }
 
-
-function renderMessages(
-  messages
-) {
-
-  messagesBox.innerHTML =
-    "";
-
+function renderMessages(messages) {
+  messagesBox.innerHTML = "";
 
   if (!messages.length) {
+    const empty = document.createElement("div");
 
-    const empty =
-      document.createElement(
-        "div"
-      );
+    empty.className = "loading";
+    empty.textContent = "No messages yet. Say hello!";
 
-
-    empty.className =
-      "loading";
-
-
-    empty.textContent =
-      "No messages yet. Say hello!";
-
-
-    messagesBox.appendChild(
-      empty
-    );
-
-
-    ensureCallButtons();
+    messagesBox.appendChild(empty);
 
     return;
   }
 
+  messages.forEach(message => {
+    const mine =
+      Number(message.sender_id) ===
+      Number(currentUser.id);
 
-  messages.forEach(
-    message => {
+    const row = document.createElement("div");
 
-      const mine =
-        Number(
-          message.sender_id
-        ) ===
-        Number(
-          currentUser.id
-        );
+    row.className =
+      "message-row" +
+      (mine ? " mine" : "");
 
+    const bubble = document.createElement("div");
+    bubble.className = "message";
 
-      const row =
-        document.createElement(
-          "div"
-        );
+    const text = document.createElement("div");
+    text.textContent = message.message;
 
+    const time = document.createElement("span");
+    time.className = "message-time";
 
-      row.className =
-        "message-row" +
-        (
-          mine
-            ? " mine"
-            : ""
-        );
+    time.textContent =
+      formatTime(message.created_at);
 
+    bubble.appendChild(text);
+    bubble.appendChild(time);
 
-      const bubble =
-        document.createElement(
-          "div"
-        );
+    row.appendChild(bubble);
 
-
-      bubble.className =
-        "message";
-
-
-      const text =
-        document.createElement(
-          "div"
-        );
-
-
-      text.textContent =
-        message.message;
-
-
-      const time =
-        document.createElement(
-          "span"
-        );
-
-
-      time.className =
-        "message-time";
-
-
-      time.textContent =
-        formatTime(
-          message.created_at
-        );
-
-
-      bubble.appendChild(
-        text
-      );
-
-      bubble.appendChild(
-        time
-      );
-
-
-      row.appendChild(
-        bubble
-      );
-
-
-      messagesBox.appendChild(
-        row
-      );
-    }
-  );
-
+    messagesBox.appendChild(row);
+  });
 
   messagesBox.scrollTop =
     messagesBox.scrollHeight;
-
-
-  ensureCallButtons();
 }
 
 
-// ============================================================
-// SEND MESSAGE
-// ============================================================
+/* ============================================================
+   SEND MESSAGE
+============================================================ */
 
 if (messageForm) {
+  messageForm.addEventListener("submit", async event => {
+    event.preventDefault();
 
-  messageForm.addEventListener(
-    "submit",
-    async event => {
+    if (!selectedUser) return;
 
-      event.preventDefault();
+    const message =
+      messageInput.value.trim();
 
+    if (!message) return;
 
-      if (!selectedUser) {
-        return;
-      }
+    messageInput.disabled = true;
 
+    try {
+      await api("/messages", {
+        method: "POST",
+        body: JSON.stringify({
+          receiver_id: selectedUser.id,
+          message
+        })
+      });
 
-      const message =
-        messageInput.value.trim();
+      messageInput.value = "";
 
+      await loadMessages();
 
-      if (!message) {
-        return;
-      }
+    } catch (error) {
+      showToast(error.message);
 
-
-      messageInput.disabled =
-        true;
-
-
-      try {
-
-        await api(
-          "/messages",
-          {
-            method: "POST",
-
-            body:
-              JSON.stringify({
-                receiver_id:
-                  selectedUser.id,
-
-                message
-              })
-          }
-        );
-
-
-        messageInput.value =
-          "";
-
-
-        await loadMessages();
-
-      } catch (error) {
-
-        showToast(
-          error.message
-        );
-
-      } finally {
-
-        messageInput.disabled =
-          false;
-
-        messageInput.focus();
-      }
+    } finally {
+      messageInput.disabled = false;
+      messageInput.focus();
     }
-  );
+  });
 }
 
 
-// ============================================================
-// AUTO REFRESH
-// ============================================================
+/* ============================================================
+   MESSAGE REFRESH
+============================================================ */
 
 function startMessageRefresh() {
-
   stopMessageRefresh();
 
-
-  messageTimer =
-    setInterval(
-      async () => {
-
-        if (
-          selectedUser &&
-          document.visibilityState ===
-            "visible"
-        ) {
-
-          await loadMessages();
-
-          ensureCallButtons();
-        }
-      },
-      3000
-    );
+  messageTimer = setInterval(async () => {
+    if (
+      selectedUser &&
+      document.visibilityState === "visible"
+    ) {
+      await loadMessages();
+    }
+  }, 3000);
 }
 
-
 function stopMessageRefresh() {
-
   if (messageTimer) {
-
-    clearInterval(
-      messageTimer
-    );
-
+    clearInterval(messageTimer);
     messageTimer = null;
   }
 }
 
 
-// ============================================================
-// REFRESH USERS
-// ============================================================
+/* ============================================================
+   REFRESH USERS
+============================================================ */
 
 if (refreshUsers) {
-
-  refreshUsers.addEventListener(
-    "click",
-    async () => {
-
-      await loadUsers();
-
-      ensureCallButtons();
-    }
-  );
+  refreshUsers.addEventListener("click", async () => {
+    await loadUsers();
+    fixCallButtons();
+  });
 }
 
 
-// ============================================================
-// REFRESH MESSAGES
-// ============================================================
+/* ============================================================
+   REFRESH MESSAGES
+============================================================ */
 
 if (reloadMessages) {
-
-  reloadMessages.addEventListener(
-    "click",
-    async () => {
-
-      await loadMessages();
-
-      ensureCallButtons();
-    }
-  );
+  reloadMessages.addEventListener("click", async () => {
+    await loadMessages();
+    fixCallButtons();
+  });
 }
 
 
-// ============================================================
-// LOGOUT
-// ============================================================
+/* ============================================================
+   LOGOUT
+============================================================ */
 
 if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
 
-  logoutBtn.addEventListener(
-    "click",
-    async () => {
-
-      if (peerConnection) {
-
-        await endCall(
-          false
-        );
-      }
-
-
-      try {
-
-        await api(
-          "/logout",
-          {
-            method: "POST"
-          }
-        );
-
-      } catch {}
-
-
-      stopMessageRefresh();
-
-      stopIncomingCallPolling();
-
-      removeToken();
-
-
-      currentUser =
-        null;
-
-      selectedUser =
-        null;
-
-
-      closeProfile();
-
-
-      chatScreen.classList.remove(
-        "chat-open"
-      );
-
-
-      showAuth();
-
-
-      showToast(
-        "Logged out"
-      );
+    if (peerConnection) {
+      await endCall(false);
     }
-  );
+
+    try {
+      await api("/logout", {
+        method: "POST"
+      });
+    } catch {}
+
+    stopMessageRefresh();
+    stopIncomingCallPolling();
+
+    removeToken();
+
+    currentUser = null;
+    selectedUser = null;
+
+    closeProfile();
+
+    chatScreen.classList.remove("chat-open");
+
+    showAuth();
+
+    showToast("Logged out");
+  });
 }
 
 
-// ============================================================
-// MOBILE BACK
-// ============================================================
+/* ============================================================
+   MOBILE BACK
+============================================================ */
 
 const chatArea =
-  document.querySelector(
-    ".chat-area"
-  );
-
+  document.querySelector(".chat-area");
 
 if (chatArea) {
+  chatArea.addEventListener("click", event => {
 
-  chatArea.addEventListener(
-    "click",
-    event => {
+    const header =
+      document.querySelector(".chat-header");
 
-      if (
-        window.innerWidth <=
-          700 &&
-        event.target ===
-          document.querySelector(
-            ".chat-header"
-          )
-      ) {
+    if (
+      window.innerWidth <= 700 &&
+      event.target === header
+    ) {
+      chatScreen.classList.remove("chat-open");
 
-        chatScreen.classList.remove(
-          "chat-open"
-        );
-
-
-        stopMessageRefresh();
-      }
+      stopMessageRefresh();
     }
-  );
+  });
 }
 
 
-// ============================================================
-// PROFILE
-// ============================================================
+/* ============================================================
+   PROFILE
+============================================================ */
 
 function updateProfilePanel() {
-
-  if (!currentUser) {
-    return;
-  }
-
+  if (!currentUser) return;
 
   profilePanelName.textContent =
     currentUser.username;
 
-
   profilePanelEmail.textContent =
     currentUser.email;
-
 
   setAvatarData(
     profilePhotoLarge,
@@ -2079,7 +925,6 @@ function updateProfilePanel() {
     currentUser.profile_photo
   );
 
-
   setAvatarData(
     myAvatar,
     currentUser.username,
@@ -2087,90 +932,60 @@ function updateProfilePanel() {
   );
 }
 
-
 function openProfile() {
-
   updateProfilePanel();
-
-
-  profilePanel.classList.remove(
-    "hidden"
-  );
+  profilePanel.classList.remove("hidden");
 }
 
-
 function closeProfile() {
-
-  profilePanel.classList.add(
-    "hidden"
-  );
-
+  profilePanel.classList.add("hidden");
 
   if (profilePhotoInput) {
-
-    profilePhotoInput.value =
-      "";
+    profilePhotoInput.value = "";
   }
 }
 
-
 if (myAvatarBtn) {
-
   myAvatarBtn.addEventListener(
     "click",
     openProfile
   );
 }
 
-
 if (closeProfilePanel) {
-
   closeProfilePanel.addEventListener(
     "click",
     closeProfile
   );
 }
 
-
 if (profilePanelBackdrop) {
-
   profilePanelBackdrop.addEventListener(
     "click",
     closeProfile
   );
 }
 
-
 if (profilePhotoBtn) {
-
   profilePhotoBtn.addEventListener(
     "click",
-    () => {
-
-      profilePhotoInput.click();
-    }
+    () => profilePhotoInput.click()
   );
 }
-
 
 if (changeProfilePhoto) {
-
   changeProfilePhoto.addEventListener(
     "click",
-    () => {
-
-      profilePhotoInput.click();
-    }
+    () => profilePhotoInput.click()
   );
 }
 
 
-// ============================================================
-// PROFILE PHOTO UPLOAD
-// ============================================================
+/* ============================================================
+   PROFILE PHOTO
+============================================================ */
 
 if (profilePhotoInput) {
-
   profilePhotoInput.addEventListener(
     "change",
     async () => {
@@ -2178,320 +993,187 @@ if (profilePhotoInput) {
       const file =
         profilePhotoInput.files?.[0];
 
+      if (!file) return;
 
-      if (!file) {
+      if (!file.type.startsWith("image/")) {
+        showToast("Please select an image");
         return;
       }
-
-
-      if (
-        !file.type.startsWith(
-          "image/"
-        )
-      ) {
-
-        showToast(
-          "Please select an image"
-        );
-
-        return;
-      }
-
 
       try {
-
-        showToast(
-          "Uploading..."
-        );
-
+        showToast("Uploading...");
 
         const imageData =
-          await imageToDataURL(
-            file
-          );
-
+          await imageToDataURL(file);
 
         const data =
-          await api(
-            "/profile/photo",
-            {
-              method: "POST",
-
-              body:
-                JSON.stringify({
-                  profile_photo:
-                    imageData
-                })
-            }
-          );
-
+          await api("/profile/photo", {
+            method: "POST",
+            body: JSON.stringify({
+              profile_photo: imageData
+            })
+          });
 
         currentUser =
-          data.user ||
-          {
+          data.user || {
             ...currentUser,
-
-            profile_photo:
-              imageData
+            profile_photo: imageData
           };
-
 
         updateProfilePanel();
 
-        renderCurrentChatAvatar();
-
         await loadUsers();
 
-        ensureCallButtons();
-
-
-        showToast(
-          "Photo updated"
-        );
+        showToast("Photo updated");
 
       } catch (error) {
-
-        showToast(
-          error.message
-        );
+        showToast(error.message);
 
       } finally {
-
-        profilePhotoInput.value =
-          "";
+        profilePhotoInput.value = "";
       }
     }
   );
 }
 
 
-// ============================================================
-// REMOVE PROFILE PHOTO
-// ============================================================
+/* ============================================================
+   REMOVE PROFILE PHOTO
+============================================================ */
 
 if (removeProfilePhoto) {
-
   removeProfilePhoto.addEventListener(
     "click",
     async () => {
 
       try {
+        await api("/profile/photo", {
+          method: "DELETE"
+        });
 
-        await api(
-          "/profile/photo",
-          {
-            method: "DELETE"
-          }
-        );
-
-
-        currentUser.profile_photo =
-          null;
-
+        currentUser.profile_photo = null;
 
         updateProfilePanel();
 
-        renderCurrentChatAvatar();
-
         await loadUsers();
 
-        ensureCallButtons();
-
-
-        showToast(
-          "Photo removed"
-        );
+        showToast("Photo removed");
 
       } catch (error) {
-
-        showToast(
-          error.message
-        );
+        showToast(error.message);
       }
     }
   );
 }
 
 
-// ============================================================
-// IMAGE PROCESSING
-// ============================================================
+/* ============================================================
+   IMAGE PROCESSING
+============================================================ */
 
 function imageToDataURL(file) {
+  return new Promise((resolve, reject) => {
 
-  return new Promise(
-    (resolve, reject) => {
+    const reader = new FileReader();
 
-      const reader =
-        new FileReader();
+    reader.onload = () => {
 
+      const img = new Image();
 
-      reader.onload =
-        () => {
+      img.onload = () => {
 
-          const img =
-            new Image();
+        const maxSize = 720;
 
+        let width = img.width;
+        let height = img.height;
 
-          img.onload =
-            () => {
+        if (
+          width > maxSize ||
+          height > maxSize
+        ) {
+          const scale =
+            Math.min(
+              maxSize / width,
+              maxSize / height
+            );
 
-              const maxSize =
-                720;
+          width =
+            Math.round(width * scale);
 
+          height =
+            Math.round(height * scale);
+        }
 
-              let width =
-                img.width;
+        const canvas =
+          document.createElement("canvas");
 
+        canvas.width = width;
+        canvas.height = height;
 
-              let height =
-                img.height;
+        const ctx =
+          canvas.getContext("2d");
 
+        ctx.drawImage(
+          img,
+          0,
+          0,
+          width,
+          height
+        );
 
-              if (
-                width > maxSize ||
-                height > maxSize
-              ) {
+        resolve(
+          canvas.toDataURL(
+            "image/jpeg",
+            0.82
+          )
+        );
+      };
 
-                const scale =
-                  Math.min(
-                    maxSize / width,
-                    maxSize / height
-                  );
+      img.onerror = () => {
+        reject(new Error("Invalid image"));
+      };
 
+      img.src = reader.result;
+    };
 
-                width =
-                  Math.round(
-                    width * scale
-                  );
-
-
-                height =
-                  Math.round(
-                    height * scale
-                  );
-              }
-
-
-              const canvas =
-                document.createElement(
-                  "canvas"
-                );
-
-
-              canvas.width =
-                width;
-
-              canvas.height =
-                height;
-
-
-              const ctx =
-                canvas.getContext(
-                  "2d"
-                );
-
-
-              ctx.drawImage(
-                img,
-                0,
-                0,
-                width,
-                height
-              );
-
-
-              resolve(
-                canvas.toDataURL(
-                  "image/jpeg",
-                  0.82
-                )
-              );
-            };
-
-
-          img.onerror =
-            () =>
-              reject(
-                new Error(
-                  "Invalid image"
-                )
-              );
-
-
-          img.src =
-            reader.result;
-        };
-
-
-      reader.onerror =
-        () =>
-          reject(
-            new Error(
-              "Could not read image"
-            )
-          );
-
-
-      reader.readAsDataURL(
-        file
+    reader.onerror = () => {
+      reject(
+        new Error("Could not read image")
       );
-    }
-  );
+    };
+
+    reader.readAsDataURL(file);
+  });
 }
 
 
-function renderCurrentChatAvatar() {
-
-  if (!selectedUser) {
-    return;
-  }
-
-
-  setAvatar(
-    chatAvatar,
-    selectedUser
-  );
-}
-
-
-// ============================================================
-// CALL CONFIG
-// ============================================================
+/* ============================================================
+   CALL CONFIG
+============================================================ */
 
 const RTC_CONFIG = {
-
   iceServers: [
-
     {
-      urls:
-        "stun:stun.l.google.com:19302"
+      urls: "stun:stun.l.google.com:19302"
     },
-
     {
-      urls:
-        "stun:stun1.l.google.com:19302"
+      urls: "stun:stun1.l.google.com:19302"
     }
-
   ]
-
 };
 
 
-// ============================================================
-// CALL ID
-// ============================================================
+/* ============================================================
+   CALL ID
+============================================================ */
 
 function generateCallId() {
-
   if (
     window.crypto &&
     crypto.randomUUID
   ) {
-
     return crypto.randomUUID();
   }
-
 
   return (
     Date.now().toString(36) +
@@ -2503,172 +1185,103 @@ function generateCallId() {
 }
 
 
-// ============================================================
-// MEDIA
-// ============================================================
+/* ============================================================
+   MEDIA
+============================================================ */
 
 async function getMedia(type) {
-
   if (
     !navigator.mediaDevices ||
-    !navigator.mediaDevices
-      .getUserMedia
+    !navigator.mediaDevices.getUserMedia
   ) {
-
     throw new Error(
       "Camera and microphone are not supported"
     );
   }
 
-
-  const video =
-    type === "video";
-
-
-  return navigator.mediaDevices
-    .getUserMedia({
-      audio: true,
-      video
-    });
+  return navigator.mediaDevices.getUserMedia({
+    audio: true,
+    video: type === "video"
+  });
 }
 
 
-// ============================================================
-// CREATE PEER
-// ============================================================
+/* ============================================================
+   PEER CONNECTION
+============================================================ */
 
 function createPeerConnection() {
 
   if (peerConnection) {
-
     try {
       peerConnection.close();
     } catch {}
   }
 
-
   peerConnection =
-    new RTCPeerConnection(
-      RTC_CONFIG
-    );
+    new RTCPeerConnection(RTC_CONFIG);
 
-
-  remoteStream =
-    new MediaStream();
-
+  remoteStream = new MediaStream();
 
   if (remoteVideo) {
-
-    remoteVideo.srcObject =
-      remoteStream;
+    remoteVideo.srcObject = remoteStream;
   }
-
 
   if (remoteAudio) {
-
-    remoteAudio.srcObject =
-      remoteStream;
+    remoteAudio.srcObject = remoteStream;
   }
 
+  peerConnection.ontrack = event => {
 
-  peerConnection.ontrack =
-    event => {
+    if (event.streams?.[0]) {
 
-      const stream =
-        event.streams?.[0];
+      event.streams[0]
+        .getTracks()
+        .forEach(track => {
 
+          if (
+            !remoteStream
+              .getTracks()
+              .includes(track)
+          ) {
+            remoteStream.addTrack(track);
+          }
+        });
 
-      if (stream) {
-
-        stream
-          .getTracks()
-          .forEach(
-            track => {
-
-              if (
-                !remoteStream
-                  .getTracks()
-                  .includes(
-                    track
-                  )
-              ) {
-
-                remoteStream.addTrack(
-                  track
-                );
-              }
-            }
-          );
-      } else if (
-        event.track
-      ) {
-
-        if (
-          !remoteStream
-            .getTracks()
-            .includes(
-              event.track
-            )
-        ) {
-
-          remoteStream.addTrack(
-            event.track
-          );
-        }
-      }
-
-
-      if (remoteVideo) {
-
-        remoteVideo.srcObject =
-          remoteStream;
-
-        remoteVideo
-          .play()
-          .catch(
-            () => {}
-          );
-      }
-
-
-      if (remoteAudio) {
-
-        remoteAudio.srcObject =
-          remoteStream;
-
-        remoteAudio
-          .play()
-          .catch(
-            () => {}
-          );
-      }
-
+    } else if (event.track) {
 
       if (
-        currentCallType ===
-        "video"
+        !remoteStream
+          .getTracks()
+          .includes(event.track)
       ) {
-
-        remoteVideo?.classList.remove(
-          "hidden"
-        );
-
-        voiceCallView?.classList.add(
-          "hidden"
-        );
-
-      } else {
-
-        remoteVideo?.classList.add(
-          "hidden"
-        );
-
-        voiceCallView?.classList.remove(
-          "hidden"
-        );
+        remoteStream.addTrack(event.track);
       }
-    };
+    }
 
+    if (remoteVideo) {
+      remoteVideo.srcObject = remoteStream;
+
+      remoteVideo.play().catch(() => {});
+    }
+
+    if (remoteAudio) {
+      remoteAudio.srcObject = remoteStream;
+
+      remoteAudio.play().catch(() => {});
+    }
+
+    if (currentCallType === "video") {
+
+      remoteVideo?.classList.remove("hidden");
+      voiceCallView?.classList.add("hidden");
+
+    } else {
+
+      remoteVideo?.classList.add("hidden");
+      voiceCallView?.classList.remove("hidden");
+    }
+  };
 
   peerConnection.onicecandidate =
     async event => {
@@ -2678,20 +1291,15 @@ function createPeerConnection() {
         !currentCallId ||
         !currentCallUser
       ) {
-
         return;
       }
 
-
       try {
-
         await sendSignal(
           "ice-candidate",
           event.candidate
         );
-
       } catch (error) {
-
         console.error(
           "ICE signal error:",
           error
@@ -2699,124 +1307,88 @@ function createPeerConnection() {
       }
     };
 
-
   peerConnection.onconnectionstatechange =
     () => {
 
-      if (!peerConnection) {
-        return;
-      }
-
+      if (!peerConnection) return;
 
       const state =
-        peerConnection
-          .connectionState;
+        peerConnection.connectionState;
 
-
-      if (
-        state ===
-        "connected"
-      ) {
-
+      if (state === "connected") {
         setCallConnected();
 
       } else if (
         state === "failed" ||
         state === "disconnected"
       ) {
-
-        voiceCallStatus.textContent =
-          "Connection lost";
+        if (voiceCallStatus) {
+          voiceCallStatus.textContent =
+            "Connection lost";
+        }
       }
     };
-
 
   return peerConnection;
 }
 
 
-// ============================================================
-// START OUTGOING CALL
-// ============================================================
+/* ============================================================
+   START CALL
+============================================================ */
 
 async function startCall(type) {
 
   if (!selectedUser) {
-
-    showToast(
-      "Select a user first"
-    );
-
+    showToast("Select a user first");
     return;
   }
-
 
   if (
     peerConnection ||
     currentCallId
   ) {
-
-    showToast(
-      "Already in a call"
-    );
-
+    showToast("Already in a call");
     return;
   }
-
 
   try {
 
     currentCallId =
       generateCallId();
 
+    currentCallType = type;
 
-    currentCallType =
-      type;
+    currentCallUser = {
+      ...selectedUser
+    };
 
-
-    currentCallUser =
-      {
-        ...selectedUser
-      };
-
-
-    currentCallDirection =
-      "outgoing";
-
+    currentCallDirection = "outgoing";
 
     localStream =
-      await getMedia(
-        type
-      );
-
+      await getMedia(type);
 
     createPeerConnection();
 
-
     localStream
       .getTracks()
-      .forEach(
-        track =>
-          peerConnection.addTrack(
-            track,
-            localStream
-          )
-      );
-
+      .forEach(track => {
+        peerConnection.addTrack(
+          track,
+          localStream
+        );
+      });
 
     showCallScreen(
       currentCallUser,
       type
     );
 
-
     callUserName.textContent =
       currentCallUser.username;
 
-
     voiceCallName.textContent =
       currentCallUser.username;
-
 
     setAvatarData(
       voiceCallAvatar,
@@ -2824,39 +1396,26 @@ async function startCall(type) {
       currentCallUser.profile_photo
     );
 
-
     voiceCallStatus.textContent =
       "Calling...";
 
-
     const offer =
-      await peerConnection
-        .createOffer();
+      await peerConnection.createOffer();
 
-
-    await peerConnection
-      .setLocalDescription(
-        offer
-      );
-
+    await peerConnection.setLocalDescription(
+      offer
+    );
 
     await sendSignal(
       "offer",
       {
-        type:
-          offer.type,
-
-        sdp:
-          offer.sdp,
-
-        call_type:
-          type
+        type: offer.type,
+        sdp: offer.sdp,
+        call_type: type
       }
     );
 
-
     startSignalPolling();
-
     startCallDuration();
 
   } catch (error) {
@@ -2866,70 +1425,39 @@ async function startCall(type) {
       error
     );
 
-
     showToast(
       error.message ||
       "Could not start call"
     );
 
-
-    await cleanupCall(
-      false
-    );
+    await cleanupCall(false);
   }
 }
 
 
-// ============================================================
-// SHOW CALL SCREEN
-// ============================================================
+/* ============================================================
+   CALL SCREEN
+============================================================ */
 
-function showCallScreen(
-  user,
-  type
-) {
+function showCallScreen(user, type) {
 
-  callScreen.classList.remove(
-    "hidden"
-  );
-
+  callScreen.classList.remove("hidden");
 
   callUserName.textContent =
-    user?.username ||
-    "User";
+    user?.username || "User";
 
+  if (type === "video") {
 
-  if (
-    type === "video"
-  ) {
-
-    remoteVideo.classList.remove(
-      "hidden"
-    );
-
-    voiceCallView.classList.add(
-      "hidden"
-    );
-
-    localVideo.classList.remove(
-      "hidden"
-    );
+    remoteVideo.classList.remove("hidden");
+    voiceCallView.classList.add("hidden");
+    localVideo.classList.remove("hidden");
 
   } else {
 
-    remoteVideo.classList.add(
-      "hidden"
-    );
-
-    voiceCallView.classList.remove(
-      "hidden"
-    );
-
-    localVideo.classList.add(
-      "hidden"
-    );
+    remoteVideo.classList.add("hidden");
+    voiceCallView.classList.remove("hidden");
+    localVideo.classList.add("hidden");
   }
-
 
   if (
     localStream &&
@@ -2939,24 +1467,18 @@ function showCallScreen(
     localVideo.srcObject =
       localStream;
 
-
-    localVideo
-      .play()
-      .catch(
-        () => {}
-      );
+    localVideo.play().catch(() => {});
   }
 }
 
 
-// ============================================================
-// INCOMING CALL POLLING
-// ============================================================
+/* ============================================================
+   INCOMING CALL POLLING
+============================================================ */
 
 function startIncomingCallPolling() {
 
   stopIncomingCallPolling();
-
 
   incomingCallTimer =
     setInterval(
@@ -2964,24 +1486,16 @@ function startIncomingCallPolling() {
       2500
     );
 
-
   checkIncomingCalls();
 }
-
 
 function stopIncomingCallPolling() {
 
   if (incomingCallTimer) {
-
-    clearInterval(
-      incomingCallTimer
-    );
-
-    incomingCallTimer =
-      null;
+    clearInterval(incomingCallTimer);
+    incomingCallTimer = null;
   }
 }
-
 
 async function checkIncomingCalls() {
 
@@ -2989,19 +1503,15 @@ async function checkIncomingCalls() {
     !currentUser ||
     !getToken()
   ) {
-
     return;
   }
-
 
   if (
     currentCallId ||
     pendingIncomingCall
   ) {
-
     return;
   }
-
 
   try {
 
@@ -3012,26 +1522,20 @@ async function checkIncomingCalls() {
         )}`
       );
 
-
     const calls =
       data.signals ||
       data.calls ||
       data.results ||
       [];
 
-
     if (!Array.isArray(calls)) {
       return;
     }
 
-
     let newest =
       lastIncomingSignalTime;
 
-
-    for (
-      const signal of calls
-    ) {
+    for (const signal of calls) {
 
       const created =
         Number(
@@ -3039,39 +1543,25 @@ async function checkIncomingCalls() {
           Date.now()
         );
 
-
-      if (
-        created >
-        newest
-      ) {
-
-        newest =
-          created;
+      if (created > newest) {
+        newest = created;
       }
     }
 
+    lastIncomingSignalTime = newest;
 
-    lastIncomingSignalTime =
-      newest;
-
-
-    for (
-      const signal of calls
-    ) {
+    for (const signal of calls) {
 
       if (
         signal.signal_type !==
         "offer"
       ) {
-
         continue;
       }
-
 
       const id =
         signal.id ||
         signal.call_id;
-
 
       if (
         id &&
@@ -3079,22 +1569,16 @@ async function checkIncomingCalls() {
           `incoming-${id}`
         )
       ) {
-
         continue;
       }
 
-
       if (id) {
-
         processedSignalIds.add(
           `incoming-${id}`
         );
       }
 
-
-      handleIncomingOffer(
-        signal
-      );
+      handleIncomingOffer(signal);
 
       break;
     }
@@ -3109,25 +1593,20 @@ async function checkIncomingCalls() {
 }
 
 
-// ============================================================
-// INCOMING OFFER
-// ============================================================
+/* ============================================================
+   INCOMING OFFER
+============================================================ */
 
-function handleIncomingOffer(
-  signal
-) {
+function handleIncomingOffer(signal) {
 
   if (
     currentCallId ||
     pendingIncomingCall
   ) {
-
     return;
   }
 
-
   let offerData;
-
 
   try {
 
@@ -3143,28 +1622,20 @@ function handleIncomingOffer(
 
   } catch {
 
-    console.error(
-      "Invalid offer"
-    );
-
     return;
   }
-
 
   if (
     !offerData ||
     !offerData.sdp
   ) {
-
     return;
   }
-
 
   const sender =
     signal.sender ||
     signal.from_user ||
     {};
-
 
   const senderId =
     Number(
@@ -3172,11 +1643,9 @@ function handleIncomingOffer(
       sender.id
     );
 
-
   if (!senderId) {
     return;
   }
-
 
   pendingIncomingCall = {
 
@@ -3196,49 +1665,40 @@ function handleIncomingOffer(
       null,
 
     type:
-      offerData.call_type ===
-      "video"
+      offerData.call_type === "video"
         ? "video"
         : "voice",
 
     offer: {
-
       type:
-        offerData.type ||
-        "offer",
+        offerData.type || "offer",
 
       sdp:
         offerData.sdp
     }
   };
 
-
   showIncomingCall(
     pendingIncomingCall
   );
-
 
   playRingtone();
 }
 
 
-// ============================================================
-// INCOMING CALL UI
-// ============================================================
+/* ============================================================
+   INCOMING UI
+============================================================ */
 
-function showIncomingCall(
-  call
-) {
+function showIncomingCall(call) {
 
   incomingCallName.textContent =
     call.username;
-
 
   incomingCallType.textContent =
     call.type === "video"
       ? "Video call"
       : "Voice call";
-
 
   setAvatarData(
     incomingCallAvatar,
@@ -3246,12 +1706,10 @@ function showIncomingCall(
     call.profilePhoto
   );
 
-
   incomingCall.classList.remove(
     "hidden"
   );
 }
-
 
 function hideIncomingCall() {
 
@@ -3259,14 +1717,13 @@ function hideIncomingCall() {
     "hidden"
   );
 
-
   stopRingtone();
 }
 
 
-// ============================================================
-// ACCEPT CALL
-// ============================================================
+/* ============================================================
+   ACCEPT CALL
+============================================================ */
 
 if (acceptCallBtn) {
 
@@ -3274,37 +1731,26 @@ if (acceptCallBtn) {
     "click",
     async () => {
 
-      if (
-        !pendingIncomingCall
-      ) {
-
+      if (!pendingIncomingCall) {
         return;
       }
-
 
       const call =
         pendingIncomingCall;
 
-
       try {
 
-        pendingIncomingCall =
-          null;
-
+        pendingIncomingCall = null;
 
         hideIncomingCall();
-
 
         currentCallId =
           call.callId;
 
-
         currentCallType =
           call.type;
 
-
         currentCallUser = {
-
           id:
             call.senderId,
 
@@ -3315,43 +1761,33 @@ if (acceptCallBtn) {
             call.profilePhoto
         };
 
-
         currentCallDirection =
           "incoming";
 
-
         localStream =
-          await getMedia(
-            call.type
-          );
-
+          await getMedia(call.type);
 
         createPeerConnection();
 
-
         localStream
           .getTracks()
-          .forEach(
-            track =>
-              peerConnection.addTrack(
-                track,
-                localStream
-              )
-          );
-
+          .forEach(track => {
+            peerConnection.addTrack(
+              track,
+              localStream
+            );
+          });
 
         showCallScreen(
           currentCallUser,
           call.type
         );
 
-
         setAvatarData(
           voiceCallAvatar,
           call.username,
           call.profilePhoto
         );
-
 
         await peerConnection
           .setRemoteDescription(
@@ -3360,17 +1796,14 @@ if (acceptCallBtn) {
             )
           );
 
-
         const answer =
           await peerConnection
             .createAnswer();
-
 
         await peerConnection
           .setLocalDescription(
             answer
           );
-
 
         await sendSignal(
           "answer",
@@ -3383,11 +1816,8 @@ if (acceptCallBtn) {
           }
         );
 
-
         startSignalPolling();
-
         startCallDuration();
-
 
         voiceCallStatus.textContent =
           "Connecting...";
@@ -3399,25 +1829,21 @@ if (acceptCallBtn) {
           error
         );
 
-
         showToast(
           error.message ||
           "Could not accept call"
         );
 
-
-        await cleanupCall(
-          false
-        );
+        await cleanupCall(false);
       }
     }
   );
 }
 
 
-// ============================================================
-// REJECT CALL
-// ============================================================
+/* ============================================================
+   REJECT CALL
+============================================================ */
 
 if (rejectCallBtn) {
 
@@ -3428,27 +1854,18 @@ if (rejectCallBtn) {
       const call =
         pendingIncomingCall;
 
-
-      pendingIncomingCall =
-        null;
-
+      pendingIncomingCall = null;
 
       hideIncomingCall();
 
-
-      if (!call) {
-        return;
-      }
-
+      if (!call) return;
 
       try {
 
         currentCallId =
           call.callId;
 
-
         currentCallUser = {
-
           id:
             call.senderId,
 
@@ -3456,12 +1873,10 @@ if (rejectCallBtn) {
             call.username
         };
 
-
         await sendSignal(
           "reject",
           {
-            reason:
-              "rejected"
+            reason: "rejected"
           }
         );
 
@@ -3474,20 +1889,17 @@ if (rejectCallBtn) {
 
       } finally {
 
-        currentCallId =
-          null;
-
-        currentCallUser =
-          null;
+        currentCallId = null;
+        currentCallUser = null;
       }
     }
   );
 }
 
 
-// ============================================================
-// SEND SIGNAL
-// ============================================================
+/* ============================================================
+   SEND SIGNAL
+============================================================ */
 
 async function sendSignal(
   signalType,
@@ -3498,55 +1910,50 @@ async function sendSignal(
     !currentCallId ||
     !currentCallUser
   ) {
-
     throw new Error(
       "Call is not ready"
     );
   }
-
 
   return api(
     "/calls/signal",
     {
       method: "POST",
 
-      body:
-        JSON.stringify({
+      body: JSON.stringify({
+        call_id:
+          currentCallId,
 
-          call_id:
-            currentCallId,
+        receiver_id:
+          Number(
+            currentCallUser.id
+          ),
 
-          receiver_id:
-            Number(
-              currentCallUser.id
-            ),
+        signal_type:
+          signalType,
 
-          signal_type:
-            signalType,
+        signal_data:
+          typeof signalData ===
+          "string"
 
-          signal_data:
-            typeof signalData ===
-            "string"
+            ? signalData
 
-              ? signalData
-
-              : JSON.stringify(
-                  signalData
-                )
-        })
+            : JSON.stringify(
+                signalData
+              )
+      })
     }
   );
 }
 
 
-// ============================================================
-// SIGNAL POLLING
-// ============================================================
+/* ============================================================
+   SIGNAL POLLING
+============================================================ */
 
 function startSignalPolling() {
 
   stopSignalPolling();
-
 
   signalTimer =
     setInterval(
@@ -3554,24 +1961,16 @@ function startSignalPolling() {
       1200
     );
 
-
   pollCallSignals();
 }
-
 
 function stopSignalPolling() {
 
   if (signalTimer) {
-
-    clearInterval(
-      signalTimer
-    );
-
-    signalTimer =
-      null;
+    clearInterval(signalTimer);
+    signalTimer = null;
   }
 }
-
 
 async function pollCallSignals() {
 
@@ -3579,10 +1978,8 @@ async function pollCallSignals() {
     !currentCallId ||
     !currentUser
   ) {
-
     return;
   }
-
 
   try {
 
@@ -3593,25 +1990,19 @@ async function pollCallSignals() {
         )}`
       );
 
-
     const signals =
       data.signals ||
       data.results ||
       [];
 
-
     if (!Array.isArray(signals)) {
       return;
     }
 
-
-    for (
-      const signal of signals
-    ) {
+    for (const signal of signals) {
 
       const signalId =
         signal.id;
-
 
       if (
         signalId &&
@@ -3619,18 +2010,14 @@ async function pollCallSignals() {
           `signal-${signalId}`
         )
       ) {
-
         continue;
       }
 
-
       if (signalId) {
-
         processedSignalIds.add(
           `signal-${signalId}`
         );
       }
-
 
       await processCallSignal(
         signal
@@ -3647,25 +2034,20 @@ async function pollCallSignals() {
 }
 
 
-// ============================================================
-// PROCESS SIGNAL
-// ============================================================
+/* ============================================================
+   PROCESS SIGNAL
+============================================================ */
 
-async function processCallSignal(
-  signal
-) {
+async function processCallSignal(signal) {
 
   if (
     !signal ||
     !peerConnection
   ) {
-
     return;
   }
 
-
   let data;
-
 
   try {
 
@@ -3685,16 +2067,12 @@ async function processCallSignal(
       signal.signal_data;
   }
 
-
-  switch (
-    signal.signal_type
-  ) {
+  switch (signal.signal_type) {
 
     case "answer":
 
       if (
-        peerConnection
-          .signalingState ===
+        peerConnection.signalingState ===
         "have-local-offer"
       ) {
 
@@ -3706,7 +2084,6 @@ async function processCallSignal(
                 data
               )
             );
-
 
           voiceCallStatus.textContent =
             "Connecting...";
@@ -3727,8 +2104,7 @@ async function processCallSignal(
 
       if (
         data &&
-        peerConnection
-          .remoteDescription
+        peerConnection.remoteDescription
       ) {
 
         try {
@@ -3754,157 +2130,109 @@ async function processCallSignal(
 
     case "reject":
 
-      showToast(
-        "Call declined"
-      );
+      showToast("Call declined");
 
-
-      await cleanupCall(
-        false
-      );
-
+      await cleanupCall(false);
 
       break;
 
 
     case "busy":
 
-      showToast(
-        "User is busy"
-      );
+      showToast("User is busy");
 
-
-      await cleanupCall(
-        false
-      );
-
+      await cleanupCall(false);
 
       break;
 
 
     case "end":
 
-      showToast(
-        "Call ended"
-      );
+      showToast("Call ended");
 
-
-      await cleanupCall(
-        false
-      );
-
+      await cleanupCall(false);
 
       break;
   }
 }
 
 
-// ============================================================
-// CALL CONNECTED
-// ============================================================
+/* ============================================================
+   CONNECTED
+============================================================ */
 
 function setCallConnected() {
 
   if (voiceCallStatus) {
-
     voiceCallStatus.textContent =
       "Connected";
   }
 
-
   if (chatStatus) {
-
     chatStatus.textContent =
       "In call";
   }
 }
 
 
-// ============================================================
-// CALL DURATION
-// ============================================================
+/* ============================================================
+   CALL DURATION
+============================================================ */
 
 function startCallDuration() {
 
   stopCallDuration();
 
+  callStartedAt = Date.now();
 
-  callStartedAt =
-    Date.now();
-
-
-  callDuration.textContent =
-    "00:00";
-
+  callDuration.textContent = "00:00";
 
   callDurationTimer =
-    setInterval(
-      () => {
+    setInterval(() => {
 
-        if (!callStartedAt) {
-          return;
-        }
+      if (!callStartedAt) return;
 
+      const seconds =
+        Math.floor(
+          (Date.now() -
+            callStartedAt) /
+          1000
+        );
 
-        const seconds =
-          Math.floor(
-            (
-              Date.now() -
-              callStartedAt
-            ) / 1000
-          );
+      const minutes =
+        Math.floor(
+          seconds / 60
+        );
 
+      const remaining =
+        seconds % 60;
 
-        const minutes =
-          Math.floor(
-            seconds / 60
-          );
+      callDuration.textContent =
+        `${String(minutes).padStart(
+          2,
+          "0"
+        )}:${String(remaining).padStart(
+          2,
+          "0"
+        )}`;
 
-
-        const remaining =
-          seconds % 60;
-
-
-        callDuration.textContent =
-          `${String(
-            minutes
-          ).padStart(
-            2,
-            "0"
-          )}:${String(
-            remaining
-          ).padStart(
-            2,
-            "0"
-          )}`;
-
-      },
-      1000
-    );
+    }, 1000);
 }
-
 
 function stopCallDuration() {
 
   if (callDurationTimer) {
-
-    clearInterval(
-      callDurationTimer
-    );
-
-    callDurationTimer =
-      null;
+    clearInterval(callDurationTimer);
+    callDurationTimer = null;
   }
 
-
-  callStartedAt =
-    null;
+  callStartedAt = null;
 }
 
 
-// ============================================================
-// MUTE
-// ============================================================
+/* ============================================================
+   MUTE
+============================================================ */
 
 if (muteCallBtn) {
 
@@ -3912,46 +2240,29 @@ if (muteCallBtn) {
     "click",
     () => {
 
-      if (!localStream) {
-        return;
-      }
-
+      if (!localStream) return;
 
       const tracks =
-        localStream
-          .getAudioTracks();
+        localStream.getAudioTracks();
 
+      if (!tracks.length) return;
 
-      if (!tracks.length) {
-        return;
-      }
+      isMuted = !isMuted;
 
-
-      isMuted =
-        !isMuted;
-
-
-      tracks.forEach(
-        track => {
-
-          track.enabled =
-            !isMuted;
-        }
-      );
-
+      tracks.forEach(track => {
+        track.enabled = !isMuted;
+      });
 
       muteCallBtn.textContent =
-        isMuted
-          ? "🔇"
-          : "🎤";
+        isMuted ? "🔇" : "🎤";
     }
   );
 }
 
 
-// ============================================================
-// CAMERA
-// ============================================================
+/* ============================================================
+   CAMERA
+============================================================ */
 
 if (cameraCallBtn) {
 
@@ -3959,46 +2270,29 @@ if (cameraCallBtn) {
     "click",
     () => {
 
-      if (!localStream) {
-        return;
-      }
-
+      if (!localStream) return;
 
       const tracks =
-        localStream
-          .getVideoTracks();
+        localStream.getVideoTracks();
 
+      if (!tracks.length) return;
 
-      if (!tracks.length) {
-        return;
-      }
+      isCameraOff = !isCameraOff;
 
-
-      isCameraOff =
-        !isCameraOff;
-
-
-      tracks.forEach(
-        track => {
-
-          track.enabled =
-            !isCameraOff;
-        }
-      );
-
+      tracks.forEach(track => {
+        track.enabled = !isCameraOff;
+      });
 
       cameraCallBtn.textContent =
-        isCameraOff
-          ? "▣"
-          : "▣";
+        isCameraOff ? "▣" : "▣";
     }
   );
 }
 
 
-// ============================================================
-// SWITCH CAMERA
-// ============================================================
+/* ============================================================
+   SWITCH CAMERA
+============================================================ */
 
 if (switchCameraBtn) {
 
@@ -4008,35 +2302,24 @@ if (switchCameraBtn) {
 
       if (
         !localStream ||
-        currentCallType !==
-          "video"
+        currentCallType !== "video"
       ) {
-
         return;
       }
-
 
       const videoTracks =
-        localStream
-          .getVideoTracks();
+        localStream.getVideoTracks();
 
-
-      if (!videoTracks.length) {
-        return;
-      }
-
+      if (!videoTracks.length) return;
 
       const oldTrack =
         videoTracks[0];
 
-
       try {
 
         const devices =
-          await navigator
-            .mediaDevices
+          await navigator.mediaDevices
             .enumerateDevices();
-
 
         const cameras =
           devices.filter(
@@ -4045,10 +2328,7 @@ if (switchCameraBtn) {
               "videoinput"
           );
 
-
-        if (
-          cameras.length < 2
-        ) {
+        if (cameras.length < 2) {
 
           showToast(
             "No other camera"
@@ -4057,12 +2337,10 @@ if (switchCameraBtn) {
           return;
         }
 
-
         const currentId =
           oldTrack
             .getSettings()
             .deviceId;
-
 
         let index =
           cameras.findIndex(
@@ -4071,28 +2349,20 @@ if (switchCameraBtn) {
               currentId
           );
 
-
-        index =
-          index < 0
-            ? 0
-            : index;
-
+        if (index < 0) {
+          index = 0;
+        }
 
         const nextCamera =
           cameras[
-            (
-              index + 1
-            ) %
+            (index + 1) %
             cameras.length
           ];
 
-
         const newStream =
-          await navigator
-            .mediaDevices
+          await navigator.mediaDevices
             .getUserMedia({
               audio: false,
-
               video: {
                 deviceId: {
                   exact:
@@ -4101,11 +2371,9 @@ if (switchCameraBtn) {
               }
             });
 
-
         const newTrack =
           newStream
             .getVideoTracks()[0];
-
 
         const sender =
           peerConnection
@@ -4114,35 +2382,27 @@ if (switchCameraBtn) {
               item =>
                 item.track &&
                 item.track.kind ===
-                  "video"
+                "video"
             );
-
 
         if (sender) {
-
-          await sender
-            .replaceTrack(
-              newTrack
-            );
+          await sender.replaceTrack(
+            newTrack
+          );
         }
-
 
         localStream.removeTrack(
           oldTrack
         );
 
-
         oldTrack.stop();
-
 
         localStream.addTrack(
           newTrack
         );
 
-
         localVideo.srcObject =
           localStream;
-
 
       } catch (error) {
 
@@ -4150,7 +2410,6 @@ if (switchCameraBtn) {
           "Switch camera error:",
           error
         );
-
 
         showToast(
           "Could not switch camera"
@@ -4161,27 +2420,21 @@ if (switchCameraBtn) {
 }
 
 
-// ============================================================
-// END CALL BUTTON
-// ============================================================
+/* ============================================================
+   END CALL
+============================================================ */
 
 if (endCallBtn) {
 
   endCallBtn.addEventListener(
     "click",
     async () => {
-
-      await endCall(
-        true
-      );
+      await endCall(true);
     }
   );
 }
 
-
-async function endCall(
-  sendEnd
-) {
+async function endCall(sendEnd) {
 
   if (
     sendEnd &&
@@ -4194,8 +2447,7 @@ async function endCall(
       await sendSignal(
         "end",
         {
-          reason:
-            "hangup"
+          reason: "hangup"
         }
       );
 
@@ -4208,284 +2460,181 @@ async function endCall(
     }
   }
 
-
-  await cleanupCall(
-    false
-  );
+  await cleanupCall(false);
 }
 
 
-// ============================================================
-// CLEANUP CALL
-// ============================================================
+/* ============================================================
+   CLEANUP
+============================================================ */
 
-async function cleanupCall(
-  clearRemote
-) {
+async function cleanupCall(clearRemote) {
 
   stopSignalPolling();
-
   stopCallDuration();
-
   stopRingtone();
-
 
   if (localStream) {
 
     localStream
       .getTracks()
-      .forEach(
-        track =>
-          track.stop()
-      );
+      .forEach(track => {
+        track.stop();
+      });
 
-    localStream =
-      null;
+    localStream = null;
   }
-
 
   if (remoteStream) {
 
     remoteStream
       .getTracks()
-      .forEach(
-        track =>
-          track.stop()
-      );
+      .forEach(track => {
+        track.stop();
+      });
 
-    remoteStream =
-      null;
+    remoteStream = null;
   }
-
 
   if (peerConnection) {
 
     try {
-
       peerConnection.close();
-
     } catch {}
 
-    peerConnection =
-      null;
+    peerConnection = null;
   }
-
 
   if (localVideo) {
-
-    localVideo.srcObject =
-      null;
+    localVideo.srcObject = null;
   }
 
+  if (clearRemote !== false) {
 
-  if (
-    clearRemote !==
-    false
-  ) {
+    if (remoteVideo) {
+      remoteVideo.srcObject = null;
+    }
 
-    remoteVideo.srcObject =
-      null;
-
-    remoteAudio.srcObject =
-      null;
+    if (remoteAudio) {
+      remoteAudio.srcObject = null;
+    }
   }
 
+  if (callScreen) {
+    callScreen.classList.add("hidden");
+  }
 
-  callScreen.classList.add(
-    "hidden"
-  );
+  currentCallId = null;
+  currentCallType = null;
+  currentCallUser = null;
+  currentCallDirection = null;
 
+  isMuted = false;
+  isCameraOff = false;
 
-  currentCallId =
-    null;
+  if (muteCallBtn) {
+    muteCallBtn.textContent = "🎤";
+  }
 
-  currentCallType =
-    null;
+  if (cameraCallBtn) {
+    cameraCallBtn.textContent = "▣";
+  }
 
-  currentCallUser =
-    null;
+  if (callDuration) {
+    callDuration.textContent = "00:00";
+  }
 
-  currentCallDirection =
-    null;
+  if (voiceCallStatus) {
+    voiceCallStatus.textContent =
+      "Calling...";
+  }
 
-
-  isMuted =
-    false;
-
-  isCameraOff =
-    false;
-
-
-  muteCallBtn.textContent =
-    "🎤";
-
-  cameraCallBtn.textContent =
-    "▣";
-
-  callDuration.textContent =
-    "00:00";
-
-  voiceCallStatus.textContent =
-    "Calling...";
-
-
-  if (selectedUser) {
-
+  if (selectedUser && chatStatus) {
     chatStatus.textContent =
       "Available";
   }
 
-
-  ensureCallButtons();
-
-
-  setTimeout(
-    ensureCallButtons,
-    100
-  );
+  /* Do NOT recreate buttons.
+     Just make sure the existing ones remain visible.
+  */
+  fixCallButtons();
 }
 
 
-// ============================================================
-// RINGTONE
-// ============================================================
+/* ============================================================
+   RINGTONE
+============================================================ */
 
 function playRingtone() {
 
-  if (!ringtone) {
-    return;
-  }
-
+  if (!ringtone) return;
 
   try {
 
     if (ringtone.src) {
 
-      ringtone.currentTime =
-        0;
+      ringtone.currentTime = 0;
 
-
-      ringtone
-        .play()
-        .catch(
-          () => {}
-        );
-
+      ringtone.play().catch(() => {});
 
       return;
     }
-
 
     const AudioContext =
       window.AudioContext ||
       window.webkitAudioContext;
 
-
-    if (!AudioContext) {
-      return;
-    }
-
+    if (!AudioContext) return;
 
     const audioContext =
       new AudioContext();
 
-
     const oscillator =
-      audioContext
-        .createOscillator();
-
+      audioContext.createOscillator();
 
     const gain =
-      audioContext
-        .createGain();
+      audioContext.createGain();
 
+    oscillator.type = "sine";
 
-    oscillator.type =
-      "sine";
+    oscillator.frequency.value = 700;
 
+    gain.gain.value = 0.035;
 
-    oscillator.frequency.value =
-      700;
-
-
-    gain.gain.value =
-      0.035;
-
-
-    oscillator.connect(
-      gain
-    );
-
-
-    gain.connect(
-      audioContext.destination
-    );
-
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
 
     oscillator.start();
 
+    setTimeout(() => {
 
-    setTimeout(
-      () => {
+      try {
+        oscillator.stop();
+        audioContext.close();
+      } catch {}
 
-        try {
-
-          oscillator.stop();
-
-          audioContext.close();
-
-        } catch {}
-      },
-      700
-    );
+    }, 700);
 
   } catch {}
 }
 
-
 function stopRingtone() {
 
-  if (!ringtone) {
-    return;
-  }
-
+  if (!ringtone) return;
 
   try {
 
     ringtone.pause();
 
-    ringtone.currentTime =
-      0;
+    ringtone.currentTime = 0;
 
   } catch {}
 }
 
 
-// ============================================================
-// SECURITY
-// ============================================================
-
-function escapeHTML(value) {
-
-  const div =
-    document.createElement(
-      "div"
-    );
-
-
-  div.textContent =
-    String(
-      value ?? ""
-    );
-
-
-  return div.innerHTML;
-}
-
-
-// ============================================================
-// START
-// ============================================================
+/* ============================================================
+   START
+============================================================ */
 
 if (
   document.readyState ===
@@ -4496,15 +2645,15 @@ if (
     "DOMContentLoaded",
     () => {
 
-      initCallButtons();
-
+      fixCallButtons();
       startApp();
+
     }
   );
 
 } else {
 
-  initCallButtons();
-
+  fixCallButtons();
   startApp();
+
 }
