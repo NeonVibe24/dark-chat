@@ -119,8 +119,7 @@ input {
 }
 
 .brand p {
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  display: none;
 }
 
 .auth-card h2 {
@@ -130,9 +129,7 @@ input {
 }
 
 .auth-subtitle {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  margin-bottom: 1.5rem;
+  display: none;
 }
 
 .field {
