@@ -61,7 +61,6 @@ button {
 .avatar {
   width: 44px;
   height: 44px;
-
   min-width: 44px;
 
   border-radius: 50%;
@@ -607,6 +606,8 @@ button {
   position: relative;
 
   z-index: 5;
+
+  overflow: visible;
 }
 
 .chat-user {
@@ -617,7 +618,9 @@ button {
 
   min-width: 0;
 
-  flex: 1;
+  flex: 1 1 auto;
+
+  overflow: hidden;
 }
 
 .chat-user > div:last-child {
@@ -648,7 +651,7 @@ button {
 
 /* =========================================================
    CALL ACTIONS
-   IMPORTANT
+   FIXED / ALWAYS VISIBLE
 ========================================================= */
 
 .chat-actions {
@@ -657,16 +660,28 @@ button {
   align-items: center;
   justify-content: flex-end;
 
-  gap: 3px;
+  gap: 6px;
 
-  flex-shrink: 0;
+  flex: 0 0 auto;
 
+  width: auto;
   min-width: max-content;
+
+  margin-left: auto;
 
   visibility: visible !important;
 
   opacity: 1 !important;
+
+  position: relative;
+
+  z-index: 100;
+
+  overflow: visible;
 }
+
+
+/* CALL BUTTON BASE */
 
 .chat-actions .call-btn,
 .chat-actions #voiceCallBtn,
@@ -677,63 +692,183 @@ button {
   min-width: 40px !important;
   min-height: 40px !important;
 
+  max-width: 40px !important;
+  max-height: 40px !important;
+
+  flex: 0 0 40px !important;
+
+  display: flex !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
   padding: 0 !important;
+  margin: 0 !important;
+
+  border: 1px solid #303541 !important;
+
+  border-radius: 11px !important;
+
+  background: #151821 !important;
+
+  color: #e5e8ee !important;
+
+  font-size: 19px !important;
+
+  line-height: 1 !important;
+
+  text-align: center;
+
+  visibility: visible !important;
+
+  opacity: 1 !important;
+
+  pointer-events: auto !important;
+
+  position: relative !important;
+
+  z-index: 101 !important;
+
+  overflow: visible;
+
+  box-shadow:
+    0 2px 8px rgba(0,0,0,.22);
+
+  outline: none;
+
+  cursor: pointer;
+
+  transition:
+    background .18s,
+    border-color .18s,
+    color .18s,
+    transform .15s,
+    box-shadow .18s;
+}
+
+
+/* FORCE BUTTON CONTENT */
+
+#voiceCallBtn::after {
+  content: "☎";
+
+  display: block;
+
+  font-size: 19px;
+
+  line-height: 1;
+
+  color: #e5e8ee;
+
+  pointer-events: none;
+}
+
+#videoCallBtn::after {
+  content: "▣";
+
+  display: block;
+
+  font-size: 19px;
+
+  line-height: 1;
+
+  color: #e5e8ee;
+
+  pointer-events: none;
+}
+
+
+/* HIDE ORIGINAL TEXT/Glyph */
+
+#voiceCallBtn,
+#videoCallBtn {
+  font-size: 0 !important;
+}
+
+
+/* HOVER */
+
+.chat-actions .call-btn:hover,
+.chat-actions #voiceCallBtn:hover,
+.chat-actions #videoCallBtn:hover {
+  background: #211d35 !important;
+
+  border-color: #6242e8 !important;
+
+  color: #a995ff !important;
+
+  box-shadow:
+    0 4px 15px rgba(124,92,255,.16);
+
+  transform: translateY(-1px);
+}
+
+#voiceCallBtn:hover::after,
+#videoCallBtn:hover::after {
+  color: #a995ff;
+}
+
+
+/* ACTIVE */
+
+.chat-actions .call-btn:active,
+.chat-actions #voiceCallBtn:active,
+.chat-actions #videoCallBtn:active {
+  transform: scale(.91) !important;
+
+  background: #19162a !important;
+}
+
+
+/* FOCUS */
+
+.chat-actions .call-btn:focus-visible,
+.chat-actions #voiceCallBtn:focus-visible,
+.chat-actions #videoCallBtn:focus-visible {
+  outline: 2px solid rgba(124,92,255,.65);
+
+  outline-offset: 2px;
+}
+
+
+/* REFRESH BUTTON */
+
+.chat-actions .icon-btn,
+.chat-actions #reloadMessages {
+  width: 40px !important;
+  height: 40px !important;
+
+  min-width: 40px !important;
+  min-height: 40px !important;
+
+  flex: 0 0 40px !important;
 
   display: flex !important;
 
   align-items: center;
   justify-content: center;
 
+  padding: 0 !important;
+
+  margin: 0 !important;
+
   flex-shrink: 0;
-
-  border: 0 !important;
-
-  border-radius: 11px;
-
-  background: transparent;
-
-  color: #b7bdc8;
-
-  font-size: 18px;
-
-  line-height: 1;
 
   visibility: visible !important;
 
   opacity: 1 !important;
-
-  position: relative;
-
-  z-index: 20;
-
-  transition:
-    background .18s,
-    color .18s,
-    transform .15s;
-}
-
-.chat-actions .call-btn:hover,
-.chat-actions #voiceCallBtn:hover,
-.chat-actions #videoCallBtn:hover {
-  background: rgba(124,92,255,.14);
-
-  color: #a18fff;
-}
-
-.chat-actions .call-btn:active,
-.chat-actions #voiceCallBtn:active,
-.chat-actions #videoCallBtn:active {
-  transform: scale(.9);
 }
 
 
-/* =========================================================
-   FORCE CALL BUTTON VISIBILITY
-========================================================= */
+/* FORCE CALL BUTTON VISIBILITY */
 
 #voiceCallBtn:not(.hidden),
 #videoCallBtn:not(.hidden) {
   display: flex !important;
+
+  visibility: visible !important;
+
+  opacity: 1 !important;
 }
 
 #voiceCallBtn.hidden,
@@ -1700,6 +1835,8 @@ button {
       10px 6px 10px 8px;
 
     gap: 4px;
+
+    overflow: visible;
   }
 
   .chat-header::before {
@@ -1724,11 +1861,13 @@ button {
   }
 
   .chat-user {
-    flex: 1;
+    flex: 1 1 auto;
 
     min-width: 0;
 
     gap: 8px;
+
+    overflow: hidden;
   }
 
   .chat-user .avatar {
@@ -1746,28 +1885,87 @@ button {
   /* CALL BUTTONS */
 
   .chat-actions {
-    flex-shrink: 0;
+    flex: 0 0 auto;
 
-    min-width: 111px;
+    width: auto;
+
+    min-width: 108px;
 
     display: flex !important;
+
+    align-items: center !important;
+    justify-content: flex-end !important;
 
     visibility: visible !important;
 
     opacity: 1 !important;
 
-    gap: 1px;
+    gap: 3px;
+
+    margin-left: auto;
+
+    overflow: visible;
   }
 
   .chat-actions .call-btn,
   .chat-actions #voiceCallBtn,
-  .chat-actions #videoCallBtn,
-  .chat-actions .icon-btn {
+  .chat-actions #videoCallBtn {
     width: 34px !important;
     height: 34px !important;
 
     min-width: 34px !important;
     min-height: 34px !important;
+
+    max-width: 34px !important;
+    max-height: 34px !important;
+
+    flex: 0 0 34px !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    border: 1px solid #303541 !important;
+
+    border-radius: 10px !important;
+
+    background: #151821 !important;
+
+    color: #e5e8ee !important;
+
+    font-size: 0 !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    pointer-events: auto !important;
+  }
+
+  #voiceCallBtn::after,
+  #videoCallBtn::after {
+    font-size: 16px !important;
+
+    line-height: 1 !important;
+
+    display: block !important;
+
+    color: #e5e8ee !important;
+  }
+
+  .chat-actions .icon-btn,
+  .chat-actions #reloadMessages {
+    width: 34px !important;
+    height: 34px !important;
+
+    min-width: 34px !important;
+    min-height: 34px !important;
+
+    flex: 0 0 34px !important;
 
     display: flex !important;
 
@@ -1775,8 +1973,6 @@ button {
     justify-content: center;
 
     padding: 0 !important;
-
-    font-size: 15px;
   }
 
 
@@ -1922,6 +2118,8 @@ button {
 
   .chat-header {
     padding-right: 4px;
+
+    gap: 2px;
   }
 
   .chat-header::before {
@@ -1945,23 +2143,31 @@ button {
   }
 
   .chat-actions {
-    min-width: 105px;
+    min-width: 102px;
 
-    gap: 0;
+    gap: 2px;
   }
 
-  .call-btn,
   .chat-actions .call-btn,
   .chat-actions #voiceCallBtn,
   .chat-actions #videoCallBtn,
-  .chat-actions .icon-btn {
+  .chat-actions .icon-btn,
+  .chat-actions #reloadMessages {
     width: 32px !important;
     height: 32px !important;
 
     min-width: 32px !important;
     min-height: 32px !important;
 
-    font-size: 14px;
+    max-width: 32px !important;
+    max-height: 32px !important;
+
+    flex: 0 0 32px !important;
+  }
+
+  #voiceCallBtn::after,
+  #videoCallBtn::after {
+    font-size: 15px !important;
   }
 
   .local-video {
