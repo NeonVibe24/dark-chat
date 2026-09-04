@@ -39,11 +39,6 @@ body {
   overflow: hidden;
 }
 
-
-/* =========================
-   COMMON
-========================= */
-
 .hidden {
   display: none !important;
 }
@@ -58,9 +53,16 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+
+/* =========================================================
+   AVATAR
+========================================================= */
+
 .avatar {
   width: 44px;
   height: 44px;
+
+  min-width: 44px;
 
   border-radius: 50%;
 
@@ -88,9 +90,9 @@ button {
 }
 
 
-/* =========================
+/* =========================================================
    AUTH
-========================= */
+========================================================= */
 
 .auth-screen {
   min-height: 100vh;
@@ -266,25 +268,29 @@ button {
 }
 
 
-/* =========================
-   CHAT LAYOUT
-========================= */
+/* =========================================================
+   CHAT
+========================================================= */
 
 .chat-screen {
+  width: 100%;
   height: 100vh;
 
   display: flex;
 
   background: var(--bg);
+
+  overflow: hidden;
 }
 
 
-/* =========================
+/* =========================================================
    SIDEBAR
-========================= */
+========================================================= */
 
 .sidebar {
   width: 320px;
+  min-width: 320px;
 
   border-right: 1px solid var(--border);
 
@@ -296,6 +302,7 @@ button {
 
 .sidebar-header {
   height: 76px;
+  min-height: 76px;
 
   padding: 15px 17px;
 
@@ -309,32 +316,45 @@ button {
 .profile {
   display: flex;
   align-items: center;
+
   gap: 11px;
+
+  min-width: 0;
 }
 
 .profile-info {
   display: flex;
   flex-direction: column;
+
   gap: 3px;
+
+  min-width: 0;
 }
 
 .profile-info strong {
   font-size: 14px;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .profile-info span {
   font-size: 11px;
+
   color: var(--success);
 }
 
 
-/* =========================
+/* =========================================================
    PROFILE AVATAR BUTTON
-========================= */
+========================================================= */
 
 .avatar-button {
   width: 44px;
   height: 44px;
+
+  min-width: 44px;
 
   padding: 0;
 
@@ -365,13 +385,14 @@ button {
 }
 
 
-/* =========================
+/* =========================================================
    BUTTONS
-========================= */
+========================================================= */
 
 .icon-btn,
 .small-btn {
   border: 0;
+
   background: transparent;
 
   color: #aeb4bf;
@@ -385,12 +406,19 @@ button {
   width: 38px;
   height: 38px;
 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   font-size: 20px;
+
+  flex-shrink: 0;
 }
 
 .icon-btn:hover,
 .small-btn:hover {
   background: #191c24;
+
   color: white;
 }
 
@@ -409,12 +437,15 @@ button {
 
 .small-btn {
   font-size: 18px;
+
   width: 30px;
   height: 30px;
 }
 
 .users-list {
   flex: 1;
+
+  min-height: 0;
 
   overflow-y: auto;
 
@@ -484,16 +515,19 @@ button {
 }
 
 
-/* =========================
-   CHAT
-========================= */
+/* =========================================================
+   CHAT AREA
+========================================================= */
 
 .chat-area {
   flex: 1;
 
+  width: 0;
   min-width: 0;
 
   position: relative;
+
+  overflow: hidden;
 }
 
 .empty-chat {
@@ -531,11 +565,13 @@ button {
 
 .empty-chat h2 {
   font-size: 20px;
+
   margin-bottom: 7px;
 }
 
 .empty-chat p {
   color: var(--muted);
+
   font-size: 13px;
 }
 
@@ -544,23 +580,33 @@ button {
 
   display: flex;
   flex-direction: column;
+
+  min-width: 0;
 }
 
 
-/* =========================
+/* =========================================================
    CHAT HEADER
-========================= */
+========================================================= */
 
 .chat-header {
   height: 76px;
+  min-height: 76px;
 
-  padding: 12px 20px;
+  padding: 12px 15px 12px 20px;
 
   border-bottom: 1px solid var(--border);
 
   display: flex;
   align-items: center;
+
   justify-content: space-between;
+
+  gap: 10px;
+
+  position: relative;
+
+  z-index: 5;
 }
 
 .chat-user {
@@ -570,11 +616,14 @@ button {
   gap: 12px;
 
   min-width: 0;
+
+  flex: 1;
 }
 
 .chat-user > div:last-child {
   display: flex;
   flex-direction: column;
+
   gap: 4px;
 
   min-width: 0;
@@ -584,73 +633,130 @@ button {
   font-size: 14px;
 
   overflow: hidden;
+
   white-space: nowrap;
+
   text-overflow: ellipsis;
 }
 
 .chat-user span {
   font-size: 11px;
+
   color: var(--muted);
 }
 
 
-/* =========================
-   CALL BUTTONS
-========================= */
+/* =========================================================
+   CALL ACTIONS
+   IMPORTANT
+========================================================= */
 
 .chat-actions {
-  display: flex;
-  align-items: center;
+  display: flex !important;
 
-  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 3px;
+
+  flex-shrink: 0;
+
+  min-width: max-content;
+
+  visibility: visible !important;
+
+  opacity: 1 !important;
 }
 
-.call-btn {
-  width: 38px;
-  height: 38px;
+.chat-actions .call-btn,
+.chat-actions #voiceCallBtn,
+.chat-actions #videoCallBtn {
+  width: 40px !important;
+  height: 40px !important;
 
-  display: flex;
+  min-width: 40px !important;
+  min-height: 40px !important;
+
+  padding: 0 !important;
+
+  display: flex !important;
+
   align-items: center;
   justify-content: center;
 
-  border: 0;
-  border-radius: 10px;
+  flex-shrink: 0;
+
+  border: 0 !important;
+
+  border-radius: 11px;
 
   background: transparent;
 
-  color: #aeb4bf;
+  color: #b7bdc8;
 
-  font-size: 17px;
+  font-size: 18px;
+
+  line-height: 1;
+
+  visibility: visible !important;
+
+  opacity: 1 !important;
+
+  position: relative;
+
+  z-index: 20;
 
   transition:
-    background .2s,
-    color .2s,
+    background .18s,
+    color .18s,
     transform .15s;
 }
 
-.call-btn:hover {
-  background: rgba(124,92,255,.12);
+.chat-actions .call-btn:hover,
+.chat-actions #voiceCallBtn:hover,
+.chat-actions #videoCallBtn:hover {
+  background: rgba(124,92,255,.14);
 
   color: #a18fff;
 }
 
-.call-btn:active {
+.chat-actions .call-btn:active,
+.chat-actions #voiceCallBtn:active,
+.chat-actions #videoCallBtn:active {
   transform: scale(.9);
 }
 
 
-/* =========================
+/* =========================================================
+   FORCE CALL BUTTON VISIBILITY
+========================================================= */
+
+#voiceCallBtn:not(.hidden),
+#videoCallBtn:not(.hidden) {
+  display: flex !important;
+}
+
+#voiceCallBtn.hidden,
+#videoCallBtn.hidden {
+  display: none !important;
+}
+
+
+/* =========================================================
    MESSAGES
-========================= */
+========================================================= */
 
 .messages {
   flex: 1;
+
+  min-height: 0;
 
   overflow-y: auto;
 
   padding: 25px;
 
   display: flex;
+
   flex-direction: column;
 
   gap: 9px;
@@ -710,9 +816,9 @@ button {
 }
 
 
-/* =========================
+/* =========================================================
    MESSAGE FORM
-========================= */
+========================================================= */
 
 .message-form {
   min-height: 76px;
@@ -780,6 +886,7 @@ button {
   z-index: 1000;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -794,6 +901,7 @@ button {
   background: rgba(0,0,0,.68);
 
   backdrop-filter: blur(7px);
+
   -webkit-backdrop-filter: blur(7px);
 }
 
@@ -803,6 +911,7 @@ button {
   z-index: 2;
 
   width: 100%;
+
   max-width: 350px;
 
   padding: 30px 24px 24px;
@@ -831,12 +940,18 @@ button {
 @keyframes profileOpen {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(.97);
+
+    transform:
+      translateY(10px)
+      scale(.97);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+
+    transform:
+      translateY(0)
+      scale(1);
   }
 }
 
@@ -850,6 +965,7 @@ button {
   height: 34px;
 
   border: 0;
+
   border-radius: 9px;
 
   background: transparent;
@@ -868,9 +984,6 @@ button {
 
   color: white;
 }
-
-
-/* PROFILE PHOTO */
 
 .profile-photo-large-btn {
   width: 108px;
@@ -894,6 +1007,7 @@ button {
   height: 108px;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -909,11 +1023,13 @@ button {
     );
 
   background-size: cover;
+
   background-position: center;
 
   color: white;
 
   font-size: 34px;
+
   font-weight: 700;
 
   border: 2px solid rgba(255,255,255,.08);
@@ -952,6 +1068,7 @@ button {
   margin-top: 22px;
 
   display: flex;
+
   flex-direction: column;
 
   gap: 9px;
@@ -996,6 +1113,7 @@ button {
   z-index: 2000;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -1010,11 +1128,13 @@ button {
     rgba(0,0,0,.78);
 
   backdrop-filter: blur(9px);
+
   -webkit-backdrop-filter: blur(9px);
 }
 
 .incoming-call-card {
   width: 100%;
+
   max-width: 320px;
 
   padding: 34px 24px 28px;
@@ -1037,11 +1157,13 @@ button {
 @keyframes incomingCallOpen {
   from {
     opacity: 0;
+
     transform: scale(.9);
   }
 
   to {
     opacity: 1;
+
     transform: scale(1);
   }
 }
@@ -1050,9 +1172,12 @@ button {
   width: 88px;
   height: 88px;
 
+  min-width: 88px;
+
   margin: 0 auto 16px;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -1068,11 +1193,13 @@ button {
     );
 
   background-size: cover;
+
   background-position: center;
 
   color: white;
 
   font-size: 28px;
+
   font-weight: 700;
 
   border: 2px solid rgba(124,92,255,.5);
@@ -1108,6 +1235,7 @@ button {
 
 .incoming-call-actions {
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -1122,6 +1250,7 @@ button {
   height: 57px;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -1166,7 +1295,7 @@ button {
 
 
 /* =========================================================
-   ACTIVE CALL SCREEN
+   ACTIVE CALL
 ========================================================= */
 
 .call-screen {
@@ -1181,12 +1310,10 @@ button {
   background: #030406;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 }
-
-
-/* REMOTE VIDEO */
 
 .remote-video {
   position: absolute;
@@ -1205,11 +1332,6 @@ button {
       #030406
     );
 }
-
-
-/* =========================================================
-   VOICE CALL VIEW
-========================================================= */
 
 .voice-call-view {
   position: absolute;
@@ -1243,6 +1365,7 @@ button {
   height: 120px;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -1258,11 +1381,13 @@ button {
     );
 
   background-size: cover;
+
   background-position: center;
 
   color: white;
 
   font-size: 38px;
+
   font-weight: 700;
 
   border: 2px solid rgba(124,92,255,.5);
@@ -1285,11 +1410,6 @@ button {
 
   font-size: 13px;
 }
-
-
-/* =========================================================
-   LOCAL VIDEO
-========================================================= */
 
 .local-video {
   position: absolute;
@@ -1316,11 +1436,6 @@ button {
   transform: scaleX(-1);
 }
 
-
-/* =========================================================
-   CALL TOP BAR
-========================================================= */
-
 .call-topbar {
   position: absolute;
 
@@ -1333,6 +1448,7 @@ button {
   height: 72px;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -1356,9 +1472,11 @@ button {
   overflow: hidden;
 
   white-space: nowrap;
+
   text-overflow: ellipsis;
 
   font-size: 15px;
+
   font-weight: 600;
 }
 
@@ -1367,11 +1485,6 @@ button {
 
   font-size: 12px;
 }
-
-
-/* =========================================================
-   CALL CONTROLS
-========================================================= */
 
 .call-controls {
   position: absolute;
@@ -1384,6 +1497,7 @@ button {
   transform: translateX(-50%);
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -1403,6 +1517,7 @@ button {
     0 20px 55px rgba(0,0,0,.45);
 
   backdrop-filter: blur(15px);
+
   -webkit-backdrop-filter: blur(15px);
 }
 
@@ -1411,7 +1526,10 @@ button {
   width: 48px;
   height: 48px;
 
+  min-width: 48px;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -1459,11 +1577,10 @@ button {
 }
 
 .call-end-btn:active {
-  transform: rotate(-135deg) scale(.9);
+  transform:
+    rotate(-135deg)
+    scale(.9);
 }
-
-
-/* REMOTE AUDIO */
 
 #remoteAudio {
   display: none;
@@ -1542,10 +1659,24 @@ button {
 
   .sidebar {
     width: 100%;
+    min-width: 100%;
   }
 
   .chat-area {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .chat-screen {
+    width: 100%;
+  }
+
+  .chat-screen:not(.chat-open) .chat-area {
     display: none;
+  }
+
+  .chat-screen:not(.chat-open) .sidebar {
+    display: flex;
   }
 
   .chat-screen.chat-open .sidebar {
@@ -1554,46 +1685,98 @@ button {
 
   .chat-screen.chat-open .chat-area {
     display: block;
+
+    width: 100%;
   }
 
 
-  /* CHAT HEADER */
+  /* HEADER */
 
   .chat-header {
-    padding-left: 10px;
-    padding-right: 8px;
+    height: 68px;
+    min-height: 68px;
+
+    padding:
+      10px 6px 10px 8px;
+
+    gap: 4px;
   }
 
   .chat-header::before {
     content: "‹";
 
-    font-size: 30px;
+    width: 25px;
 
-    margin-right: 4px;
+    min-width: 25px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 30px;
 
     color: #aaa;
 
     cursor: pointer;
+
+    flex-shrink: 0;
   }
 
   .chat-user {
+    flex: 1;
+
     min-width: 0;
+
+    gap: 8px;
+  }
+
+  .chat-user .avatar {
+    width: 40px;
+    height: 40px;
+
+    min-width: 40px;
   }
 
   .chat-user strong {
-    max-width: 130px;
+    max-width: 120px;
   }
 
+
+  /* CALL BUTTONS */
+
   .chat-actions {
+    flex-shrink: 0;
+
+    min-width: 111px;
+
+    display: flex !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
     gap: 1px;
   }
 
-  .call-btn,
+  .chat-actions .call-btn,
+  .chat-actions #voiceCallBtn,
+  .chat-actions #videoCallBtn,
   .chat-actions .icon-btn {
-    width: 35px;
-    height: 35px;
+    width: 34px !important;
+    height: 34px !important;
 
-    font-size: 16px;
+    min-width: 34px !important;
+    min-height: 34px !important;
+
+    display: flex !important;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 !important;
+
+    font-size: 15px;
   }
 
 
@@ -1608,7 +1791,7 @@ button {
   }
 
 
-  /* MESSAGE INPUT */
+  /* INPUT */
 
   .message-form {
     min-height: 68px;
@@ -1653,7 +1836,14 @@ button {
   }
 
 
-  /* CALL */
+  /* ACTIVE CALL */
+
+  .call-screen {
+    width: 100%;
+    height: 100%;
+
+    min-height: 100dvh;
+  }
 
   .local-video {
     top: 66px;
@@ -1687,6 +1877,8 @@ button {
   .call-end-btn {
     width: 45px;
     height: 45px;
+
+    min-width: 45px;
   }
 
   .voice-call-avatar {
@@ -1699,7 +1891,6 @@ button {
   .voice-call-view h3 {
     font-size: 20px;
   }
-
 }
 
 
@@ -1729,23 +1920,48 @@ button {
     font-size: 23px;
   }
 
-  .chat-user .avatar {
-    width: 40px;
-    height: 40px;
+  .chat-header {
+    padding-right: 4px;
+  }
 
-    min-width: 40px;
+  .chat-header::before {
+    width: 22px;
+    min-width: 22px;
+  }
+
+  .chat-user {
+    gap: 6px;
+  }
+
+  .chat-user .avatar {
+    width: 38px;
+    height: 38px;
+
+    min-width: 38px;
   }
 
   .chat-user strong {
-    max-width: 105px;
+    max-width: 92px;
+  }
+
+  .chat-actions {
+    min-width: 105px;
+
+    gap: 0;
   }
 
   .call-btn,
+  .chat-actions .call-btn,
+  .chat-actions #voiceCallBtn,
+  .chat-actions #videoCallBtn,
   .chat-actions .icon-btn {
-    width: 33px;
-    height: 33px;
+    width: 32px !important;
+    height: 32px !important;
 
-    font-size: 15px;
+    min-width: 32px !important;
+    min-height: 32px !important;
+
+    font-size: 14px;
   }
 
   .local-video {
@@ -1762,9 +1978,10 @@ button {
     width: 42px;
     height: 42px;
 
+    min-width: 42px;
+
     font-size: 16px;
   }
-
 }
 
 
@@ -1792,7 +2009,9 @@ button {
   *::before,
   *::after {
     animation-duration: .01ms !important;
+
     animation-iteration-count: 1 !important;
+
     transition-duration: .01ms !important;
   }
 
