@@ -3,7 +3,7 @@ main = "worker.js"
 compatibility_date = "2026-03-01"
 
 [observability]
-enabled = false
+enabled = true
 
 [observability.logs]
 enabled = true
@@ -15,8 +15,6 @@ persist = true
 enabled = false
 head_sampling_rate = 1
 persist = true
-
-
 
 [[d1_databases]]
 binding = "DB"
