@@ -44,7 +44,7 @@ async function hashPassword(password) {
 
 
 /* =========================================================
-   TOKEN
+   RANDOM TOKEN
 ========================================================= */
 
 function randomToken() {
@@ -59,7 +59,7 @@ function randomToken() {
 
 
 /* =========================================================
-   CALL ID
+   RANDOM CALL ID
 ========================================================= */
 
 function randomCallId() {
@@ -149,7 +149,7 @@ async function initDatabase(db) {
 
 
   /* =======================================================
-     ADD PROFILE PHOTO TO OLD USERS TABLE
+     PROFILE PHOTO MIGRATION
   ======================================================= */
 
   const columns =
@@ -326,7 +326,7 @@ export default {
     try {
 
       /* ===================================================
-         HEALTH CHECK
+         HEALTH
       =================================================== */
 
       if (
@@ -340,8 +340,7 @@ export default {
             success: false,
             database: false,
             service: "dark-chat",
-            error:
-              "D1 binding DB not found"
+            error: "D1 binding DB not found"
           }, 500);
 
         }
@@ -370,8 +369,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Database is not connected"
+            error: "Database is not connected"
           }, 500);
 
         }
@@ -382,21 +380,15 @@ export default {
           await request.json();
 
         const username =
-          String(
-            body.username || ""
-          ).trim();
+          String(body.username || "").trim();
 
         const email =
-          String(
-            body.email || ""
-          )
-          .trim()
-          .toLowerCase();
+          String(body.email || "")
+            .trim()
+            .toLowerCase();
 
         const password =
-          String(
-            body.password || ""
-          );
+          String(body.password || "");
 
 
         if (
@@ -441,17 +433,14 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Email already exists"
+            error: "Email already exists"
           }, 409);
 
         }
 
 
         const passwordHash =
-          await hashPassword(
-            password
-          );
+          await hashPassword(password);
 
 
         const result =
@@ -476,8 +465,7 @@ export default {
 
         return json({
           success: true,
-          user_id:
-            result.meta.last_row_id
+          user_id: result.meta.last_row_id
         });
 
       }
@@ -496,8 +484,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Database is not connected"
+            error: "Database is not connected"
           }, 500);
 
         }
@@ -508,16 +495,12 @@ export default {
           await request.json();
 
         const email =
-          String(
-            body.email || ""
-          )
-          .trim()
-          .toLowerCase();
+          String(body.email || "")
+            .trim()
+            .toLowerCase();
 
         const password =
-          String(
-            body.password || ""
-          );
+          String(body.password || "");
 
 
         if (!email || !password) {
@@ -560,15 +543,10 @@ export default {
 
 
         const passwordHash =
-          await hashPassword(
-            password
-          );
+          await hashPassword(password);
 
 
-        if (
-          user.password !==
-          passwordHash
-        ) {
+        if (user.password !== passwordHash) {
 
           return json({
             success: false,
@@ -623,22 +601,8 @@ export default {
         request.method === "POST"
       ) {
 
-        if (!env.DB) {
-
-          return json({
-            success: false,
-            error:
-              "Database is not connected"
-          }, 500);
-
-        }
-
-
         const auth =
-          request.headers.get(
-            "Authorization"
-          );
-
+          request.headers.get("Authorization");
 
         if (
           auth &&
@@ -647,7 +611,6 @@ export default {
 
           const token =
             auth.substring(7).trim();
-
 
           if (token) {
 
@@ -691,8 +654,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -707,7 +669,7 @@ export default {
 
 
       /* ===================================================
-         UPDATE PROFILE PHOTO
+         PROFILE PHOTO
       =================================================== */
 
       if (
@@ -726,8 +688,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -735,7 +696,6 @@ export default {
 
         const body =
           await request.json();
-
 
         const profilePhoto =
           body.profile_photo;
@@ -748,8 +708,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Invalid profile photo"
+            error: "Invalid profile photo"
           }, 400);
 
         }
@@ -762,8 +721,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Profile photo is too large"
+            error: "Profile photo is too large"
           }, 413);
 
         }
@@ -771,9 +729,7 @@ export default {
 
         if (
           typeof profilePhoto === "string" &&
-          !profilePhoto.startsWith(
-            "data:image/"
-          )
+          !profilePhoto.startsWith("data:image/")
         ) {
 
           return json({
@@ -827,8 +783,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -872,8 +827,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -889,8 +843,7 @@ export default {
                 profile_photo
               FROM users
               WHERE id != ?
-              ORDER BY
-                username COLLATE NOCASE ASC
+              ORDER BY username COLLATE NOCASE ASC
             `)
             .bind(user.id)
             .all();
@@ -910,9 +863,7 @@ export default {
       =================================================== */
 
       if (
-        url.pathname.startsWith(
-          "/api/users/"
-        ) &&
+        url.pathname.startsWith("/api/users/") &&
         request.method === "GET"
       ) {
 
@@ -927,8 +878,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -936,9 +886,7 @@ export default {
 
         const id =
           Number(
-            url.pathname
-              .split("/")
-              .pop()
+            url.pathname.split("/").pop()
           );
 
 
@@ -946,8 +894,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Invalid user ID"
+            error: "Invalid user ID"
           }, 400);
 
         }
@@ -973,8 +920,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "User not found"
+            error: "User not found"
           }, 404);
 
         }
@@ -993,8 +939,7 @@ export default {
       =================================================== */
 
       if (
-        url.pathname ===
-          "/api/conversations" &&
+        url.pathname === "/api/conversations" &&
         request.method === "POST"
       ) {
 
@@ -1009,8 +954,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -1018,7 +962,6 @@ export default {
 
         const body =
           await request.json();
-
 
         const receiverId =
           Number(body.user_id);
@@ -1031,8 +974,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Invalid user ID"
+            error: "Invalid user ID"
           }, 400);
 
         }
@@ -1054,8 +996,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "User not found"
+            error: "User not found"
           }, 404);
 
         }
@@ -1082,8 +1023,7 @@ export default {
       =================================================== */
 
       if (
-        url.pathname ===
-          "/api/conversations" &&
+        url.pathname === "/api/conversations" &&
         request.method === "GET"
       ) {
 
@@ -1098,8 +1038,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -1154,8 +1093,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -1164,17 +1102,11 @@ export default {
         const body =
           await request.json();
 
-
         const receiverId =
-          Number(
-            body.receiver_id
-          );
-
+          Number(body.receiver_id);
 
         const message =
-          String(
-            body.message || ""
-          ).trim();
+          String(body.message || "").trim();
 
 
         if (
@@ -1191,9 +1123,7 @@ export default {
         }
 
 
-        if (
-          receiverId === user.id
-        ) {
+        if (receiverId === user.id) {
 
           return json({
             success: false,
@@ -1220,8 +1150,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Receiver not found"
+            error: "Receiver not found"
           }, 404);
 
         }
@@ -1293,8 +1222,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -1302,9 +1230,7 @@ export default {
 
         const otherUserId =
           Number(
-            url.searchParams.get(
-              "user_id"
-            )
+            url.searchParams.get("user_id")
           );
 
 
@@ -1350,9 +1276,7 @@ export default {
               WHERE conversation_id = ?
               ORDER BY id ASC
             `)
-            .bind(
-              conversation.id
-            )
+            .bind(conversation.id)
             .all();
 
 
@@ -1370,9 +1294,7 @@ export default {
       =================================================== */
 
       if (
-        url.pathname.startsWith(
-          "/api/messages/"
-        ) &&
+        url.pathname.startsWith("/api/messages/") &&
         request.method === "DELETE"
       ) {
 
@@ -1387,8 +1309,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -1396,9 +1317,7 @@ export default {
 
         const id =
           Number(
-            url.pathname
-              .split("/")
-              .pop()
+            url.pathname.split("/").pop()
           );
 
 
@@ -1437,15 +1356,7 @@ export default {
 
 
       /* ===================================================
-         CREATE / SEND CALL SIGNAL
-         
-         signal_type examples:
-         offer
-         answer
-         ice-candidate
-         reject
-         end
-         busy
+         SEND CALL SIGNAL
       =================================================== */
 
       if (
@@ -1464,8 +1375,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -1474,28 +1384,26 @@ export default {
         const body =
           await request.json();
 
-
         const receiverId =
-          Number(
-            body.receiver_id
-          );
-
+          Number(body.receiver_id);
 
         const signalType =
           String(
             body.signal_type || ""
           ).trim();
 
-
         let signalData =
           body.signal_data;
 
-
-        const callId =
+        let callId =
           String(
             body.call_id || ""
-          ).trim() ||
-          randomCallId();
+          ).trim();
+
+
+        if (!callId) {
+          callId = randomCallId();
+        }
 
 
         const allowedTypes = [
@@ -1519,9 +1427,7 @@ export default {
         }
 
 
-        if (
-          receiverId === user.id
-        ) {
+        if (receiverId === user.id) {
 
           return json({
             success: false,
@@ -1533,9 +1439,7 @@ export default {
 
 
         if (
-          !allowedTypes.includes(
-            signalType
-          )
+          !allowedTypes.includes(signalType)
         ) {
 
           return json({
@@ -1577,9 +1481,7 @@ export default {
         ) {
 
           signalData =
-            JSON.stringify(
-              signalData
-            );
+            JSON.stringify(signalData);
 
         }
 
@@ -1598,33 +1500,40 @@ export default {
         }
 
 
-        await env.DB
-          .prepare(`
-            INSERT INTO call_signals
-            (
-              call_id,
-              sender_id,
-              receiver_id,
-              signal_type,
-              signal_data,
-              created_at
+        const createdAt =
+          Date.now();
+
+
+        const result =
+          await env.DB
+            .prepare(`
+              INSERT INTO call_signals
+              (
+                call_id,
+                sender_id,
+                receiver_id,
+                signal_type,
+                signal_data,
+                created_at
+              )
+              VALUES (?, ?, ?, ?, ?, ?)
+            `)
+            .bind(
+              callId,
+              user.id,
+              receiverId,
+              signalType,
+              signalData || null,
+              createdAt
             )
-            VALUES (?, ?, ?, ?, ?, ?)
-          `)
-          .bind(
-            callId,
-            user.id,
-            receiverId,
-            signalType,
-            signalData || null,
-            Date.now()
-          )
-          .run();
+            .run();
 
 
         return json({
           success: true,
-          call_id: callId
+          id: result.meta.last_row_id,
+          call_id: callId,
+          created_at: createdAt
         });
 
       }
@@ -1650,8 +1559,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -1659,9 +1567,7 @@ export default {
 
         const callId =
           String(
-            url.searchParams.get(
-              "call_id"
-            ) || ""
+            url.searchParams.get("call_id") || ""
           ).trim();
 
 
@@ -1680,19 +1586,29 @@ export default {
           await env.DB
             .prepare(`
               SELECT
-                id,
-                call_id,
-                sender_id,
-                receiver_id,
-                signal_type,
-                signal_data,
-                created_at
-              FROM call_signals
+                cs.id,
+                cs.call_id,
+                cs.sender_id,
+                cs.receiver_id,
+                cs.signal_type,
+                cs.signal_data,
+                cs.created_at,
+
+                u.username AS sender_username,
+                u.email AS sender_email,
+                u.profile_photo AS sender_profile_photo
+
+              FROM call_signals cs
+
+              INNER JOIN users u
+                ON u.id = cs.sender_id
+
               WHERE
-                call_id = ?
+                cs.call_id = ?
                 AND
-                receiver_id = ?
-              ORDER BY id ASC
+                cs.receiver_id = ?
+
+              ORDER BY cs.id ASC
             `)
             .bind(
               callId,
@@ -1701,10 +1617,29 @@ export default {
             .all();
 
 
+        const result =
+          (signals.results || []).map(signal => ({
+            id: signal.id,
+            call_id: signal.call_id,
+            sender_id: signal.sender_id,
+            receiver_id: signal.receiver_id,
+            signal_type: signal.signal_type,
+            signal_data: signal.signal_data,
+            created_at: signal.created_at,
+
+            sender: {
+              id: signal.sender_id,
+              username: signal.sender_username,
+              email: signal.sender_email,
+              profile_photo:
+                signal.sender_profile_photo || null
+            }
+          }));
+
+
         return json({
           success: true,
-          signals:
-            signals.results || []
+          signals: result
         });
 
       }
@@ -1730,8 +1665,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -1739,9 +1673,7 @@ export default {
 
         const callId =
           String(
-            url.searchParams.get(
-              "call_id"
-            ) || ""
+            url.searchParams.get("call_id") || ""
           ).trim();
 
 
@@ -1785,9 +1717,6 @@ export default {
 
       /* ===================================================
          INCOMING CALLS
-         
-         Used by frontend to check whether
-         another user is calling this user.
       =================================================== */
 
       if (
@@ -1806,37 +1735,49 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
 
 
+        const sinceParam =
+          url.searchParams.get("since");
+
         const since =
-          Number(
-            url.searchParams.get(
-              "since"
-            )
-          ) || (Date.now() - 30000);
+          sinceParam !== null
+            ? Number(sinceParam) || 0
+            : Date.now() - 30000;
 
 
         const calls =
           await env.DB
             .prepare(`
               SELECT
-                call_id,
-                sender_id,
-                receiver_id,
-                signal_type,
-                signal_data,
-                created_at
-              FROM call_signals
+                cs.id,
+                cs.call_id,
+                cs.sender_id,
+                cs.receiver_id,
+                cs.signal_type,
+                cs.signal_data,
+                cs.created_at,
+
+                u.username AS sender_username,
+                u.email AS sender_email,
+                u.profile_photo AS sender_profile_photo
+
+              FROM call_signals cs
+
+              INNER JOIN users u
+                ON u.id = cs.sender_id
+
               WHERE
-                receiver_id = ?
-                AND signal_type = 'offer'
-                AND created_at >= ?
-              ORDER BY id DESC
+                cs.receiver_id = ?
+                AND cs.signal_type = 'offer'
+                AND cs.created_at >= ?
+
+              ORDER BY cs.id DESC
+              LIMIT 20
             `)
             .bind(
               user.id,
@@ -1845,10 +1786,52 @@ export default {
             .all();
 
 
+        const result =
+          (calls.results || []).map(call => {
+
+            let offerData = null;
+
+            try {
+
+              offerData =
+                call.signal_data
+                  ? JSON.parse(call.signal_data)
+                  : null;
+
+            } catch {
+
+              offerData =
+                call.signal_data;
+
+            }
+
+
+            return {
+              id: call.id,
+              call_id: call.call_id,
+              sender_id: call.sender_id,
+              receiver_id: call.receiver_id,
+              signal_type: call.signal_type,
+              signal_data: call.signal_data,
+              created_at: call.created_at,
+
+              sender: {
+                id: call.sender_id,
+                username: call.sender_username,
+                email: call.sender_email,
+                profile_photo:
+                  call.sender_profile_photo || null
+              },
+
+              offer: offerData
+            };
+
+          });
+
+
         return json({
           success: true,
-          calls:
-            calls.results || []
+          calls: result
         });
 
       }
@@ -1874,8 +1857,7 @@ export default {
 
           return json({
             success: false,
-            error:
-              "Unauthorized"
+            error: "Unauthorized"
           }, 401);
 
         }
@@ -1937,9 +1919,7 @@ export default {
 
       if (env.ASSETS) {
 
-        return env.ASSETS.fetch(
-          request
-        );
+        return env.ASSETS.fetch(request);
 
       }
 
@@ -1969,3 +1949,6 @@ export default {
   }
 
 };
+
+
+အရေးကြီးတာတစ်ခုက Call အလုပ်လုပ်ဖို့ "worker.js" တစ်ခုတည်းနဲ့ မပြီးသေးပါဘူး။ အခု "app.js" က "call_id" ကို server ပြန်ပေးတဲ့ response နဲ့ တိတိကျကျ ဆက်သုံးနေရပါမယ်။ ဒါကြောင့် "worker.js" တင်ပြီး Voice Call / Video Call ကို စမ်းကြည့်ပါ။ မခေါ်နိုင်သေးရင် "app.js" ကို အဲဒီ call flow နဲ့ တစ်ဆင့်ချင်း တိုက်စစ်ပြီး ပြင်ရပါမယ်။
