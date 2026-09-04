@@ -4,10 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dark Chat</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-:root{--bg:#070b14;--card:#101725;--card2:#151e2d;--primary:#7c5cff;--primary2:#6244e8;--text:#f5f7ff;--muted:#8d98ab;--border:rgba(255,255,255,.08);--danger:#ff5c70;--success:#20d99a;}
+:root{--bg:#070b14;--card:#101725;--primary:#7c5cff;--primary2:#6244e8;--text:#f5f7ff;--muted:#8d98ab;--border:rgba(255,255,255,.08);--success:#20d99a;}
 body{min-height:100vh;background:var(--bg);color:var(--text);font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;overflow:hidden;}
 .app{width:100%;max-width:430px;min-height:100vh;position:relative;overflow:hidden;}
 .auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
@@ -28,7 +27,7 @@ body{min-height:100vh;background:var(--bg);color:var(--text);font-family:Arial,s
 .chat-content{padding:18px;}
 .search{width:100%;height:48px;border:1px solid var(--border);border-radius:15px;background:#101725;color:white;outline:none;padding:0 15px;margin-bottom:20px;}
 .user-list{display:flex;flex-direction:column;gap:8px;}
-.user{display:flex;align-items:center;gap:13px;padding:12px;border-radius:17px;cursor:pointer;}
+.user{display:flex;align-items:center;gap:13px;padding:12px;border-radius:17px;cursor:pointer;background:#101725;border:1px solid var(--border);}
 .avatar{width:50px;height:50px;border-radius:17px;background:#343e55;display:flex;align-items:center;justify-content:center;font-weight:700;}
 .hidden{display:none!important;}
 </style>
@@ -65,7 +64,7 @@ body{min-height:100vh;background:var(--bg);color:var(--text);font-family:Arial,s
 
     <section class="chat-page" id="chatPage">
         <header class="chat-header">
-            <div><b>Messages</b></div>
+            <div><b>Messages</b> <span id="currentUserDisplay" style="font-size:12px;color:var(--muted);display:block;"></span></div>
             <button id="logoutButton" style="padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#101725;color:white;cursor:pointer;">Logout</button>
         </header>
         <main class="chat-content">
@@ -76,11 +75,6 @@ body{min-height:100vh;background:var(--bg);color:var(--text);font-family:Arial,s
 </div>
 
 <script>
-const SUPABASE_URL = window.location.origin + "/api";
-const SUPABASE_KEY = "sb_publishable_304Z-38ePX_x0FNMkB0Pow_TUUqvLns";
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 const authPage = document.getElementById("authPage");
 const chatPage = document.getElementById("chatPage");
 const emailInput = document.getElementById("email");
@@ -94,8 +88,10 @@ const authSubtitle = document.getElementById("authSubtitle");
 const switchText = document.getElementById("switchText");
 const switchButton = document.getElementById("switchButton");
 const userList = document.getElementById("userList");
+const currentUserDisplay = document.getElementById("currentUserDisplay");
 
 let registerMode = false;
+let loggedInUser = null;
 
 function showMessage(text, type = "error") {
     messageBox.textContent = text;
@@ -131,16 +127,24 @@ authButton.addEventListener("click", async () => {
 
     authButton.disabled = true;
     try {
+        const endpoint = registerMode ? "/api/register" : "/api/login";
+        const bodyData = registerMode ? { email, password, username } : { email, password };
+
+        const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(bodyData)
+        });
+
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error || "Something went wrong");
+
         if(registerMode) {
-            const { data, error } = await supabaseClient.auth.signUp({ email, password });
-            if(error) throw error;
-            if(data.user) {
-                await supabaseClient.from("profiles").insert({ id: data.user.id, username });
-            }
-            showMessage("Account created successfully.", "success");
+            showMessage("Account created successfully. Please sign in.", "success");
+            switchButton.click();
         } else {
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if(error) throw error;
+            loggedInUser = data.user;
+            currentUserDisplay.textContent = "(@ " + loggedInUser.username + ")";
             openChat();
         }
     } catch(err) {
@@ -157,24 +161,29 @@ async function openChat() {
 }
 
 async function loadUsers() {
-    const { data } = await supabaseClient.from("profiles").select("id, username");
-    userList.innerHTML = "";
-    (data || []).forEach(u => {
-        const div = document.createElement("div");
-        div.className = "user";
-        div.innerHTML = `<div class="avatar">${u.username.charAt(0).toUpperCase()}</div><div><b>${u.username}</b></div>`;
-        userList.appendChild(div);
-    });
+    try {
+        const res = await fetch("/api/users");
+        const data = await res.json();
+        userList.innerHTML = "";
+        
+        (data.users || []).forEach(u => {
+            if(loggedInUser && u.email === loggedInUser.email) return;
+            const div = document.createElement("div");
+            div.className = "user";
+            div.innerHTML = `<div class="avatar">${u.username.charAt(0).toUpperCase()}</div><div><b>${u.username}</b><div style="font-size:12px;color:var(--muted);">${u.email}</div></div>`;
+            userList.appendChild(div);
+        });
+    } catch(err) {
+        userList.innerHTML = `<div style="text-align:center;color:var(--muted);">Failed to load users</div>`;
+    }
 }
 
-document.getElementById("logoutButton").addEventListener("click", async () => {
-    await supabaseClient.auth.signOut();
+document.getElementById("logoutButton").addEventListener("click", () => {
+    loggedInUser = null;
     chatPage.style.display = "none";
     authPage.style.display = "flex";
-});
-
-supabaseClient.auth.onAuthStateChange((event, session) => {
-    if(session) openChat();
+    emailInput.value = "";
+    passwordInput.value = "";
 });
 </script>
 </body>
