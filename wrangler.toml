@@ -1,0 +1,7 @@
+name = "dark-chat"
+compatibility_date = "2026-03-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "chat-db"
+database_id = "သင့်ရဲ့ D1 Database ပုံထဲက UUID နံပါတ်အရှည်ကြီးကို ဒီမှာထည့်ပါ"
