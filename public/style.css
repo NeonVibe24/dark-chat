@@ -14,6 +14,13 @@
   --accent: #7c5cff;
   --accent2: #6242e8;
   --danger: #ff5c70;
+  --success: #5fe49a;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
 }
 
 body {
@@ -48,6 +55,7 @@ input {
 
 button {
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .avatar {
@@ -60,12 +68,17 @@ button {
   align-items: center;
   justify-content: center;
 
+  overflow: hidden;
+
   background:
     linear-gradient(
       135deg,
       #7c5cff,
       #a86cff
     );
+
+  background-size: cover;
+  background-position: center;
 
   color: white;
   font-weight: 700;
@@ -266,7 +279,9 @@ button {
 }
 
 
-/* SIDEBAR */
+/* =========================
+   SIDEBAR
+========================= */
 
 .sidebar {
   width: 320px;
@@ -309,8 +324,50 @@ button {
 
 .profile-info span {
   font-size: 11px;
-  color: #5fe49a;
+  color: var(--success);
 }
+
+
+/* =========================
+   PROFILE AVATAR BUTTON
+========================= */
+
+.avatar-button {
+  width: 44px;
+  height: 44px;
+
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  border-radius: 50%;
+
+  flex-shrink: 0;
+}
+
+.avatar-button .avatar {
+  transition:
+    transform .2s,
+    box-shadow .2s;
+}
+
+.avatar-button:hover .avatar {
+  transform: scale(1.05);
+
+  box-shadow:
+    0 0 0 3px rgba(124,92,255,.18);
+}
+
+.avatar-button:active .avatar {
+  transform: scale(.95);
+}
+
+
+/* =========================
+   BUTTONS
+========================= */
 
 .icon-btn,
 .small-btn {
@@ -427,7 +484,9 @@ button {
 }
 
 
-/* CHAT */
+/* =========================
+   CHAT
+========================= */
 
 .chat-area {
   flex: 1;
@@ -487,6 +546,11 @@ button {
   flex-direction: column;
 }
 
+
+/* =========================
+   CHAT HEADER
+========================= */
+
 .chat-header {
   height: 76px;
 
@@ -504,22 +568,80 @@ button {
   align-items: center;
 
   gap: 12px;
+
+  min-width: 0;
 }
 
 .chat-user > div:last-child {
   display: flex;
   flex-direction: column;
   gap: 4px;
+
+  min-width: 0;
 }
 
 .chat-user strong {
   font-size: 14px;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .chat-user span {
   font-size: 11px;
   color: var(--muted);
 }
+
+
+/* =========================
+   CALL BUTTONS
+========================= */
+
+.chat-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+}
+
+.call-btn {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: transparent;
+
+  color: #aeb4bf;
+
+  font-size: 17px;
+
+  transition:
+    background .2s,
+    color .2s,
+    transform .15s;
+}
+
+.call-btn:hover {
+  background: rgba(124,92,255,.12);
+
+  color: #a18fff;
+}
+
+.call-btn:active {
+  transform: scale(.9);
+}
+
+
+/* =========================
+   MESSAGES
+========================= */
 
 .messages {
   flex: 1;
@@ -587,6 +709,11 @@ button {
   opacity: .55;
 }
 
+
+/* =========================
+   MESSAGE FORM
+========================= */
+
 .message-form {
   min-height: 76px;
 
@@ -641,7 +768,711 @@ button {
 }
 
 
-/* TOAST */
+/* =========================================================
+   PROFILE PANEL
+========================================================= */
+
+.profile-panel {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+}
+
+.profile-panel-backdrop {
+  position: absolute;
+
+  inset: 0;
+
+  background: rgba(0,0,0,.68);
+
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.profile-panel-card {
+  position: relative;
+
+  z-index: 2;
+
+  width: 100%;
+  max-width: 350px;
+
+  padding: 30px 24px 24px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.035),
+      rgba(255,255,255,.01)
+    ),
+    var(--panel);
+
+  border: 1px solid var(--border);
+
+  border-radius: 23px;
+
+  box-shadow:
+    0 30px 100px rgba(0,0,0,.65);
+
+  text-align: center;
+
+  animation:
+    profileOpen .2s ease-out;
+}
+
+@keyframes profileOpen {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.profile-close {
+  position: absolute;
+
+  top: 11px;
+  right: 11px;
+
+  width: 34px;
+  height: 34px;
+
+  border: 0;
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: #9298a4;
+
+  font-size: 25px;
+
+  line-height: 1;
+
+  transition: .2s;
+}
+
+.profile-close:hover {
+  background: #1a1d25;
+
+  color: white;
+}
+
+
+/* PROFILE PHOTO */
+
+.profile-photo-large-btn {
+  width: 108px;
+  height: 108px;
+
+  padding: 0;
+
+  margin: 4px auto 17px;
+
+  border: 0;
+
+  background: transparent;
+
+  border-radius: 50%;
+
+  display: block;
+}
+
+.profile-photo-large {
+  width: 108px;
+  height: 108px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      135deg,
+      #7c5cff,
+      #a86cff
+    );
+
+  background-size: cover;
+  background-position: center;
+
+  color: white;
+
+  font-size: 34px;
+  font-weight: 700;
+
+  border: 2px solid rgba(255,255,255,.08);
+
+  transition:
+    transform .2s,
+    box-shadow .2s;
+}
+
+.profile-photo-large-btn:hover .profile-photo-large {
+  transform: scale(1.04);
+
+  box-shadow:
+    0 0 0 4px rgba(124,92,255,.14);
+}
+
+.profile-photo-large-btn:active .profile-photo-large {
+  transform: scale(.95);
+}
+
+.profile-panel-card h3 {
+  font-size: 19px;
+
+  margin-bottom: 5px;
+}
+
+.profile-panel-card > p {
+  color: var(--muted);
+
+  font-size: 13px;
+
+  word-break: break-word;
+}
+
+.profile-actions {
+  margin-top: 22px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+.profile-actions .primary-btn {
+  padding: 12px;
+}
+
+.profile-actions .secondary-btn {
+  width: 100%;
+
+  padding: 12px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 12px;
+
+  background: #151821;
+
+  color: #c4c8d0;
+
+  transition: .2s;
+}
+
+.profile-actions .secondary-btn:hover {
+  background: #1b1e27;
+
+  color: white;
+}
+
+
+/* =========================================================
+   INCOMING CALL
+========================================================= */
+
+.call-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 2000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(124,92,255,.13),
+      transparent 45%
+    ),
+    rgba(0,0,0,.78);
+
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+}
+
+.incoming-call-card {
+  width: 100%;
+  max-width: 320px;
+
+  padding: 34px 24px 28px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 23px;
+
+  background: #11141b;
+
+  box-shadow:
+    0 30px 100px rgba(0,0,0,.65);
+
+  text-align: center;
+
+  animation:
+    incomingCallOpen .25s ease-out;
+}
+
+@keyframes incomingCallOpen {
+  from {
+    opacity: 0;
+    transform: scale(.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.call-avatar {
+  width: 88px;
+  height: 88px;
+
+  margin: 0 auto 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      135deg,
+      #7c5cff,
+      #a86cff
+    );
+
+  background-size: cover;
+  background-position: center;
+
+  color: white;
+
+  font-size: 28px;
+  font-weight: 700;
+
+  border: 2px solid rgba(124,92,255,.5);
+
+  animation:
+    callAvatarPulse 1.7s infinite;
+}
+
+@keyframes callAvatarPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(124,92,255,.22);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 13px rgba(124,92,255,0);
+  }
+}
+
+.incoming-call-card h3 {
+  font-size: 20px;
+
+  margin-bottom: 6px;
+}
+
+.incoming-call-type {
+  color: var(--muted);
+
+  font-size: 13px;
+}
+
+.incoming-call-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 34px;
+
+  margin-top: 27px;
+}
+
+.call-reject-btn,
+.call-accept-btn {
+  width: 57px;
+  height: 57px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+
+  border-radius: 50%;
+
+  color: white;
+
+  font-size: 21px;
+
+  transition:
+    transform .18s,
+    filter .18s;
+}
+
+.call-reject-btn {
+  background: var(--danger);
+
+  box-shadow:
+    0 10px 28px rgba(255,92,112,.22);
+}
+
+.call-accept-btn {
+  background: var(--success);
+
+  box-shadow:
+    0 10px 28px rgba(95,228,154,.18);
+}
+
+.call-reject-btn:hover,
+.call-accept-btn:hover {
+  transform: scale(1.06);
+
+  filter: brightness(1.08);
+}
+
+.call-reject-btn:active,
+.call-accept-btn:active {
+  transform: scale(.9);
+}
+
+
+/* =========================================================
+   ACTIVE CALL SCREEN
+========================================================= */
+
+.call-screen {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 3000;
+
+  overflow: hidden;
+
+  background: #030406;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* REMOTE VIDEO */
+
+.remote-video {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  background:
+    radial-gradient(
+      circle at center,
+      #171c28,
+      #030406
+    );
+}
+
+
+/* =========================================================
+   VOICE CALL VIEW
+========================================================= */
+
+.voice-call-view {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 3;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  flex-direction: column;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(124,92,255,.13),
+      transparent 45%
+    ),
+    #080a10;
+
+  padding-bottom: 100px;
+
+  text-align: center;
+}
+
+.voice-call-avatar {
+  width: 120px;
+  height: 120px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      135deg,
+      #7c5cff,
+      #a86cff
+    );
+
+  background-size: cover;
+  background-position: center;
+
+  color: white;
+
+  font-size: 38px;
+  font-weight: 700;
+
+  border: 2px solid rgba(124,92,255,.5);
+
+  margin-bottom: 20px;
+
+  box-shadow:
+    0 0 0 17px rgba(124,92,255,.035),
+    0 0 0 34px rgba(124,92,255,.018);
+}
+
+.voice-call-view h3 {
+  font-size: 22px;
+
+  margin-bottom: 7px;
+}
+
+.voice-call-view span {
+  color: var(--muted);
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   LOCAL VIDEO
+========================================================= */
+
+.local-video {
+  position: absolute;
+
+  z-index: 8;
+
+  top: 78px;
+  right: 18px;
+
+  width: 130px;
+  height: 185px;
+
+  object-fit: cover;
+
+  border-radius: 15px;
+
+  background: #11151e;
+
+  border: 1px solid rgba(255,255,255,.14);
+
+  box-shadow:
+    0 15px 40px rgba(0,0,0,.45);
+
+  transform: scaleX(-1);
+}
+
+
+/* =========================================================
+   CALL TOP BAR
+========================================================= */
+
+.call-topbar {
+  position: absolute;
+
+  z-index: 10;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  padding: 0 20px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,.62),
+      transparent
+    );
+
+  color: white;
+}
+
+#callUserName {
+  max-width: 60%;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 15px;
+  font-weight: 600;
+}
+
+#callDuration {
+  color: rgba(255,255,255,.62);
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   CALL CONTROLS
+========================================================= */
+
+.call-controls {
+  position: absolute;
+
+  z-index: 20;
+
+  left: 50%;
+  bottom: 28px;
+
+  transform: translateX(-50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  padding: 10px 13px;
+
+  background:
+    rgba(12,14,20,.82);
+
+  border:
+    1px solid rgba(255,255,255,.09);
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 20px 55px rgba(0,0,0,.45);
+
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+}
+
+.call-control-btn,
+.call-end-btn {
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+
+  border-radius: 50%;
+
+  transition:
+    transform .18s,
+    background .18s,
+    filter .18s;
+}
+
+.call-control-btn {
+  background: rgba(255,255,255,.09);
+
+  color: white;
+
+  font-size: 18px;
+}
+
+.call-control-btn:hover {
+  background: rgba(255,255,255,.15);
+}
+
+.call-control-btn:active {
+  transform: scale(.9);
+}
+
+.call-end-btn {
+  background: var(--danger);
+
+  color: white;
+
+  font-size: 19px;
+
+  transform: rotate(-135deg);
+
+  box-shadow:
+    0 8px 25px rgba(255,92,112,.22);
+}
+
+.call-end-btn:hover {
+  filter: brightness(1.08);
+}
+
+.call-end-btn:active {
+  transform: rotate(-135deg) scale(.9);
+}
+
+
+/* REMOTE AUDIO */
+
+#remoteAudio {
+  display: none;
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
 
 .toast {
   position: fixed;
@@ -670,7 +1501,7 @@ button {
 
   transition: .25s;
 
-  z-index: 100;
+  z-index: 5000;
 }
 
 .toast.show {
@@ -681,9 +1512,31 @@ button {
 }
 
 
-/* =========================
+/* =========================================================
+   SCROLLBARS
+========================================================= */
+
+.users-list::-webkit-scrollbar,
+.messages::-webkit-scrollbar {
+  width: 5px;
+}
+
+.users-list::-webkit-scrollbar-thumb,
+.messages::-webkit-scrollbar-thumb {
+  background: #272b34;
+
+  border-radius: 10px;
+}
+
+.users-list::-webkit-scrollbar-track,
+.messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+/* =========================================================
    MOBILE
-========================= */
+========================================================= */
 
 @media (max-width: 700px) {
 
@@ -703,8 +1556,12 @@ button {
     display: block;
   }
 
+
+  /* CHAT HEADER */
+
   .chat-header {
-    padding-left: 12px;
+    padding-left: 10px;
+    padding-right: 8px;
   }
 
   .chat-header::before {
@@ -712,12 +1569,35 @@ button {
 
     font-size: 30px;
 
-    margin-right: 5px;
+    margin-right: 4px;
 
     color: #aaa;
 
     cursor: pointer;
   }
+
+  .chat-user {
+    min-width: 0;
+  }
+
+  .chat-user strong {
+    max-width: 130px;
+  }
+
+  .chat-actions {
+    gap: 1px;
+  }
+
+  .call-btn,
+  .chat-actions .icon-btn {
+    width: 35px;
+    height: 35px;
+
+    font-size: 16px;
+  }
+
+
+  /* MESSAGES */
 
   .messages {
     padding: 18px 13px;
@@ -727,7 +1607,193 @@ button {
     max-width: 82%;
   }
 
+
+  /* MESSAGE INPUT */
+
+  .message-form {
+    min-height: 68px;
+
+    padding:
+      9px 10px;
+
+    padding-bottom:
+      calc(
+        9px +
+        env(safe-area-inset-bottom)
+      );
+  }
+
+  .message-form input {
+    height: 48px;
+  }
+
+  .send-btn {
+    width: 48px;
+    height: 48px;
+  }
+
+
+  /* AUTH */
+
   .auth-card {
     padding: 27px 21px;
   }
+
+
+  /* PROFILE */
+
+  .profile-panel {
+    padding: 15px;
+  }
+
+  .profile-panel-card {
+    max-width: 100%;
+
+    border-radius: 21px;
+  }
+
+
+  /* CALL */
+
+  .local-video {
+    top: 66px;
+    right: 10px;
+
+    width: 105px;
+    height: 150px;
+
+    border-radius: 12px;
+  }
+
+  .call-topbar {
+    height: 62px;
+  }
+
+  .call-controls {
+    bottom:
+      calc(
+        18px +
+        env(safe-area-inset-bottom)
+      );
+
+    gap: 8px;
+
+    padding: 9px 11px;
+
+    border-radius: 18px;
+  }
+
+  .call-control-btn,
+  .call-end-btn {
+    width: 45px;
+    height: 45px;
+  }
+
+  .voice-call-avatar {
+    width: 110px;
+    height: 110px;
+
+    font-size: 34px;
+  }
+
+  .voice-call-view h3 {
+    font-size: 20px;
+  }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 390px) {
+
+  .auth-card {
+    padding:
+      25px 19px;
+
+    border-radius: 20px;
+  }
+
+  .brand {
+    margin-bottom: 27px;
+  }
+
+  .brand-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .auth-card h2 {
+    font-size: 23px;
+  }
+
+  .chat-user .avatar {
+    width: 40px;
+    height: 40px;
+
+    min-width: 40px;
+  }
+
+  .chat-user strong {
+    max-width: 105px;
+  }
+
+  .call-btn,
+  .chat-actions .icon-btn {
+    width: 33px;
+    height: 33px;
+
+    font-size: 15px;
+  }
+
+  .local-video {
+    width: 92px;
+    height: 132px;
+  }
+
+  .call-controls {
+    gap: 5px;
+  }
+
+  .call-control-btn,
+  .call-end-btn {
+    width: 42px;
+    height: 42px;
+
+    font-size: 16px;
+  }
+
+}
+
+
+/* =========================================================
+   SAFE AREA
+========================================================= */
+
+@supports (padding: env(safe-area-inset-bottom)) {
+
+  .call-controls {
+    margin-bottom:
+      env(safe-area-inset-bottom);
+  }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
 }
