@@ -237,7 +237,9 @@
   >
 
 
-    <!-- SIDEBAR -->
+    <!-- ===================================================
+         SIDEBAR
+    ==================================================== -->
 
     <aside class="sidebar">
 
@@ -247,6 +249,8 @@
 
         <div class="profile">
 
+
+          <!-- MY PROFILE PHOTO -->
 
           <button
             id="myAvatarBtn"
@@ -283,14 +287,12 @@
         <button
           id="logoutBtn"
           class="icon-btn"
-          type="button"
           title="Logout"
         >
           ⎋
         </button>
 
       </div>
-
 
 
       <!-- USER LIST -->
@@ -304,7 +306,6 @@
         <button
           id="refreshUsers"
           class="small-btn"
-          type="button"
           title="Refresh"
         >
           ↻
@@ -328,7 +329,9 @@
 
 
 
-    <!-- CHAT AREA -->
+    <!-- ===================================================
+         CHAT AREA
+    ==================================================== -->
 
     <main class="chat-area">
 
@@ -356,7 +359,9 @@
 
 
 
-      <!-- ACTIVE CHAT -->
+      <!-- =================================================
+           ACTIVE CHAT
+      ================================================== -->
 
       <div
         id="activeChat"
@@ -364,16 +369,15 @@
       >
 
 
-        <!-- =================================================
-             CHAT HEADER
-        ================================================== -->
+        <!-- CHAT HEADER -->
 
         <header class="chat-header">
 
 
-          <!-- USER -->
-
           <div class="chat-user">
+
+
+            <!-- CHAT USER AVATAR -->
 
             <div
               id="chatAvatar"
@@ -398,11 +402,7 @@
           </div>
 
 
-
-          <!-- =================================================
-               CALL BUTTONS
-               KEEP INSIDE CHAT HEADER
-          ================================================== -->
+          <!-- CALL BUTTONS -->
 
           <div class="chat-actions">
 
@@ -435,7 +435,6 @@
             >
               ↻
             </button>
-
 
           </div>
 
@@ -550,6 +549,7 @@
 
     <div class="profile-actions">
 
+
       <button
         id="changeProfilePhoto"
         class="primary-btn"
@@ -583,6 +583,7 @@
   id="incomingCall"
   class="call-overlay hidden"
 >
+
 
   <div class="incoming-call-card">
 
@@ -646,6 +647,8 @@
 >
 
 
+  <!-- REMOTE VIDEO -->
+
   <video
     id="remoteVideo"
     class="remote-video"
@@ -653,6 +656,8 @@
     playsinline
   ></video>
 
+
+  <!-- AUDIO ONLY -->
 
   <div
     id="voiceCallView"
@@ -677,6 +682,8 @@
   </div>
 
 
+  <!-- LOCAL VIDEO -->
+
   <video
     id="localVideo"
     class="local-video"
@@ -685,6 +692,8 @@
     playsinline
   ></video>
 
+
+  <!-- CALL HEADER -->
 
   <div class="call-topbar">
 
@@ -698,6 +707,8 @@
 
   </div>
 
+
+  <!-- CALL CONTROLS -->
 
   <div class="call-controls">
 
@@ -743,6 +754,8 @@
 
   </div>
 
+
+  <!-- LOCAL MEDIA -->
 
   <audio
     id="remoteAudio"
