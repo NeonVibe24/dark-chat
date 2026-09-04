@@ -149,11 +149,12 @@ const removeProfilePhoto =
 // CALL ELEMENTS
 // ============================================================
 
-const voiceCallBtn =
-  document.getElementById("voiceCallBtn");
+// IMPORTANT:
+// Don't keep a permanently cached reference to call buttons.
+// They may be recreated if the chat DOM changes.
 
-const videoCallBtn =
-  document.getElementById("videoCallBtn");
+let voiceCallBtn = null;
+let videoCallBtn = null;
 
 const incomingCall =
   document.getElementById("incomingCall");
@@ -224,9 +225,7 @@ const ringtone =
 // ============================================================
 
 function getToken() {
-  return localStorage.getItem(
-    "dark_chat_token"
-  );
+  return localStorage.getItem("dark_chat_token");
 }
 
 
@@ -342,12 +341,9 @@ function formatTime(dateString) {
 
 function setAvatar(element, user) {
 
-  if (!element) {
-    return;
-  }
+  if (!element) return;
 
   element.textContent = "";
-
   element.style.backgroundImage = "";
 
   if (
@@ -362,9 +358,7 @@ function setAvatar(element, user) {
   }
 
   element.textContent =
-    avatarLetter(
-      user?.username
-    );
+    avatarLetter(user?.username);
 }
 
 
@@ -374,12 +368,9 @@ function setAvatarData(
   photo
 ) {
 
-  if (!element) {
-    return;
-  }
+  if (!element) return;
 
   element.textContent = "";
-
   element.style.backgroundImage = "";
 
   if (photo) {
@@ -396,102 +387,319 @@ function setAvatarData(
 
 
 // ============================================================
+// CALL BUTTON PROTECTION
+// ============================================================
+
+function ensureCallButtons() {
+
+  const header =
+    document.querySelector(
+      ".chat-header"
+    );
+
+  if (!header) {
+    return;
+  }
+
+
+  let actions =
+    header.querySelector(
+      ".chat-actions"
+    );
+
+
+  if (!actions) {
+
+    actions =
+      document.createElement(
+        "div"
+      );
+
+    actions.className =
+      "chat-actions";
+
+    header.appendChild(
+      actions
+    );
+  }
+
+
+  // ----------------------------------------------------------
+  // VOICE CALL BUTTON
+  // ----------------------------------------------------------
+
+  let voice =
+    actions.querySelector(
+      "#voiceCallBtn"
+    );
+
+
+  if (!voice) {
+
+    voice =
+      document.createElement(
+        "button"
+      );
+
+    voice.id =
+      "voiceCallBtn";
+
+    voice.className =
+      "call-btn";
+
+    voice.type =
+      "button";
+
+    voice.title =
+      "Voice call";
+
+    voice.setAttribute(
+      "aria-label",
+      "Voice call"
+    );
+
+    voice.textContent =
+      "☎";
+
+    actions.insertBefore(
+      voice,
+      actions.firstChild
+    );
+  }
+
+
+  // ----------------------------------------------------------
+  // VIDEO CALL BUTTON
+  // ----------------------------------------------------------
+
+  let video =
+    actions.querySelector(
+      "#videoCallBtn"
+    );
+
+
+  if (!video) {
+
+    video =
+      document.createElement(
+        "button"
+      );
+
+    video.id =
+      "videoCallBtn";
+
+    video.className =
+      "call-btn";
+
+    video.type =
+      "button";
+
+    video.title =
+      "Video call";
+
+    video.setAttribute(
+      "aria-label",
+      "Video call"
+    );
+
+    video.textContent =
+      "▣";
+
+    const refresh =
+      actions.querySelector(
+        "#reloadMessages"
+      );
+
+    if (refresh) {
+
+      actions.insertBefore(
+        video,
+        refresh
+      );
+
+    } else {
+
+      actions.appendChild(
+        video
+      );
+    }
+  }
+
+
+  // ----------------------------------------------------------
+  // FORCE VISIBILITY
+  // ----------------------------------------------------------
+
+  actions.style.display =
+    "flex";
+
+  actions.style.visibility =
+    "visible";
+
+  actions.style.opacity =
+    "1";
+
+  actions.style.alignItems =
+    "center";
+
+  actions.style.justifyContent =
+    "flex-end";
+
+  actions.style.flexShrink =
+    "0";
+
+
+  [voice, video].forEach(
+    button => {
+
+      button.classList.add(
+        "call-btn"
+      );
+
+      button.style.display =
+        "flex";
+
+      button.style.visibility =
+        "visible";
+
+      button.style.opacity =
+        "1";
+
+      button.style.flex =
+        "0 0 auto";
+
+      button.style.width =
+        window.innerWidth <= 390
+          ? "33px"
+          : window.innerWidth <= 700
+            ? "35px"
+            : "38px";
+
+      button.style.height =
+        window.innerWidth <= 390
+          ? "33px"
+          : window.innerWidth <= 700
+            ? "35px"
+            : "38px";
+
+      button.style.alignItems =
+        "center";
+
+      button.style.justifyContent =
+        "center";
+
+      button.style.visibility =
+        "visible";
+
+      button.style.pointerEvents =
+        "auto";
+
+      button.style.cursor =
+        "pointer";
+    }
+  );
+
+
+  voiceCallBtn = voice;
+  videoCallBtn = video;
+
+
+  // ----------------------------------------------------------
+  // EVENTS - ONLY ONCE
+  // ----------------------------------------------------------
+
+  if (
+    !voice.dataset.callListener
+  ) {
+
+    voice.addEventListener(
+      "click",
+      event => {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        startCall("voice");
+      }
+    );
+
+    voice.dataset.callListener =
+      "true";
+  }
+
+
+  if (
+    !video.dataset.callListener
+  ) {
+
+    video.addEventListener(
+      "click",
+      event => {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        startCall("video");
+      }
+    );
+
+    video.dataset.callListener =
+      "true";
+  }
+}
+
+
+// Keep the buttons alive even if another
+// part of the application changes the chat DOM.
+
+const callButtonObserver =
+  new MutationObserver(
+    () => {
+
+      ensureCallButtons();
+    }
+  );
+
+
+callButtonObserver.observe(
+  document.body,
+  {
+    childList: true,
+    subtree: true
+  }
+);
+
+
+// ============================================================
 // AUTH SCREEN
 // ============================================================
 
-showRegister.addEventListener(
-  "click",
-  () => {
+if (showRegister) {
 
-    loginForm.classList.add(
-      "hidden"
-    );
+  showRegister.addEventListener(
+    "click",
+    () => {
 
-    registerForm.classList.remove(
-      "hidden"
-    );
-
-    loginError.textContent = "";
-    registerError.textContent = "";
-  }
-);
-
-
-showLogin.addEventListener(
-  "click",
-  () => {
-
-    registerForm.classList.add(
-      "hidden"
-    );
-
-    loginForm.classList.remove(
-      "hidden"
-    );
-
-    loginError.textContent = "";
-    registerError.textContent = "";
-  }
-);
-
-
-// ============================================================
-// REGISTER
-// ============================================================
-
-registerForm.addEventListener(
-  "submit",
-  async event => {
-
-    event.preventDefault();
-
-    registerError.textContent = "";
-
-    const username =
-      document
-        .getElementById(
-          "registerUsername"
-        )
-        .value
-        .trim();
-
-    const email =
-      document
-        .getElementById(
-          "registerEmail"
-        )
-        .value
-        .trim();
-
-    const password =
-      document
-        .getElementById(
-          "registerPassword"
-        )
-        .value;
-
-
-    try {
-
-      await api(
-        "/register",
-        {
-          method: "POST",
-
-          body: JSON.stringify({
-            username,
-            email,
-            password
-          })
-        }
+      loginForm.classList.add(
+        "hidden"
       );
 
-
-      showToast(
-        "Account created"
+      registerForm.classList.remove(
+        "hidden"
       );
 
-      registerForm.reset();
+      loginError.textContent = "";
+      registerError.textContent = "";
+    }
+  );
+}
+
+
+if (showLogin) {
+
+  showLogin.addEventListener(
+    "click",
+    () => {
 
       registerForm.classList.add(
         "hidden"
@@ -501,59 +709,60 @@ registerForm.addEventListener(
         "hidden"
       );
 
-      document
-        .getElementById(
-          "loginEmail"
-        )
-        .value = email;
-
-    } catch (error) {
-
-      registerError.textContent =
-        error.message;
+      loginError.textContent = "";
+      registerError.textContent = "";
     }
-
-  }
-);
+  );
+}
 
 
 // ============================================================
-// LOGIN
+// REGISTER
 // ============================================================
 
-loginForm.addEventListener(
-  "submit",
-  async event => {
+if (registerForm) {
 
-    event.preventDefault();
+  registerForm.addEventListener(
+    "submit",
+    async event => {
 
-    loginError.textContent = "";
+      event.preventDefault();
 
-    const email =
-      document
-        .getElementById(
-          "loginEmail"
-        )
-        .value
-        .trim();
+      registerError.textContent = "";
 
-    const password =
-      document
-        .getElementById(
-          "loginPassword"
-        )
-        .value;
+      const username =
+        document
+          .getElementById(
+            "registerUsername"
+          )
+          .value
+          .trim();
+
+      const email =
+        document
+          .getElementById(
+            "registerEmail"
+          )
+          .value
+          .trim();
+
+      const password =
+        document
+          .getElementById(
+            "registerPassword"
+          )
+          .value;
 
 
-    try {
+      try {
 
-      const data =
         await api(
-          "/login",
+          "/register",
           {
             method: "POST",
 
             body: JSON.stringify({
+              username,
               email,
               password
             })
@@ -561,23 +770,103 @@ loginForm.addEventListener(
         );
 
 
-      setToken(data.token);
+        showToast(
+          "Account created"
+        );
 
-      currentUser =
-        data.user;
+        registerForm.reset();
 
-      loginForm.reset();
+        registerForm.classList.add(
+          "hidden"
+        );
 
-      openChatApp();
+        loginForm.classList.remove(
+          "hidden"
+        );
 
-    } catch (error) {
+        document
+          .getElementById(
+            "loginEmail"
+          )
+          .value = email;
 
-      loginError.textContent =
-        error.message;
+      } catch (error) {
+
+        registerError.textContent =
+          error.message;
+      }
+
     }
+  );
+}
 
-  }
-);
+
+// ============================================================
+// LOGIN
+// ============================================================
+
+if (loginForm) {
+
+  loginForm.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+      loginError.textContent = "";
+
+      const email =
+        document
+          .getElementById(
+            "loginEmail"
+          )
+          .value
+          .trim();
+
+      const password =
+        document
+          .getElementById(
+            "loginPassword"
+          )
+          .value;
+
+
+      try {
+
+        const data =
+          await api(
+            "/login",
+            {
+              method: "POST",
+
+              body: JSON.stringify({
+                email,
+                password
+              })
+            }
+          );
+
+
+        setToken(
+          data.token
+        );
+
+        currentUser =
+          data.user;
+
+        loginForm.reset();
+
+        openChatApp();
+
+      } catch (error) {
+
+        loginError.textContent =
+          error.message;
+      }
+
+    }
+  );
+}
 
 
 // ============================================================
@@ -585,6 +874,8 @@ loginForm.addEventListener(
 // ============================================================
 
 async function startApp() {
+
+  ensureCallButtons();
 
   const token =
     getToken();
@@ -658,6 +949,17 @@ function openChatApp() {
   loadUsers();
 
   startIncomingCallPolling();
+
+  // Make sure buttons exist after chat is shown.
+  setTimeout(
+    ensureCallButtons,
+    0
+  );
+
+  setTimeout(
+    ensureCallButtons,
+    100
+  );
 }
 
 
@@ -840,11 +1142,23 @@ async function selectUser(user) {
     "Available";
 
 
+  // IMPORTANT:
+  // Restore call buttons after opening chat.
+  ensureCallButtons();
+
+
   await loadMessages();
 
   messageInput.focus();
 
   startMessageRefresh();
+
+
+  // Run again after DOM settles.
+  setTimeout(
+    ensureCallButtons,
+    0
+  );
 }
 
 
@@ -981,6 +1295,10 @@ function renderMessages(messages) {
 
   messagesBox.scrollTop =
     messagesBox.scrollHeight;
+
+
+  // Message rendering must never affect call buttons.
+  ensureCallButtons();
 }
 
 
@@ -988,68 +1306,71 @@ function renderMessages(messages) {
 // SEND MESSAGE
 // ============================================================
 
-messageForm.addEventListener(
-  "submit",
-  async event => {
+if (messageForm) {
 
-    event.preventDefault();
+  messageForm.addEventListener(
+    "submit",
+    async event => {
 
-
-    if (!selectedUser) {
-      return;
-    }
+      event.preventDefault();
 
 
-    const message =
-      messageInput.value.trim();
+      if (!selectedUser) {
+        return;
+      }
 
 
-    if (!message) {
-      return;
-    }
+      const message =
+        messageInput.value.trim();
 
 
-    messageInput.disabled =
-      true;
+      if (!message) {
+        return;
+      }
 
-
-    try {
-
-      await api(
-        "/messages",
-        {
-          method: "POST",
-
-          body: JSON.stringify({
-            receiver_id:
-              selectedUser.id,
-
-            message
-          })
-        }
-      );
-
-
-      messageInput.value = "";
-
-      await loadMessages();
-
-    } catch (error) {
-
-      showToast(
-        error.message
-      );
-
-    } finally {
 
       messageInput.disabled =
-        false;
+        true;
 
-      messageInput.focus();
+
+      try {
+
+        await api(
+          "/messages",
+          {
+            method: "POST",
+
+            body: JSON.stringify({
+              receiver_id:
+                selectedUser.id,
+
+              message
+            })
+          }
+        );
+
+
+        messageInput.value = "";
+
+        await loadMessages();
+
+      } catch (error) {
+
+        showToast(
+          error.message
+        );
+
+      } finally {
+
+        messageInput.disabled =
+          false;
+
+        messageInput.focus();
+      }
+
     }
-
-  }
-);
+  );
+}
 
 
 // ============================================================
@@ -1072,6 +1393,8 @@ function startMessageRefresh() {
         ) {
 
           await loadMessages();
+
+          ensureCallButtons();
         }
 
       },
@@ -1097,74 +1420,99 @@ function stopMessageRefresh() {
 // REFRESH
 // ============================================================
 
-refreshUsers.addEventListener(
-  "click",
-  loadUsers
-);
+if (refreshUsers) {
+
+  refreshUsers.addEventListener(
+    "click",
+    async () => {
+
+      await loadUsers();
+
+      ensureCallButtons();
+    }
+  );
+}
 
 
-reloadMessages.addEventListener(
-  "click",
-  loadMessages
-);
+if (reloadMessages) {
+
+  reloadMessages.addEventListener(
+    "click",
+    async () => {
+
+      await loadMessages();
+
+      ensureCallButtons();
+    }
+  );
+}
 
 
 // ============================================================
 // LOGOUT
 // ============================================================
 
-logoutBtn.addEventListener(
-  "click",
-  async () => {
+if (logoutBtn) {
 
-    if (peerConnection) {
-      await endCall(false);
-    }
+  logoutBtn.addEventListener(
+    "click",
+    async () => {
+
+      if (peerConnection) {
+        await endCall(false);
+      }
 
 
-    try {
+      try {
 
-      await api(
-        "/logout",
-        {
-          method: "POST"
-        }
+        await api(
+          "/logout",
+          {
+            method: "POST"
+          }
+        );
+
+      } catch {}
+
+
+      stopMessageRefresh();
+
+      stopIncomingCallPolling();
+
+      removeToken();
+
+      currentUser = null;
+      selectedUser = null;
+
+      closeProfile();
+
+      chatScreen.classList.remove(
+        "chat-open"
       );
 
-    } catch {}
+      showAuth();
 
-
-    stopMessageRefresh();
-
-    stopIncomingCallPolling();
-
-    removeToken();
-
-    currentUser = null;
-    selectedUser = null;
-
-    closeProfile();
-
-    chatScreen.classList.remove(
-      "chat-open"
-    );
-
-    showAuth();
-
-    showToast(
-      "Logged out"
-    );
-  }
-);
+      showToast(
+        "Logged out"
+      );
+    }
+  );
+}
 
 
 // ============================================================
 // MOBILE BACK
 // ============================================================
 
-document
-  .querySelector(".chat-area")
-  .addEventListener(
+const chatArea =
+  document.querySelector(
+    ".chat-area"
+  );
+
+
+if (chatArea) {
+
+  chatArea.addEventListener(
     "click",
     event => {
 
@@ -1185,6 +1533,7 @@ document
 
     }
   );
+}
 
 
 // ============================================================
@@ -1243,175 +1592,200 @@ function closeProfile() {
 }
 
 
-myAvatarBtn.addEventListener(
-  "click",
-  openProfile
-);
+if (myAvatarBtn) {
+
+  myAvatarBtn.addEventListener(
+    "click",
+    openProfile
+  );
+}
 
 
-closeProfilePanel.addEventListener(
-  "click",
-  closeProfile
-);
+if (closeProfilePanel) {
+
+  closeProfilePanel.addEventListener(
+    "click",
+    closeProfile
+  );
+}
 
 
-profilePanelBackdrop.addEventListener(
-  "click",
-  closeProfile
-);
+if (profilePanelBackdrop) {
+
+  profilePanelBackdrop.addEventListener(
+    "click",
+    closeProfile
+  );
+}
 
 
-profilePhotoBtn.addEventListener(
-  "click",
-  () => {
+if (profilePhotoBtn) {
 
-    profilePhotoInput.click();
-  }
-);
+  profilePhotoBtn.addEventListener(
+    "click",
+    () => {
+
+      profilePhotoInput.click();
+    }
+  );
+}
 
 
-changeProfilePhoto.addEventListener(
-  "click",
-  () => {
+if (changeProfilePhoto) {
 
-    profilePhotoInput.click();
-  }
-);
+  changeProfilePhoto.addEventListener(
+    "click",
+    () => {
+
+      profilePhotoInput.click();
+    }
+  );
+}
 
 
 // ============================================================
 // PROFILE PHOTO UPLOAD
 // ============================================================
 
-profilePhotoInput.addEventListener(
-  "change",
-  async () => {
+if (profilePhotoInput) {
 
-    const file =
-      profilePhotoInput.files?.[0];
+  profilePhotoInput.addEventListener(
+    "change",
+    async () => {
 
-    if (!file) {
-      return;
-    }
+      const file =
+        profilePhotoInput.files?.[0];
 
-
-    if (
-      !file.type.startsWith(
-        "image/"
-      )
-    ) {
-
-      showToast(
-        "Please select an image"
-      );
-
-      return;
-    }
+      if (!file) {
+        return;
+      }
 
 
-    try {
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
 
-      showToast(
-        "Uploading..."
-      );
+        showToast(
+          "Please select an image"
+        );
+
+        return;
+      }
 
 
-      const imageData =
-        await imageToDataURL(
-          file
+      try {
+
+        showToast(
+          "Uploading..."
         );
 
 
-      const data =
-        await api(
-          "/profile/photo",
+        const imageData =
+          await imageToDataURL(
+            file
+          );
+
+
+        const data =
+          await api(
+            "/profile/photo",
+            {
+              method: "POST",
+
+              body: JSON.stringify({
+                profile_photo:
+                  imageData
+              })
+            }
+          );
+
+
+        currentUser =
+          data.user ||
           {
-            method: "POST",
+            ...currentUser,
+            profile_photo:
+              imageData
+          };
 
-            body: JSON.stringify({
-              profile_photo:
-                imageData
-            })
-          }
+
+        updateProfilePanel();
+
+        renderCurrentChatAvatar();
+
+        await loadUsers();
+
+        ensureCallButtons();
+
+        showToast(
+          "Photo updated"
         );
 
+      } catch (error) {
 
-      currentUser =
-        data.user ||
-        {
-          ...currentUser,
-          profile_photo:
-            imageData
-        };
+        showToast(
+          error.message
+        );
 
+      } finally {
 
-      updateProfilePanel();
+        profilePhotoInput.value =
+          "";
+      }
 
-      renderCurrentChatAvatar();
-
-      await loadUsers();
-
-      showToast(
-        "Photo updated"
-      );
-
-    } catch (error) {
-
-      showToast(
-        error.message
-      );
-
-    } finally {
-
-      profilePhotoInput.value =
-        "";
     }
-
-  }
-);
+  );
+}
 
 
 // ============================================================
 // REMOVE PROFILE PHOTO
 // ============================================================
 
-removeProfilePhoto.addEventListener(
-  "click",
-  async () => {
+if (removeProfilePhoto) {
 
-    try {
+  removeProfilePhoto.addEventListener(
+    "click",
+    async () => {
 
-      await api(
-        "/profile/photo",
-        {
-          method: "DELETE"
-        }
-      );
+      try {
 
-
-      currentUser.profile_photo =
-        null;
+        await api(
+          "/profile/photo",
+          {
+            method: "DELETE"
+          }
+        );
 
 
-      updateProfilePanel();
+        currentUser.profile_photo =
+          null;
 
-      renderCurrentChatAvatar();
 
-      await loadUsers();
+        updateProfilePanel();
 
-      showToast(
-        "Photo removed"
-      );
+        renderCurrentChatAvatar();
 
-    } catch (error) {
+        await loadUsers();
 
-      showToast(
-        error.message
-      );
+        ensureCallButtons();
+
+        showToast(
+          "Photo removed"
+        );
+
+      } catch (error) {
+
+        showToast(
+          error.message
+        );
+      }
+
     }
-
-  }
-);
+  );
+}
 
 
 // ============================================================
@@ -1649,11 +2023,15 @@ function createPeerConnection() {
     new MediaStream();
 
 
-  remoteVideo.srcObject =
-    remoteStream;
+  if (remoteVideo) {
+    remoteVideo.srcObject =
+      remoteStream;
+  }
 
-  remoteAudio.srcObject =
-    remoteStream;
+  if (remoteAudio) {
+    remoteAudio.srcObject =
+      remoteStream;
+  }
 
 
   peerConnection.ontrack =
@@ -1765,7 +2143,7 @@ function createPeerConnection() {
 
       if (
         state ===
-          "connected"
+        "connected"
       ) {
 
         setCallConnected();
@@ -1918,32 +2296,6 @@ async function startCall(
     );
   }
 }
-
-
-// ============================================================
-// CALL BUTTONS
-// ============================================================
-
-voiceCallBtn.addEventListener(
-  "click",
-  () => {
-
-    startCall(
-      "voice"
-    );
-  }
-);
-
-
-videoCallBtn.addEventListener(
-  "click",
-  () => {
-
-    startCall(
-      "video"
-    );
-  }
-);
 
 
 // ============================================================
@@ -2932,9 +3284,7 @@ cameraCallBtn.addEventListener(
 
 
     cameraCallBtn.textContent =
-      isCameraOff
-        ? "▣"
-        : "▣";
+      "▣";
   }
 );
 
@@ -3249,6 +3599,13 @@ async function cleanupCall(
     chatStatus.textContent =
       "Available";
   }
+
+
+  // Restore buttons after call cleanup.
+  setTimeout(
+    ensureCallButtons,
+    0
+  );
 }
 
 
@@ -3376,4 +3733,26 @@ function escapeHTML(value) {
 // START
 // ============================================================
 
+ensureCallButtons();
+
 startApp();
+
+
+// Additional delayed checks.
+// This handles browsers where the chat DOM
+// becomes visible slightly after app startup.
+
+setTimeout(
+  ensureCallButtons,
+  100
+);
+
+setTimeout(
+  ensureCallButtons,
+  500
+);
+
+setTimeout(
+  ensureCallButtons,
+  1500
+);
