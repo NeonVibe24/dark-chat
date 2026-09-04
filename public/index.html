@@ -17,6 +17,247 @@
     href="/style.css"
   >
 
+  <!-- Call Button / Header Layout Fix -->
+  <style>
+    /* =========================================
+       GLOBAL HIDDEN
+    ========================================= */
+
+    .hidden {
+      display: none !important;
+    }
+
+
+    /* =========================================
+       CHAT HEADER
+    ========================================= */
+
+    .chat-header {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 10;
+    }
+
+
+    /* =========================================
+       CHAT USER - LEFT
+    ========================================= */
+
+    .chat-user {
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px;
+      min-width: 0;
+      flex: 1 1 auto;
+      overflow: hidden;
+    }
+
+    .chat-user-info {
+      min-width: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-user-info strong,
+    .chat-user-info span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+
+    /* =========================================
+       CALL BUTTON AREA - RIGHT
+    ========================================= */
+
+    .chat-actions {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+      gap: 4px !important;
+
+      flex: 0 0 auto !important;
+      flex-shrink: 0 !important;
+
+      width: auto;
+      min-width: max-content;
+
+      visibility: visible !important;
+      opacity: 1 !important;
+
+      position: relative;
+      z-index: 50;
+    }
+
+
+    /* =========================================
+       CALL BUTTONS
+    ========================================= */
+
+    .chat-actions .call-btn {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+
+      width: 38px !important;
+      min-width: 38px !important;
+      max-width: 38px !important;
+
+      height: 38px !important;
+      min-height: 38px !important;
+      max-height: 38px !important;
+
+      flex: 0 0 38px !important;
+      flex-shrink: 0 !important;
+
+      visibility: visible !important;
+      opacity: 1 !important;
+
+      position: relative;
+      z-index: 51;
+
+      pointer-events: auto !important;
+
+      box-sizing: border-box;
+    }
+
+
+    /* =========================================
+       REFRESH BUTTON
+    ========================================= */
+
+    .chat-actions .icon-btn {
+      flex: 0 0 auto !important;
+      flex-shrink: 0 !important;
+
+      visibility: visible !important;
+      opacity: 1 !important;
+
+      position: relative;
+      z-index: 51;
+    }
+
+
+    /* =========================================
+       CALL OVERLAYS
+    ========================================= */
+
+    .call-overlay.hidden,
+    .call-screen.hidden,
+    .profile-panel.hidden {
+      display: none !important;
+    }
+
+
+    .call-overlay,
+    .call-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+    }
+
+
+    /* =========================================
+       MOBILE
+    ========================================= */
+
+    @media (max-width: 700px) {
+
+      .chat-header {
+        padding-left: 10px !important;
+        padding-right: 8px !important;
+        gap: 6px;
+      }
+
+
+      .chat-user {
+        gap: 8px;
+      }
+
+
+      .chat-actions {
+        gap: 1px !important;
+      }
+
+
+      .chat-actions .call-btn,
+      .chat-actions .icon-btn {
+        width: 35px !important;
+        min-width: 35px !important;
+        max-width: 35px !important;
+
+        height: 35px !important;
+        min-height: 35px !important;
+        max-height: 35px !important;
+
+        flex: 0 0 35px !important;
+      }
+
+
+      .chat-user-info {
+        max-width: calc(100vw - 180px);
+      }
+
+
+      /*
+        Do not let the mobile back-arrow pseudo
+        element push the call buttons away.
+      */
+      .chat-header::before {
+        flex: 0 0 auto;
+      }
+
+    }
+
+
+    @media (max-width: 390px) {
+
+      .chat-header {
+        padding-left: 7px !important;
+        padding-right: 5px !important;
+        gap: 3px;
+      }
+
+
+      .chat-user {
+        gap: 6px;
+      }
+
+
+      .chat-actions {
+        gap: 0 !important;
+      }
+
+
+      .chat-actions .call-btn,
+      .chat-actions .icon-btn {
+        width: 33px !important;
+        min-width: 33px !important;
+        max-width: 33px !important;
+
+        height: 33px !important;
+        min-height: 33px !important;
+        max-height: 33px !important;
+
+        flex: 0 0 33px !important;
+
+        font-size: 15px !important;
+      }
+
+
+      .chat-user-info {
+        max-width: calc(100vw - 155px);
+      }
+
+    }
+  </style>
+
 </head>
 
 
@@ -287,6 +528,7 @@
         <button
           id="logoutBtn"
           class="icon-btn"
+          type="button"
           title="Logout"
         >
           ⎋
@@ -306,6 +548,7 @@
         <button
           id="refreshUsers"
           class="small-btn"
+          type="button"
           title="Refresh"
         >
           ↻
@@ -369,15 +612,17 @@
       >
 
 
-        <!-- CHAT HEADER -->
+        <!-- =================================================
+             CHAT HEADER
+        ================================================== -->
 
         <header class="chat-header">
 
 
+          <!-- LEFT -->
+
           <div class="chat-user">
 
-
-            <!-- CHAT USER AVATAR -->
 
             <div
               id="chatAvatar"
@@ -387,7 +632,7 @@
             </div>
 
 
-            <div>
+            <div class="chat-user-info">
 
               <strong id="chatUsername">
                 User
@@ -402,39 +647,54 @@
           </div>
 
 
-          <!-- CALL BUTTONS -->
+          <!-- =================================================
+               RIGHT / CALL ACTIONS
+          ================================================== -->
 
-          <div class="chat-actions">
+          <div
+            id="chatActions"
+            class="chat-actions"
+          >
 
+
+            <!-- VOICE CALL -->
 
             <button
               id="voiceCallBtn"
               class="call-btn"
               type="button"
               title="Voice call"
+              aria-label="Voice call"
             >
               ☎
             </button>
 
+
+            <!-- VIDEO CALL -->
 
             <button
               id="videoCallBtn"
               class="call-btn"
               type="button"
               title="Video call"
+              aria-label="Video call"
             >
               ▣
             </button>
 
+
+            <!-- REFRESH -->
 
             <button
               id="reloadMessages"
               class="icon-btn"
               type="button"
               title="Refresh messages"
+              aria-label="Refresh messages"
             >
               ↻
             </button>
+
 
           </div>
 
@@ -442,7 +702,9 @@
 
 
 
-        <!-- MESSAGES -->
+        <!-- =================================================
+             MESSAGES
+        ================================================== -->
 
         <div
           id="messages"
@@ -451,7 +713,9 @@
 
 
 
-        <!-- MESSAGE FORM -->
+        <!-- =================================================
+             MESSAGE FORM
+        ================================================== -->
 
         <form
           id="messageForm"
@@ -475,6 +739,7 @@
           </button>
 
         </form>
+
 
       </div>
 
@@ -582,6 +847,7 @@
 <div
   id="incomingCall"
   class="call-overlay hidden"
+  aria-hidden="true"
 >
 
 
@@ -644,6 +910,7 @@
 <div
   id="callScreen"
   class="call-screen hidden"
+  aria-hidden="true"
 >
 
 
@@ -755,7 +1022,7 @@
   </div>
 
 
-  <!-- LOCAL MEDIA -->
+  <!-- REMOTE AUDIO -->
 
   <audio
     id="remoteAudio"
