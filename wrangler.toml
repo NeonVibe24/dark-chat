@@ -4,4 +4,4 @@ compatibility_date = "2026-03-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "chat-db"
-database_id = "သင့်ရဲ့ D1 Database ပုံထဲက UUID နံပါတ်အရှည်ကြီးကို ဒီမှာထည့်ပါ"
+database_id = "4b86b503-f438-4a45-b5a6-b868a7467eae"
