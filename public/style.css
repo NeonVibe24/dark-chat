@@ -118,6 +118,17 @@ input {
   font-weight: 700;
 }
 
+.brand h1::before {
+  content: "Private Chat";
+  visibility: visible;
+  position: absolute;
+}
+
+.brand h1 {
+  visibility: hidden;
+  position: relative;
+}
+
 .brand p {
   display: none;
 }
