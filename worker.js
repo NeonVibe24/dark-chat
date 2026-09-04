@@ -1,35 +1,76 @@
-const json = (data, status = 200) =>
-  new Response(JSON.stringify(data), {
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
+};
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
     status,
     headers: {
       "Content-Type": "application/json; charset=UTF-8",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
+      ...CORS_HEADERS
     }
   });
+}
 
-const hashPassword = async (password) => {
+function text(data, status = 200) {
+  return new Response(data, {
+    status,
+    headers: {
+      "Content-Type": "text/plain; charset=UTF-8",
+      ...CORS_HEADERS
+    }
+  });
+}
+
+async function hashPassword(password) {
   const data = new TextEncoder().encode(password);
 
-  const hash = await crypto.subtle.digest("SHA-256", data);
+  const hash = await crypto.subtle.digest(
+    "SHA-256",
+    data
+  );
 
   return Array.from(new Uint8Array(hash))
-    .map((b) => b.toString(16).padStart(2, "0"))
+    .map(b => b.toString(16).padStart(2, "0"))
     .join("");
-};
+}
 
-const randomToken = () => {
+function randomToken() {
   const bytes = new Uint8Array(32);
+
   crypto.getRandomValues(bytes);
 
   return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
+    .map(b => b.toString(16).padStart(2, "0"))
     .join("");
-};
+}
+
+
+/* =========================================================
+   DATABASE
+========================================================= */
+
+async function columnExists(db, table, column) {
+  const result = await db
+    .prepare(`PRAGMA table_info(${table})`)
+    .all();
+
+  return (result.results || []).some(
+    item => item.name === column
+  );
+}
+
 
 async function initDatabase(db) {
+
+  /*
+   * Create tables if they do not exist
+   */
+
   await db.batch([
+
     db.prepare(`
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,7 +87,8 @@ async function initDatabase(db) {
         user_id INTEGER NOT NULL,
         token TEXT NOT NULL UNIQUE,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id)
+          REFERENCES users(id)
       )
     `),
 
@@ -57,8 +99,10 @@ async function initDatabase(db) {
         user2_id INTEGER NOT NULL,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user1_id, user2_id),
-        FOREIGN KEY (user1_id) REFERENCES users(id),
-        FOREIGN KEY (user2_id) REFERENCES users(id)
+        FOREIGN KEY (user1_id)
+          REFERENCES users(id),
+        FOREIGN KEY (user2_id)
+          REFERENCES users(id)
       )
     `),
 
@@ -70,33 +114,101 @@ async function initDatabase(db) {
         receiver_id INTEGER NOT NULL,
         message TEXT NOT NULL,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (conversation_id) REFERENCES conversations(id),
-        FOREIGN KEY (sender_id) REFERENCES users(id),
-        FOREIGN KEY (receiver_id) REFERENCES users(id)
+        FOREIGN KEY (conversation_id)
+          REFERENCES conversations(id),
+        FOREIGN KEY (sender_id)
+          REFERENCES users(id),
+        FOREIGN KEY (receiver_id)
+          REFERENCES users(id)
       )
     `)
+
   ]);
+
+
+  /*
+   * Migration for old database
+   */
+
+  if (!(await columnExists(db, "users", "created_at"))) {
+
+    await db.prepare(`
+      ALTER TABLE users
+      ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    `).run();
+
+  }
+
+
+  if (!(await columnExists(db, "sessions", "created_at"))) {
+
+    await db.prepare(`
+      ALTER TABLE sessions
+      ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    `).run();
+
+  }
+
+
+  if (!(await columnExists(db, "conversations", "created_at"))) {
+
+    await db.prepare(`
+      ALTER TABLE conversations
+      ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    `).run();
+
+  }
+
+
+  if (!(await columnExists(db, "messages", "created_at"))) {
+
+    await db.prepare(`
+      ALTER TABLE messages
+      ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    `).run();
+
+  }
 }
 
+
+/* =========================================================
+   AUTH
+========================================================= */
+
 async function getUserFromRequest(request, env) {
-  if (!env.DB) return null;
 
-  const auth = request.headers.get("Authorization");
-
-  if (!auth || !auth.startsWith("Bearer ")) {
+  if (!env.DB) {
     return null;
   }
 
-  const token = auth.substring(7).trim();
+  const authorization =
+    request.headers.get("Authorization");
 
-  if (!token) return null;
+  if (
+    !authorization ||
+    !authorization.startsWith("Bearer ")
+  ) {
+    return null;
+  }
+
+  const token =
+    authorization.substring(7).trim();
+
+  if (!token) {
+    return null;
+  }
 
   const result = await env.DB
     .prepare(`
-      SELECT users.id, users.username, users.email
+      SELECT
+        users.id,
+        users.username,
+        users.email
       FROM sessions
-      JOIN users ON users.id = sessions.user_id
+      INNER JOIN users
+        ON users.id = sessions.user_id
       WHERE sessions.token = ?
+      LIMIT 1
     `)
     .bind(token)
     .first();
@@ -104,66 +216,121 @@ async function getUserFromRequest(request, env) {
   return result || null;
 }
 
-async function getConversation(db, userA, userB) {
-  const a = Math.min(Number(userA), Number(userB));
-  const b = Math.max(Number(userA), Number(userB));
+
+/* =========================================================
+   CONVERSATION
+========================================================= */
+
+async function getConversation(
+  db,
+  userA,
+  userB
+) {
+
+  const a = Math.min(
+    Number(userA),
+    Number(userB)
+  );
+
+  const b = Math.max(
+    Number(userA),
+    Number(userB)
+  );
 
   return await db
     .prepare(`
       SELECT *
       FROM conversations
-      WHERE user1_id = ? AND user2_id = ?
+      WHERE user1_id = ?
+      AND user2_id = ?
+      LIMIT 1
     `)
     .bind(a, b)
     .first();
 }
 
-async function createConversation(db, userA, userB) {
-  const a = Math.min(Number(userA), Number(userB));
-  const b = Math.max(Number(userA), Number(userB));
+
+async function createConversation(
+  db,
+  userA,
+  userB
+) {
+
+  const a = Math.min(
+    Number(userA),
+    Number(userB)
+  );
+
+  const b = Math.max(
+    Number(userA),
+    Number(userB)
+  );
 
   await db
     .prepare(`
-      INSERT OR IGNORE INTO conversations (user1_id, user2_id)
+      INSERT OR IGNORE INTO conversations
+      (
+        user1_id,
+        user2_id
+      )
       VALUES (?, ?)
     `)
     .bind(a, b)
     .run();
 
-  return await getConversation(db, a, b);
+  return await getConversation(
+    db,
+    a,
+    b
+  );
 }
 
+
+/* =========================================================
+   WORKER
+========================================================= */
+
 export default {
+
   async fetch(request, env) {
+
     const url = new URL(request.url);
 
+    /*
+     * CORS
+     */
+
     if (request.method === "OPTIONS") {
+
       return new Response(null, {
         status: 204,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
-        }
+        headers: CORS_HEADERS
       });
+
     }
 
+
     try {
-      /*
-       * HEALTH CHECK
-       */
+
+      /* =====================================================
+         HEALTH
+      ===================================================== */
 
       if (
         url.pathname === "/api/health" &&
         request.method === "GET"
       ) {
+
         if (!env.DB) {
+
           return json({
             success: false,
             database: false,
             service: "dark-chat",
-            error: "D1 database binding 'DB' not found"
+            error:
+              "D1 database binding 'DB' not found"
           }, 500);
+
         }
 
         await initDatabase(env.DB);
@@ -173,66 +340,99 @@ export default {
           database: true,
           service: "dark-chat"
         });
+
       }
 
-      /*
-       * REGISTER
-       */
+
+      /* =====================================================
+         REGISTER
+      ===================================================== */
 
       if (
         url.pathname === "/api/register" &&
         request.method === "POST"
       ) {
+
         if (!env.DB) {
+
           return json({
             success: false,
             error: "Database is not connected"
           }, 500);
+
         }
 
         await initDatabase(env.DB);
 
         const body = await request.json();
 
-        const username = String(body.username || "").trim();
-        const email = String(body.email || "").trim().toLowerCase();
-        const password = String(body.password || "");
+        const username =
+          String(body.username || "").trim();
 
-        if (!username || !email || !password) {
+        const email =
+          String(body.email || "")
+            .trim()
+            .toLowerCase();
+
+        const password =
+          String(body.password || "");
+
+
+        if (
+          !username ||
+          !email ||
+          !password
+        ) {
+
           return json({
             success: false,
-            error: "Username, email and password are required"
+            error:
+              "Username, email and password are required"
           }, 400);
+
         }
+
 
         if (password.length < 6) {
+
           return json({
             success: false,
-            error: "Password must be at least 6 characters"
+            error:
+              "Password must be at least 6 characters"
           }, 400);
+
         }
+
 
         const existing = await env.DB
           .prepare(`
             SELECT id
             FROM users
             WHERE email = ?
+            LIMIT 1
           `)
           .bind(email)
           .first();
 
+
         if (existing) {
+
           return json({
             success: false,
             error: "Email already exists"
           }, 409);
+
         }
 
-        const passwordHash = await hashPassword(password);
+
+        const passwordHash =
+          await hashPassword(password);
+
 
         const result = await env.DB
           .prepare(`
-            INSERT INTO users (
+            INSERT INTO users
+            (
               username,
               email,
               password
@@ -246,81 +446,120 @@ export default {
           )
           .run();
 
+
         return json({
           success: true,
-          user_id: result.meta.last_row_id
+          user_id:
+            result.meta.last_row_id
         });
+
       }
 
-      /*
-       * LOGIN
-       */
+
+      /* =====================================================
+         LOGIN
+      ===================================================== */
 
       if (
         url.pathname === "/api/login" &&
         request.method === "POST"
       ) {
+
         if (!env.DB) {
+
           return json({
             success: false,
             error: "Database is not connected"
           }, 500);
+
         }
 
         await initDatabase(env.DB);
 
         const body = await request.json();
 
-        const email = String(body.email || "")
-          .trim()
-          .toLowerCase();
+        const email =
+          String(body.email || "")
+            .trim()
+            .toLowerCase();
 
-        const password = String(body.password || "");
+        const password =
+          String(body.password || "");
+
 
         if (!email || !password) {
+
           return json({
             success: false,
-            error: "Email and password are required"
+            error:
+              "Email and password are required"
           }, 400);
+
         }
+
 
         const user = await env.DB
           .prepare(`
-            SELECT *
+            SELECT
+              id,
+              username,
+              email,
+              password
             FROM users
             WHERE email = ?
+            LIMIT 1
           `)
           .bind(email)
           .first();
 
+
         if (!user) {
+
           return json({
             success: false,
-            error: "Invalid email or password"
+            error:
+              "Invalid email or password"
           }, 401);
+
         }
 
-        const passwordHash = await hashPassword(password);
 
-        if (user.password !== passwordHash) {
+        const passwordHash =
+          await hashPassword(password);
+
+
+        if (
+          user.password !== passwordHash
+        ) {
+
           return json({
             success: false,
-            error: "Invalid email or password"
+            error:
+              "Invalid email or password"
           }, 401);
+
         }
 
-        const token = randomToken();
+
+        const token =
+          randomToken();
+
 
         await env.DB
           .prepare(`
-            INSERT INTO sessions (
+            INSERT INTO sessions
+            (
               user_id,
               token
             )
             VALUES (?, ?)
           `)
-          .bind(user.id, token)
+          .bind(
+            user.id,
+            token
+          )
           .run();
+
 
         return json({
           success: true,
@@ -331,315 +570,501 @@ export default {
             email: user.email
           }
         });
+
       }
 
-      /*
-       * LOGOUT
-       */
+
+      /* =====================================================
+         LOGOUT
+      ===================================================== */
 
       if (
         url.pathname === "/api/logout" &&
         request.method === "POST"
       ) {
+
         if (!env.DB) {
+
           return json({
-            success: false
+            success: false,
+            error:
+              "Database is not connected"
           }, 500);
+
         }
 
-        const auth = request.headers.get("Authorization");
 
-        if (auth && auth.startsWith("Bearer ")) {
-          const token = auth.substring(7).trim();
+        const authorization =
+          request.headers.get(
+            "Authorization"
+          );
 
-          await env.DB
-            .prepare(`
-              DELETE FROM sessions
-              WHERE token = ?
-            `)
-            .bind(token)
-            .run();
+
+        if (
+          authorization &&
+          authorization.startsWith("Bearer ")
+        ) {
+
+          const token =
+            authorization
+              .substring(7)
+              .trim();
+
+
+          if (token) {
+
+            await env.DB
+              .prepare(`
+                DELETE FROM sessions
+                WHERE token = ?
+              `)
+              .bind(token)
+              .run();
+
+          }
+
         }
+
 
         return json({
           success: true
         });
+
       }
 
-      /*
-       * CURRENT USER
-       */
+
+      /* =====================================================
+         ME
+      ===================================================== */
 
       if (
         url.pathname === "/api/me" &&
         request.method === "GET"
       ) {
-        const user = await getUserFromRequest(request, env);
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "Unauthorized"
           }, 401);
+
         }
+
 
         return json({
           success: true,
           user
         });
+
       }
 
-      /*
-       * USERS
-       */
+
+      /* =====================================================
+         USERS
+      ===================================================== */
 
       if (
         url.pathname === "/api/users" &&
         request.method === "GET"
       ) {
-        const user = await getUserFromRequest(request, env);
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "Unauthorized"
           }, 401);
+
         }
 
-        const users = await env.DB
-          .prepare(`
-            SELECT
-              id,
-              username,
-              email,
-              created_at
-            FROM users
-            WHERE id != ?
-            ORDER BY username COLLATE NOCASE ASC
-          `)
-          .bind(user.id)
-          .all();
+
+        const users =
+          await env.DB
+            .prepare(`
+              SELECT
+                id,
+                username,
+                email,
+                created_at
+              FROM users
+              WHERE id != ?
+              ORDER BY
+                username COLLATE NOCASE ASC
+            `)
+            .bind(user.id)
+            .all();
+
 
         return json({
           success: true,
-          users: users.results || []
+          users:
+            users.results || []
         });
+
       }
 
-      /*
-       * SINGLE USER
-       */
+
+      /* =====================================================
+         SINGLE USER
+      ===================================================== */
 
       if (
-        url.pathname.startsWith("/api/users/") &&
+        url.pathname.startsWith(
+          "/api/users/"
+        ) &&
         request.method === "GET"
       ) {
-        const user = await getUserFromRequest(request, env);
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "Unauthorized"
           }, 401);
+
         }
+
 
         const id = Number(
-          url.pathname.split("/").pop()
+          url.pathname
+            .split("/")
+            .pop()
         );
 
+
         if (!id) {
+
           return json({
             success: false,
-            error: "Invalid user ID"
+            error:
+              "Invalid user ID"
           }, 400);
+
         }
 
-        const target = await env.DB
-          .prepare(`
-            SELECT
-              id,
-              username,
-              email,
-              created_at
-            FROM users
-            WHERE id = ?
-          `)
-          .bind(id)
-          .first();
+
+        const target =
+          await env.DB
+            .prepare(`
+              SELECT
+                id,
+                username,
+                email,
+                created_at
+              FROM users
+              WHERE id = ?
+              LIMIT 1
+            `)
+            .bind(id)
+            .first();
+
 
         if (!target) {
+
           return json({
             success: false,
-            error: "User not found"
+            error:
+              "User not found"
           }, 404);
+
         }
+
 
         return json({
           success: true,
           user: target
         });
+
       }
 
-      /*
-       * CREATE CONVERSATION
-       */
+
+      /* =====================================================
+         CREATE CONVERSATION
+      ===================================================== */
 
       if (
-        url.pathname === "/api/conversations" &&
+        url.pathname ===
+          "/api/conversations" &&
         request.method === "POST"
       ) {
-        const user = await getUserFromRequest(request, env);
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "Unauthorized"
           }, 401);
+
         }
 
-        const body = await request.json();
 
-        const receiverId = Number(body.user_id);
+        const body =
+          await request.json();
 
-        if (!receiverId || receiverId === user.id) {
+
+        const receiverId =
+          Number(body.user_id);
+
+
+        if (
+          !receiverId ||
+          receiverId === user.id
+        ) {
+
           return json({
             success: false,
-            error: "Invalid user ID"
+            error:
+              "Invalid user ID"
           }, 400);
+
         }
 
-        const receiver = await env.DB
-          .prepare(`
-            SELECT id
-            FROM users
-            WHERE id = ?
-          `)
-          .bind(receiverId)
-          .first();
+
+        const receiver =
+          await env.DB
+            .prepare(`
+              SELECT id
+              FROM users
+              WHERE id = ?
+              LIMIT 1
+            `)
+            .bind(receiverId)
+            .first();
+
 
         if (!receiver) {
+
           return json({
             success: false,
-            error: "User not found"
+            error:
+              "User not found"
           }, 404);
+
         }
 
-        const conversation = await createConversation(
-          env.DB,
-          user.id,
-          receiverId
-        );
+
+        const conversation =
+          await createConversation(
+            env.DB,
+            user.id,
+            receiverId
+          );
+
 
         return json({
           success: true,
           conversation
         });
+
       }
 
-      /*
-       * GET CONVERSATIONS
-       */
+
+      /* =====================================================
+         GET CONVERSATIONS
+      ===================================================== */
 
       if (
-        url.pathname === "/api/conversations" &&
+        url.pathname ===
+          "/api/conversations" &&
         request.method === "GET"
       ) {
-        const user = await getUserFromRequest(request, env);
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "Unauthorized"
           }, 401);
+
         }
 
-        const conversations = await env.DB
-          .prepare(`
-            SELECT
-              c.id,
-              c.created_at,
-              CASE
-                WHEN c.user1_id = ? THEN c.user2_id
-                ELSE c.user1_id
-              END AS other_user_id
-            FROM conversations c
-            WHERE c.user1_id = ? OR c.user2_id = ?
-            ORDER BY c.id DESC
-          `)
-          .bind(
-            user.id,
-            user.id,
-            user.id
-          )
-          .all();
+
+        const conversations =
+          await env.DB
+            .prepare(`
+              SELECT
+                c.id,
+                c.created_at,
+
+                CASE
+                  WHEN c.user1_id = ?
+                  THEN c.user2_id
+                  ELSE c.user1_id
+                END AS other_user_id
+
+              FROM conversations c
+
+              WHERE
+                c.user1_id = ?
+                OR c.user2_id = ?
+
+              ORDER BY c.id DESC
+            `)
+            .bind(
+              user.id,
+              user.id,
+              user.id
+            )
+            .all();
+
 
         return json({
           success: true,
-          conversations: conversations.results || []
+          conversations:
+            conversations.results || []
         });
+
       }
 
-      /*
-       * SEND MESSAGE
-       */
+
+      /* =====================================================
+         SEND MESSAGE
+      ===================================================== */
 
       if (
         url.pathname === "/api/messages" &&
         request.method === "POST"
       ) {
-        const user = await getUserFromRequest(request, env);
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "Unauthorized"
           }, 401);
+
         }
 
-        const body = await request.json();
 
-        const receiverId = Number(body.receiver_id);
-        const message = String(body.message || "").trim();
+        const body =
+          await request.json();
 
-        if (!receiverId || !message) {
+
+        const receiverId =
+          Number(body.receiver_id);
+
+
+        const message =
+          String(body.message || "")
+            .trim();
+
+
+        if (
+          !receiverId ||
+          !message
+        ) {
+
           return json({
             success: false,
-            error: "Receiver and message are required"
+            error:
+              "Receiver and message are required"
           }, 400);
+
         }
 
-        if (receiverId === user.id) {
+
+        if (
+          receiverId === user.id
+        ) {
+
           return json({
             success: false,
-            error: "You cannot message yourself"
+            error:
+              "You cannot message yourself"
           }, 400);
+
         }
 
-        const receiver = await env.DB
-          .prepare(`
-            SELECT id
-            FROM users
-            WHERE id = ?
-          `)
-          .bind(receiverId)
-          .first();
+
+        const receiver =
+          await env.DB
+            .prepare(`
+              SELECT id
+              FROM users
+              WHERE id = ?
+              LIMIT 1
+            `)
+            .bind(receiverId)
+            .first();
+
 
         if (!receiver) {
+
           return json({
             success: false,
-            error: "Receiver not found"
+            error:
+              "Receiver not found"
           }, 404);
+
         }
 
-        const conversation = await createConversation(
-          env.DB,
-          user.id,
-          receiverId
-        );
+
+        const conversation =
+          await createConversation(
+            env.DB,
+            user.id,
+            receiverId
+          );
+
+
+        if (!conversation) {
+
+          return json({
+            success: false,
+            error:
+              "Could not create conversation"
+          }, 500);
+
+        }
+
 
         await env.DB
           .prepare(`
-            INSERT INTO messages (
+            INSERT INTO messages
+            (
               conversation_id,
               sender_id,
               receiver_id,
@@ -655,154 +1080,229 @@ export default {
           )
           .run();
 
+
         return json({
           success: true
         });
+
       }
 
-      /*
-       * GET MESSAGES
-       */
+
+      /* =====================================================
+         GET MESSAGES
+      ===================================================== */
 
       if (
         url.pathname === "/api/messages" &&
         request.method === "GET"
       ) {
-        const user = await getUserFromRequest(request, env);
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "Unauthorized"
           }, 401);
+
         }
 
-        const otherUserId = Number(
-          url.searchParams.get("user_id")
-        );
+
+        const otherUserId =
+          Number(
+            url.searchParams.get(
+              "user_id"
+            )
+          );
+
 
         if (!otherUserId) {
+
           return json({
             success: false,
-            error: "user_id is required"
+            error:
+              "user_id is required"
           }, 400);
+
         }
 
-        const conversation = await getConversation(
-          env.DB,
-          user.id,
-          otherUserId
-        );
+
+        const conversation =
+          await getConversation(
+            env.DB,
+            user.id,
+            otherUserId
+          );
+
 
         if (!conversation) {
+
           return json({
             success: true,
             messages: []
           });
+
         }
 
-        const messages = await env.DB
-          .prepare(`
-            SELECT
-              id,
-              conversation_id,
-              sender_id,
-              receiver_id,
-              message,
-              created_at
-            FROM messages
-            WHERE conversation_id = ?
-            ORDER BY id ASC
-          `)
-          .bind(conversation.id)
-          .all();
+
+        const messages =
+          await env.DB
+            .prepare(`
+              SELECT
+                id,
+                conversation_id,
+                sender_id,
+                receiver_id,
+                message,
+                created_at
+              FROM messages
+              WHERE conversation_id = ?
+              ORDER BY id ASC
+            `)
+            .bind(
+              conversation.id
+            )
+            .all();
+
 
         return json({
           success: true,
-          messages: messages.results || []
+          messages:
+            messages.results || []
         });
+
       }
 
-      /*
-       * DELETE MESSAGE
-       */
+
+      /* =====================================================
+         DELETE MESSAGE
+      ===================================================== */
 
       if (
-        url.pathname.startsWith("/api/messages/") &&
+        url.pathname.startsWith(
+          "/api/messages/"
+        ) &&
         request.method === "DELETE"
       ) {
-        const user = await getUserFromRequest(request, env);
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "Unauthorized"
           }, 401);
+
         }
+
 
         const id = Number(
-          url.pathname.split("/").pop()
+          url.pathname
+            .split("/")
+            .pop()
         );
 
+
         if (!id) {
+
           return json({
             success: false,
-            error: "Invalid message ID"
+            error:
+              "Invalid message ID"
           }, 400);
+
         }
 
-        const result = await env.DB
-          .prepare(`
-            DELETE FROM messages
-            WHERE id = ?
-            AND sender_id = ?
-          `)
-          .bind(id, user.id)
-          .run();
+
+        const result =
+          await env.DB
+            .prepare(`
+              DELETE FROM messages
+              WHERE id = ?
+              AND sender_id = ?
+            `)
+            .bind(
+              id,
+              user.id
+            )
+            .run();
+
 
         return json({
           success: true,
-          deleted: result.meta.changes > 0
+          deleted:
+            result.meta.changes > 0
         });
+
       }
 
-      /*
-       * API NOT FOUND
-       */
 
-      if (url.pathname.startsWith("/api/")) {
+      /* =====================================================
+         UNKNOWN API
+      ===================================================== */
+
+      if (
+        url.pathname.startsWith("/api/")
+      ) {
+
         return json({
           success: false,
-          error: "API endpoint not found",
-          path: url.pathname
+          error:
+            "API endpoint not found",
+          path:
+            url.pathname
         }, 404);
+
       }
 
-      /*
-       * FRONTEND
-       */
+
+      /* =====================================================
+         FRONTEND
+      ===================================================== */
 
       if (env.ASSETS) {
-        return env.ASSETS.fetch(request);
+
+        return env.ASSETS.fetch(
+          request
+        );
+
       }
 
-      return new Response(
-        "Dark Chat Worker is running!",
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "text/plain; charset=UTF-8"
-          }
-        }
+
+      return text(
+        "Dark Chat Worker is running!"
       );
 
+
     } catch (error) {
-      console.error(error);
+
+      console.error(
+        "Dark Chat Error:",
+        error
+      );
+
 
       return json({
         success: false,
-        error: error.message || "Internal Server Error"
+        error:
+          error?.message ||
+          "Internal Server Error"
       }, 500);
+
     }
+
   }
+
 };
