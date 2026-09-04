@@ -7,9 +7,18 @@ export async function onRequest(context) {
   const targetPath = url.pathname.replace(/^\/api/, '');
   const targetUrl = `${SUPABASE_URL}${targetPath}${url.search}`;
 
+  // Headers အသစ်ဆောက်လုပ်ခြင်း (Cloudflare Host အစား Supabase Host ကို သုံးရန်)
+  const newHeaders = new Headers(request.headers);
+  newHeaders.set("Host", "arrhyuolxiqayvibstid.supabase.co");
+  
+  // လိုအပ်ပါက origin ကိုပါ ပြင်ဆင်ခြင်း
+  if (newHeaders.has("Origin")) {
+    newHeaders.set("Origin", SUPABASE_URL);
+  }
+
   const modifiedRequest = new Request(targetUrl, {
     method: request.method,
-    headers: request.headers,
+    headers: newHeaders,
     body: request.method !== "GET" && request.method !== "HEAD" ? await request.clone().arrayBuffer() : undefined,
     redirect: "follow"
   });
@@ -17,18 +26,6 @@ export async function onRequest(context) {
   try {
     const response = await fetch(modifiedRequest);
     
-    // Response body အလွတ်ဖြစ်နေရင် (ဥပမာ 204 No Content) JSON parse လုပ်လို့ error တက်တာကို ကာကွယ်ရန်
-    const clonedResponse = response.clone();
-    const text = await clonedResponse.text();
-    
-    if (!text) {
-      return new Response(null, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers
-      });
-    }
-
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
