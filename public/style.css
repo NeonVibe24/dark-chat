@@ -713,7 +713,7 @@ button {
 
   color: #e5e8ee !important;
 
-  font-size: 19px !important;
+  font-size: 18px !important;
 
   line-height: 1 !important;
 
@@ -747,45 +747,6 @@ button {
 }
 
 
-/* FORCE BUTTON CONTENT */
-
-#voiceCallBtn::after {
-  content: "☎";
-
-  display: block;
-
-  font-size: 19px;
-
-  line-height: 1;
-
-  color: #e5e8ee;
-
-  pointer-events: none;
-}
-
-#videoCallBtn::after {
-  content: "▣";
-
-  display: block;
-
-  font-size: 19px;
-
-  line-height: 1;
-
-  color: #e5e8ee;
-
-  pointer-events: none;
-}
-
-
-/* HIDE ORIGINAL TEXT/Glyph */
-
-#voiceCallBtn,
-#videoCallBtn {
-  font-size: 0 !important;
-}
-
-
 /* HOVER */
 
 .chat-actions .call-btn:hover,
@@ -801,11 +762,6 @@ button {
     0 4px 15px rgba(124,92,255,.16);
 
   transform: translateY(-1px);
-}
-
-#voiceCallBtn:hover::after,
-#videoCallBtn:hover::after {
-  color: #a995ff;
 }
 
 
@@ -1937,24 +1893,13 @@ button {
 
     color: #e5e8ee !important;
 
-    font-size: 0 !important;
+    font-size: 16px !important;
 
     visibility: visible !important;
 
     opacity: 1 !important;
 
     pointer-events: auto !important;
-  }
-
-  #voiceCallBtn::after,
-  #videoCallBtn::after {
-    font-size: 16px !important;
-
-    line-height: 1 !important;
-
-    display: block !important;
-
-    color: #e5e8ee !important;
   }
 
   .chat-actions .icon-btn,
@@ -2163,11 +2108,6 @@ button {
     max-height: 32px !important;
 
     flex: 0 0 32px !important;
-  }
-
-  #voiceCallBtn::after,
-  #videoCallBtn::after {
-    font-size: 15px !important;
   }
 
   .local-video {
