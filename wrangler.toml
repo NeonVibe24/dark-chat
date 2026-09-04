@@ -17,6 +17,7 @@ head_sampling_rate = 1
 persist = true
 
 
+
 [[d1_databases]]
 binding = "DB"
 database_name = "chat-db"
