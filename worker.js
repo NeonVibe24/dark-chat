@@ -24,6 +24,11 @@ function text(data, status = 200) {
   });
 }
 
+
+/* =========================================================
+   PASSWORD HASH
+========================================================= */
+
 async function hashPassword(password) {
   const data = new TextEncoder().encode(password);
 
@@ -37,6 +42,11 @@ async function hashPassword(password) {
     .join("");
 }
 
+
+/* =========================================================
+   TOKEN
+========================================================= */
+
 function randomToken() {
   const bytes = new Uint8Array(32);
 
@@ -49,25 +59,10 @@ function randomToken() {
 
 
 /* =========================================================
-   DATABASE
+   DATABASE INITIALIZATION
 ========================================================= */
 
-async function columnExists(db, table, column) {
-  const result = await db
-    .prepare(`PRAGMA table_info(${table})`)
-    .all();
-
-  return (result.results || []).some(
-    item => item.name === column
-  );
-}
-
-
 async function initDatabase(db) {
-
-  /*
-   * Create tables if they do not exist
-   */
 
   await db.batch([
 
@@ -76,8 +71,7 @@ async function initDatabase(db) {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        password TEXT NOT NULL
       )
     `),
 
@@ -86,7 +80,6 @@ async function initDatabase(db) {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         token TEXT NOT NULL UNIQUE,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id)
           REFERENCES users(id)
       )
@@ -97,7 +90,6 @@ async function initDatabase(db) {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user1_id INTEGER NOT NULL,
         user2_id INTEGER NOT NULL,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user1_id, user2_id),
         FOREIGN KEY (user1_id)
           REFERENCES users(id),
@@ -113,7 +105,6 @@ async function initDatabase(db) {
         sender_id INTEGER NOT NULL,
         receiver_id INTEGER NOT NULL,
         message TEXT NOT NULL,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (conversation_id)
           REFERENCES conversations(id),
         FOREIGN KEY (sender_id)
@@ -125,54 +116,11 @@ async function initDatabase(db) {
 
   ]);
 
-
-  /*
-   * Migration for old database
-   */
-
-  if (!(await columnExists(db, "users", "created_at"))) {
-
-    await db.prepare(`
-      ALTER TABLE users
-      ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    `).run();
-
-  }
-
-
-  if (!(await columnExists(db, "sessions", "created_at"))) {
-
-    await db.prepare(`
-      ALTER TABLE sessions
-      ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    `).run();
-
-  }
-
-
-  if (!(await columnExists(db, "conversations", "created_at"))) {
-
-    await db.prepare(`
-      ALTER TABLE conversations
-      ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    `).run();
-
-  }
-
-
-  if (!(await columnExists(db, "messages", "created_at"))) {
-
-    await db.prepare(`
-      ALTER TABLE messages
-      ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    `).run();
-
-  }
 }
 
 
 /* =========================================================
-   AUTH
+   AUTH USER
 ========================================================= */
 
 async function getUserFromRequest(request, env) {
@@ -181,39 +129,40 @@ async function getUserFromRequest(request, env) {
     return null;
   }
 
-  const authorization =
+  const auth =
     request.headers.get("Authorization");
 
   if (
-    !authorization ||
-    !authorization.startsWith("Bearer ")
+    !auth ||
+    !auth.startsWith("Bearer ")
   ) {
     return null;
   }
 
   const token =
-    authorization.substring(7).trim();
+    auth.substring(7).trim();
 
   if (!token) {
     return null;
   }
 
-  const result = await env.DB
-    .prepare(`
-      SELECT
-        users.id,
-        users.username,
-        users.email
-      FROM sessions
-      INNER JOIN users
-        ON users.id = sessions.user_id
-      WHERE sessions.token = ?
-      LIMIT 1
-    `)
-    .bind(token)
-    .first();
+  const user =
+    await env.DB
+      .prepare(`
+        SELECT
+          users.id,
+          users.username,
+          users.email
+        FROM sessions
+        INNER JOIN users
+          ON users.id = sessions.user_id
+        WHERE sessions.token = ?
+        LIMIT 1
+      `)
+      .bind(token)
+      .first();
 
-  return result || null;
+  return user || null;
 }
 
 
@@ -239,7 +188,10 @@ async function getConversation(
 
   return await db
     .prepare(`
-      SELECT *
+      SELECT
+        id,
+        user1_id,
+        user2_id
       FROM conversations
       WHERE user1_id = ?
       AND user2_id = ?
@@ -294,11 +246,13 @@ export default {
 
   async fetch(request, env) {
 
-    const url = new URL(request.url);
+    const url =
+      new URL(request.url);
 
-    /*
-     * CORS
-     */
+
+    /* =====================================================
+       CORS
+    ===================================================== */
 
     if (request.method === "OPTIONS") {
 
@@ -312,9 +266,9 @@ export default {
 
     try {
 
-      /* =====================================================
-         HEALTH
-      ===================================================== */
+      /* ===================================================
+         HEALTH CHECK
+      =================================================== */
 
       if (
         url.pathname === "/api/health" &&
@@ -328,7 +282,7 @@ export default {
             database: false,
             service: "dark-chat",
             error:
-              "D1 database binding 'DB' not found"
+              "D1 binding DB not found"
           }, 500);
 
         }
@@ -344,9 +298,9 @@ export default {
       }
 
 
-      /* =====================================================
+      /* ===================================================
          REGISTER
-      ===================================================== */
+      =================================================== */
 
       if (
         url.pathname === "/api/register" &&
@@ -357,25 +311,33 @@ export default {
 
           return json({
             success: false,
-            error: "Database is not connected"
+            error:
+              "Database is not connected"
           }, 500);
 
         }
 
         await initDatabase(env.DB);
 
-        const body = await request.json();
+        const body =
+          await request.json();
 
         const username =
-          String(body.username || "").trim();
+          String(
+            body.username || ""
+          ).trim();
 
         const email =
-          String(body.email || "")
-            .trim()
-            .toLowerCase();
+          String(
+            body.email || ""
+          )
+          .trim()
+          .toLowerCase();
 
         const password =
-          String(body.password || "");
+          String(
+            body.password || ""
+          );
 
 
         if (
@@ -404,47 +366,52 @@ export default {
         }
 
 
-        const existing = await env.DB
-          .prepare(`
-            SELECT id
-            FROM users
-            WHERE email = ?
-            LIMIT 1
-          `)
-          .bind(email)
-          .first();
+        const existing =
+          await env.DB
+            .prepare(`
+              SELECT id
+              FROM users
+              WHERE email = ?
+              LIMIT 1
+            `)
+            .bind(email)
+            .first();
 
 
         if (existing) {
 
           return json({
             success: false,
-            error: "Email already exists"
+            error:
+              "Email already exists"
           }, 409);
 
         }
 
 
         const passwordHash =
-          await hashPassword(password);
+          await hashPassword(
+            password
+          );
 
 
-        const result = await env.DB
-          .prepare(`
-            INSERT INTO users
-            (
+        const result =
+          await env.DB
+            .prepare(`
+              INSERT INTO users
+              (
+                username,
+                email,
+                password
+              )
+              VALUES (?, ?, ?)
+            `)
+            .bind(
               username,
               email,
-              password
+              passwordHash
             )
-            VALUES (?, ?, ?)
-          `)
-          .bind(
-            username,
-            email,
-            passwordHash
-          )
-          .run();
+            .run();
 
 
         return json({
@@ -456,9 +423,9 @@ export default {
       }
 
 
-      /* =====================================================
+      /* ===================================================
          LOGIN
-      ===================================================== */
+      =================================================== */
 
       if (
         url.pathname === "/api/login" &&
@@ -469,22 +436,28 @@ export default {
 
           return json({
             success: false,
-            error: "Database is not connected"
+            error:
+              "Database is not connected"
           }, 500);
 
         }
 
         await initDatabase(env.DB);
 
-        const body = await request.json();
+        const body =
+          await request.json();
 
         const email =
-          String(body.email || "")
-            .trim()
-            .toLowerCase();
+          String(
+            body.email || ""
+          )
+          .trim()
+          .toLowerCase();
 
         const password =
-          String(body.password || "");
+          String(
+            body.password || ""
+          );
 
 
         if (!email || !password) {
@@ -498,19 +471,20 @@ export default {
         }
 
 
-        const user = await env.DB
-          .prepare(`
-            SELECT
-              id,
-              username,
-              email,
-              password
-            FROM users
-            WHERE email = ?
-            LIMIT 1
-          `)
-          .bind(email)
-          .first();
+        const user =
+          await env.DB
+            .prepare(`
+              SELECT
+                id,
+                username,
+                email,
+                password
+              FROM users
+              WHERE email = ?
+              LIMIT 1
+            `)
+            .bind(email)
+            .first();
 
 
         if (!user) {
@@ -525,11 +499,14 @@ export default {
 
 
         const passwordHash =
-          await hashPassword(password);
+          await hashPassword(
+            password
+          );
 
 
         if (
-          user.password !== passwordHash
+          user.password !==
+          passwordHash
         ) {
 
           return json({
@@ -574,9 +551,9 @@ export default {
       }
 
 
-      /* =====================================================
+      /* ===================================================
          LOGOUT
-      ===================================================== */
+      =================================================== */
 
       if (
         url.pathname === "/api/logout" &&
@@ -594,21 +571,19 @@ export default {
         }
 
 
-        const authorization =
+        const auth =
           request.headers.get(
             "Authorization"
           );
 
 
         if (
-          authorization &&
-          authorization.startsWith("Bearer ")
+          auth &&
+          auth.startsWith("Bearer ")
         ) {
 
           const token =
-            authorization
-              .substring(7)
-              .trim();
+            auth.substring(7).trim();
 
 
           if (token) {
@@ -633,9 +608,9 @@ export default {
       }
 
 
-      /* =====================================================
-         ME
-      ===================================================== */
+      /* ===================================================
+         CURRENT USER
+      =================================================== */
 
       if (
         url.pathname === "/api/me" &&
@@ -653,7 +628,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -667,9 +643,9 @@ export default {
       }
 
 
-      /* =====================================================
-         USERS
-      ===================================================== */
+      /* ===================================================
+         USER LIST
+      =================================================== */
 
       if (
         url.pathname === "/api/users" &&
@@ -687,7 +663,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -699,8 +676,7 @@ export default {
               SELECT
                 id,
                 username,
-                email,
-                created_at
+                email
               FROM users
               WHERE id != ?
               ORDER BY
@@ -719,9 +695,9 @@ export default {
       }
 
 
-      /* =====================================================
+      /* ===================================================
          SINGLE USER
-      ===================================================== */
+      =================================================== */
 
       if (
         url.pathname.startsWith(
@@ -741,17 +717,19 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
 
 
-        const id = Number(
-          url.pathname
-            .split("/")
-            .pop()
-        );
+        const id =
+          Number(
+            url.pathname
+              .split("/")
+              .pop()
+          );
 
 
         if (!id) {
@@ -771,8 +749,7 @@ export default {
               SELECT
                 id,
                 username,
-                email,
-                created_at
+                email
               FROM users
               WHERE id = ?
               LIMIT 1
@@ -800,9 +777,9 @@ export default {
       }
 
 
-      /* =====================================================
+      /* ===================================================
          CREATE CONVERSATION
-      ===================================================== */
+      =================================================== */
 
       if (
         url.pathname ===
@@ -821,7 +798,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -888,9 +866,9 @@ export default {
       }
 
 
-      /* =====================================================
+      /* ===================================================
          GET CONVERSATIONS
-      ===================================================== */
+      =================================================== */
 
       if (
         url.pathname ===
@@ -909,7 +887,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -919,25 +898,16 @@ export default {
           await env.DB
             .prepare(`
               SELECT
-                c.id,
-                c.created_at,
-
-                CASE
-                  WHEN c.user1_id = ?
-                  THEN c.user2_id
-                  ELSE c.user1_id
-                END AS other_user_id
-
-              FROM conversations c
-
+                id,
+                user1_id,
+                user2_id
+              FROM conversations
               WHERE
-                c.user1_id = ?
-                OR c.user2_id = ?
-
-              ORDER BY c.id DESC
+                user1_id = ?
+                OR user2_id = ?
+              ORDER BY id DESC
             `)
             .bind(
-              user.id,
               user.id,
               user.id
             )
@@ -953,9 +923,9 @@ export default {
       }
 
 
-      /* =====================================================
+      /* ===================================================
          SEND MESSAGE
-      ===================================================== */
+      =================================================== */
 
       if (
         url.pathname === "/api/messages" &&
@@ -973,7 +943,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -984,12 +955,15 @@ export default {
 
 
         const receiverId =
-          Number(body.receiver_id);
+          Number(
+            body.receiver_id
+          );
 
 
         const message =
-          String(body.message || "")
-            .trim();
+          String(
+            body.message || ""
+          ).trim();
 
 
         if (
@@ -1088,9 +1062,9 @@ export default {
       }
 
 
-      /* =====================================================
+      /* ===================================================
          GET MESSAGES
-      ===================================================== */
+      =================================================== */
 
       if (
         url.pathname === "/api/messages" &&
@@ -1108,7 +1082,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -1159,8 +1134,7 @@ export default {
                 conversation_id,
                 sender_id,
                 receiver_id,
-                message,
-                created_at
+                message
               FROM messages
               WHERE conversation_id = ?
               ORDER BY id ASC
@@ -1180,9 +1154,9 @@ export default {
       }
 
 
-      /* =====================================================
+      /* ===================================================
          DELETE MESSAGE
-      ===================================================== */
+      =================================================== */
 
       if (
         url.pathname.startsWith(
@@ -1202,17 +1176,19 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
 
 
-        const id = Number(
-          url.pathname
-            .split("/")
-            .pop()
-        );
+        const id =
+          Number(
+            url.pathname
+              .split("/")
+              .pop()
+          );
 
 
         if (!id) {
@@ -1249,9 +1225,9 @@ export default {
       }
 
 
-      /* =====================================================
+      /* ===================================================
          UNKNOWN API
-      ===================================================== */
+      =================================================== */
 
       if (
         url.pathname.startsWith("/api/")
@@ -1268,9 +1244,9 @@ export default {
       }
 
 
-      /* =====================================================
+      /* ===================================================
          FRONTEND
-      ===================================================== */
+      =================================================== */
 
       if (env.ASSETS) {
 
