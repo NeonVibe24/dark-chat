@@ -2,60 +2,92 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // D1 Table အလိုအလျောက် ဖန်တီးပေးခြင်း
-    await env.DB.prepare(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        email TEXT UNIQUE,
-        password TEXT
-      )
-    `).run();
+    // ဇယား အလိုအလျောက် ဆောက်ပေးရန်
+    try {
+      await env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT,
+          email TEXT UNIQUE,
+          password TEXT
+        )
+      `).run();
+    } catch (e) {}
 
     if (request.method === "POST" && url.pathname === "/api/register") {
       try {
-        const { username, email, password } = await request.json();
+        const body = await request.json();
+        const username = body.username;
+        const email = body.email;
+        const password = body.password;
+
         if (!username || !email || !password) {
-          return Response.json({ error: "All fields are required" }, { status: 400 });
+          return new Response(JSON.stringify({ error: "All fields are required" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" }
+          });
         }
         
         await env.DB.prepare(
           "INSERT INTO users (username, email, password) VALUES (?, ?, ?)"
         ).bind(username, email, password).run();
 
-        return Response.json({ success: true });
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
       } catch (err) {
-        return Response.json({ error: "Email already exists or invalid data" }, { status: 400 });
+        return new Response(JSON.stringify({ error: "Email already exists or invalid data" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
       }
     }
 
     if (request.method === "POST" && url.pathname === "/api/login") {
       try {
-        const { email, password } = await request.json();
+        const body = await request.json();
+        const email = body.email;
+        const password = body.password;
+
         const user = await env.DB.prepare(
           "SELECT id, username, email FROM users WHERE email = ? AND password = ?"
         ).bind(email, password).first();
 
         if (!user) {
-          return Response.json({ error: "Invalid email or password" }, { status: 401 });
+          return new Response(JSON.stringify({ error: "Invalid email or password" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" }
+          });
         }
 
-        return Response.json({ success: true, user });
+        return new Response(JSON.stringify({ success: true, user }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
       } catch (err) {
-        return Response.json({ error: err.message }, { status: 500 });
+        return new Response(JSON.stringify({ error: err.message }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
       }
     }
 
     if (request.method === "GET" && url.pathname === "/api/users") {
       try {
         const { results } = await env.DB.prepare("SELECT username, email FROM users").all();
-        return Response.json({ users: results });
-      } else {
-        return Response.json({ error: "Failed to fetch users" }, { status: 500 });
+        return new Response(JSON.stringify({ users: results }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: "Failed to fetch users" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
       }
     }
 
-    // Static Asset တွေအတွက် Cloudflare Pages ကို ပြန်လွှဲပေးရန်
     return env.ASSETS.fetch(request);
   }
 };
