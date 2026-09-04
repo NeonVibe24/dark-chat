@@ -1,46 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>Dark Chat</title>
 
-  <link rel="stylesheet" href="/style.css">
+  <link
+    rel="stylesheet"
+    href="/style.css"
+  >
+
 </head>
+
 
 <body>
 
 <div id="app">
 
-  <!-- LOGIN / REGISTER -->
 
-  <section id="authScreen" class="auth-screen">
+  <!-- =====================================================
+       AUTH
+  ====================================================== -->
+
+  <section
+    id="authScreen"
+    class="auth-screen"
+  >
 
     <div class="auth-card">
 
+
       <div class="brand">
-        <div class="brand-icon">D</div>
+
+        <div class="brand-icon">
+          D
+        </div>
 
         <div>
-          <h1>Dark Chat</h1>
-          <p>Private messaging</p>
+
+          <h1>
+            Dark Chat
+          </h1>
+
+          <p>
+            Private messaging
+          </p>
+
         </div>
+
       </div>
+
 
       <!-- LOGIN -->
 
       <form id="loginForm">
 
-        <h2>Welcome back</h2>
+        <h2>
+          Welcome back
+        </h2>
 
         <p class="auth-subtitle">
           Sign in to continue
         </p>
 
+
         <div class="field">
 
-          <label>Email</label>
+          <label>
+            Email
+          </label>
 
           <input
             id="loginEmail"
@@ -52,9 +87,12 @@
 
         </div>
 
+
         <div class="field">
 
-          <label>Password</label>
+          <label>
+            Password
+          </label>
 
           <input
             id="loginPassword"
@@ -66,11 +104,20 @@
 
         </div>
 
-        <button class="primary-btn" type="submit">
+
+        <button
+          class="primary-btn"
+          type="submit"
+        >
           Sign In
         </button>
 
-        <div id="loginError" class="error"></div>
+
+        <div
+          id="loginError"
+          class="error"
+        ></div>
+
 
         <button
           type="button"
@@ -85,17 +132,25 @@
 
       <!-- REGISTER -->
 
-      <form id="registerForm" class="hidden">
+      <form
+        id="registerForm"
+        class="hidden"
+      >
 
-        <h2>Create account</h2>
+        <h2>
+          Create account
+        </h2>
 
         <p class="auth-subtitle">
           Join Dark Chat
         </p>
 
+
         <div class="field">
 
-          <label>Username</label>
+          <label>
+            Username
+          </label>
 
           <input
             id="registerUsername"
@@ -107,9 +162,12 @@
 
         </div>
 
+
         <div class="field">
 
-          <label>Email</label>
+          <label>
+            Email
+          </label>
 
           <input
             id="registerEmail"
@@ -121,9 +179,12 @@
 
         </div>
 
+
         <div class="field">
 
-          <label>Password</label>
+          <label>
+            Password
+          </label>
 
           <input
             id="registerPassword"
@@ -135,11 +196,20 @@
 
         </div>
 
-        <button class="primary-btn" type="submit">
+
+        <button
+          class="primary-btn"
+          type="submit"
+        >
           Create Account
         </button>
 
-        <div id="registerError" class="error"></div>
+
+        <div
+          id="registerError"
+          class="error"
+        ></div>
+
 
         <button
           type="button"
@@ -156,21 +226,48 @@
   </section>
 
 
-  <!-- CHAT APP -->
 
-  <section id="chatScreen" class="chat-screen hidden">
+  <!-- =====================================================
+       CHAT APP
+  ====================================================== -->
 
-    <!-- SIDEBAR -->
+  <section
+    id="chatScreen"
+    class="chat-screen hidden"
+  >
+
+
+    <!-- ===================================================
+         SIDEBAR
+    ==================================================== -->
 
     <aside class="sidebar">
 
+
       <div class="sidebar-header">
+
 
         <div class="profile">
 
-          <div id="myAvatar" class="avatar">
-            D
-          </div>
+
+          <!-- MY PROFILE PHOTO -->
+
+          <button
+            id="myAvatarBtn"
+            class="avatar-button"
+            type="button"
+            title="Profile"
+          >
+
+            <div
+              id="myAvatar"
+              class="avatar"
+            >
+              D
+            </div>
+
+          </button>
+
 
           <div class="profile-info">
 
@@ -178,11 +275,14 @@
               User
             </strong>
 
-            <span>Online</span>
+            <span>
+              Online
+            </span>
 
           </div>
 
         </div>
+
 
         <button
           id="logoutBtn"
@@ -195,8 +295,13 @@
       </div>
 
 
+      <!-- USER LIST -->
+
       <div class="sidebar-title">
-        <span>Messages</span>
+
+        <span>
+          Messages
+        </span>
 
         <button
           id="refreshUsers"
@@ -205,10 +310,14 @@
         >
           ↻
         </button>
+
       </div>
 
 
-      <div id="usersList" class="users-list">
+      <div
+        id="usersList"
+        class="users-list"
+      >
 
         <div class="loading">
           Loading users...
@@ -219,11 +328,15 @@
     </aside>
 
 
-    <!-- CHAT AREA -->
+
+    <!-- ===================================================
+         CHAT AREA
+    ==================================================== -->
 
     <main class="chat-area">
 
-      <!-- EMPTY -->
+
+      <!-- EMPTY CHAT -->
 
       <div
         id="emptyChat"
@@ -234,7 +347,9 @@
           ◇
         </div>
 
-        <h2>Select a conversation</h2>
+        <h2>
+          Select a conversation
+        </h2>
 
         <p>
           Choose someone from the list to start chatting.
@@ -243,16 +358,26 @@
       </div>
 
 
-      <!-- ACTIVE CHAT -->
+
+      <!-- =================================================
+           ACTIVE CHAT
+      ================================================== -->
 
       <div
         id="activeChat"
         class="active-chat hidden"
       >
 
+
+        <!-- CHAT HEADER -->
+
         <header class="chat-header">
 
+
           <div class="chat-user">
+
+
+            <!-- CHAT USER AVATAR -->
 
             <div
               id="chatAvatar"
@@ -260,6 +385,7 @@
             >
               U
             </div>
+
 
             <div>
 
@@ -275,22 +401,57 @@
 
           </div>
 
-          <button
-            id="reloadMessages"
-            class="icon-btn"
-            title="Refresh messages"
-          >
-            ↻
-          </button>
+
+          <!-- CALL BUTTONS -->
+
+          <div class="chat-actions">
+
+
+            <button
+              id="voiceCallBtn"
+              class="call-btn"
+              type="button"
+              title="Voice call"
+            >
+              ☎
+            </button>
+
+
+            <button
+              id="videoCallBtn"
+              class="call-btn"
+              type="button"
+              title="Video call"
+            >
+              ▣
+            </button>
+
+
+            <button
+              id="reloadMessages"
+              class="icon-btn"
+              type="button"
+              title="Refresh messages"
+            >
+              ↻
+            </button>
+
+          </div>
 
         </header>
 
+
+
+        <!-- MESSAGES -->
 
         <div
           id="messages"
           class="messages"
         ></div>
 
+
+
+        <!-- MESSAGE FORM -->
 
         <form
           id="messageForm"
@@ -304,6 +465,7 @@
             maxlength="5000"
             autocomplete="off"
           >
+
 
           <button
             class="send-btn"
@@ -323,13 +485,312 @@
 </div>
 
 
+
+<!-- =======================================================
+     PROFILE PANEL
+======================================================== -->
+
+<div
+  id="profilePanel"
+  class="profile-panel hidden"
+>
+
+  <div
+    class="profile-panel-backdrop"
+    id="profilePanelBackdrop"
+  ></div>
+
+
+  <div class="profile-panel-card">
+
+
+    <button
+      id="closeProfilePanel"
+      class="profile-close"
+      type="button"
+    >
+      ×
+    </button>
+
+
+    <button
+      id="profilePhotoBtn"
+      class="profile-photo-large-btn"
+      type="button"
+    >
+
+      <div
+        id="profilePhotoLarge"
+        class="profile-photo-large"
+      >
+        D
+      </div>
+
+    </button>
+
+
+    <h3 id="profilePanelName">
+      User
+    </h3>
+
+
+    <p id="profilePanelEmail">
+      user@email.com
+    </p>
+
+
+    <input
+      id="profilePhotoInput"
+      type="file"
+      accept="image/*"
+      hidden
+    >
+
+
+    <div class="profile-actions">
+
+
+      <button
+        id="changeProfilePhoto"
+        class="primary-btn"
+        type="button"
+      >
+        Change Photo
+      </button>
+
+
+      <button
+        id="removeProfilePhoto"
+        class="secondary-btn"
+        type="button"
+      >
+        Remove
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     INCOMING CALL
+======================================================== -->
+
+<div
+  id="incomingCall"
+  class="call-overlay hidden"
+>
+
+
+  <div class="incoming-call-card">
+
+
+    <div
+      id="incomingCallAvatar"
+      class="call-avatar"
+    >
+      U
+    </div>
+
+
+    <h3 id="incomingCallName">
+      User
+    </h3>
+
+
+    <div
+      id="incomingCallType"
+      class="incoming-call-type"
+    >
+      Incoming call
+    </div>
+
+
+    <div class="incoming-call-actions">
+
+
+      <button
+        id="rejectCallBtn"
+        class="call-reject-btn"
+        type="button"
+      >
+        ✕
+      </button>
+
+
+      <button
+        id="acceptCallBtn"
+        class="call-accept-btn"
+        type="button"
+      >
+        ✓
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
+     ACTIVE CALL
+======================================================== -->
+
+<div
+  id="callScreen"
+  class="call-screen hidden"
+>
+
+
+  <!-- REMOTE VIDEO -->
+
+  <video
+    id="remoteVideo"
+    class="remote-video"
+    autoplay
+    playsinline
+  ></video>
+
+
+  <!-- AUDIO ONLY -->
+
+  <div
+    id="voiceCallView"
+    class="voice-call-view hidden"
+  >
+
+    <div
+      id="voiceCallAvatar"
+      class="voice-call-avatar"
+    >
+      U
+    </div>
+
+    <h3 id="voiceCallName">
+      User
+    </h3>
+
+    <span id="voiceCallStatus">
+      Calling...
+    </span>
+
+  </div>
+
+
+  <!-- LOCAL VIDEO -->
+
+  <video
+    id="localVideo"
+    class="local-video"
+    autoplay
+    muted
+    playsinline
+  ></video>
+
+
+  <!-- CALL HEADER -->
+
+  <div class="call-topbar">
+
+    <span id="callUserName">
+      User
+    </span>
+
+    <span id="callDuration">
+      00:00
+    </span>
+
+  </div>
+
+
+  <!-- CALL CONTROLS -->
+
+  <div class="call-controls">
+
+
+    <button
+      id="muteCallBtn"
+      class="call-control-btn"
+      type="button"
+      title="Mute"
+    >
+      🎤
+    </button>
+
+
+    <button
+      id="cameraCallBtn"
+      class="call-control-btn"
+      type="button"
+      title="Camera"
+    >
+      ▣
+    </button>
+
+
+    <button
+      id="switchCameraBtn"
+      class="call-control-btn"
+      type="button"
+      title="Switch camera"
+    >
+      ↻
+    </button>
+
+
+    <button
+      id="endCallBtn"
+      class="call-end-btn"
+      type="button"
+      title="End call"
+    >
+      ☎
+    </button>
+
+  </div>
+
+
+  <!-- LOCAL MEDIA -->
+
+  <audio
+    id="remoteAudio"
+    autoplay
+  ></audio>
+
+</div>
+
+
+
+<!-- =======================================================
+     HIDDEN AUDIO
+======================================================== -->
+
+<audio
+  id="ringtone"
+  loop
+  preload="auto"
+></audio>
+
+
+
+<!-- =======================================================
+     TOAST
+======================================================== -->
+
 <div
   id="toast"
   class="toast"
 ></div>
 
 
+
 <script src="/app.js"></script>
 
 </body>
+
 </html>
