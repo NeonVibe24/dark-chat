@@ -46,6 +46,7 @@
       height: 100%;
       min-height: 0;
       display: flex;
+      flex-direction: column;
       overflow: hidden;
     }
 
@@ -58,8 +59,10 @@
       width: 100%;
       height: 100%;
       min-height: 0;
+
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
+
       overflow: hidden;
     }
 
@@ -69,150 +72,151 @@
 
 
     /* =====================================================
-       SIDEBAR
+       TOP BAR
     ====================================================== */
 
-    #chatScreen .sidebar {
-      flex: 0 0 280px;
-      width: 280px;
-      min-width: 260px;
-      max-width: 320px;
-
-      height: 100%;
-      min-height: 0;
-
-      display: flex;
-      flex-direction: column;
-
-      overflow: hidden;
-
-      box-sizing: border-box;
-
-      border-right: 1px solid rgba(255, 255, 255, 0.08);
-
-      background: inherit;
-    }
-
-
-    /* =====================================================
-       SIDEBAR HEADER
-    ====================================================== */
-
-    #chatScreen .sidebar-header {
+    #chatScreen .top-bar {
       flex: 0 0 auto;
 
       width: 100%;
       min-height: 64px;
+      height: 64px;
 
       display: flex;
       align-items: center;
       justify-content: space-between;
 
-      padding: 10px 14px;
+      padding:
+        8px
+        16px
+        8px
+        16px;
 
       box-sizing: border-box;
 
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom:
+        1px solid rgba(255, 255, 255, 0.08);
+
+      background: inherit;
+
+      position: relative;
+
+      z-index: 20;
     }
 
-    #chatScreen .sidebar-header .profile {
+
+    /* =====================================================
+       TOP BAR LEFT
+    ====================================================== */
+
+    #chatScreen .top-bar-left {
+      min-width: 0;
+
       display: flex;
       align-items: center;
 
       gap: 10px;
-
-      min-width: 0;
-      flex: 1 1 auto;
     }
 
-    #chatScreen .sidebar-header .profile-info {
+
+    /* =====================================================
+       TOP BAR BRAND
+    ====================================================== */
+
+    #chatScreen .top-bar-brand {
       display: flex;
+      align-items: center;
+
+      gap: 9px;
+
+      min-width: 0;
+    }
+
+    #chatScreen .top-bar-brand strong {
+      max-width: 220px;
+
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+
+      white-space: nowrap;
+
+      font-size: 16px;
+    }
+
+    #chatScreen .top-bar-brand span {
+      font-size: 11px;
+
+      opacity: 0.55;
+
+      white-space: nowrap;
+    }
+
+
+    /* =====================================================
+       TOP BAR RIGHT
+    ====================================================== */
+
+    #chatScreen .top-bar-right {
+      flex: 0 0 auto;
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 8px;
+    }
+
+
+    /* =====================================================
+       TOP BAR PROFILE
+    ====================================================== */
+
+    #chatScreen .top-profile {
+      display: flex;
+
+      align-items: center;
+
+      gap: 8px;
+
+      min-width: 0;
+    }
+
+    #chatScreen .top-profile-info {
+      display: flex;
+
       flex-direction: column;
 
       min-width: 0;
     }
 
-    #chatScreen .sidebar-header .profile-info strong {
-      max-width: 170px;
+    #chatScreen .top-profile-info strong {
+      max-width: 150px;
 
       overflow: hidden;
+
       text-overflow: ellipsis;
+
       white-space: nowrap;
-    }
-
-    #chatScreen .sidebar-header .profile-info span {
-      margin-top: 2px;
-
-      font-size: 11px;
-
-      opacity: 0.65;
-    }
-
-
-    /* =====================================================
-       SIDEBAR GROUP BUTTON
-    ====================================================== */
-
-    #groupChatNavBtn {
-      flex: 0 0 auto;
-
-      width: calc(100% - 24px);
-
-      min-height: 44px;
-
-      margin: 14px 12px;
-
-      padding: 9px 12px;
-
-      display: flex;
-      align-items: center;
-
-      box-sizing: border-box;
-
-      border: 1px solid rgba(255, 255, 255, 0.08);
-
-      border-radius: 10px;
-
-      background: rgba(255, 255, 255, 0.045);
-
-      color: inherit;
-
-      cursor: pointer;
-
-      text-align: left;
 
       font-size: 13px;
-
-      font-weight: 500;
-
-      transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        transform 0.12s ease;
     }
 
-    #groupChatNavBtn:hover {
-      background: rgba(255, 255, 255, 0.08);
+    #chatScreen .top-profile-info span {
+      margin-top: 1px;
 
-      border-color:
-        rgba(255, 255, 255, 0.13);
-    }
+      font-size: 10px;
 
-    #groupChatNavBtn:active {
-      transform: scale(0.98);
+      opacity: 0.55;
     }
 
 
     /* =====================================================
-       SIDEBAR EMPTY SPACE
+       TOP BAR BUTTONS
     ====================================================== */
 
-    #chatScreen .sidebar::after {
-      content: "";
-
-      flex: 1 1 auto;
-
-      min-height: 0;
+    #chatScreen .top-bar .icon-btn {
+      flex: 0 0 auto;
     }
 
 
@@ -223,13 +227,12 @@
     #chatScreen .chat-area {
       flex: 1 1 auto;
 
-      width: 0;
+      width: 100%;
 
       min-width: 0;
-
-      height: 100%;
-
       min-height: 0;
+
+      height: 0;
 
       display: flex !important;
 
@@ -247,11 +250,9 @@
 
     #chatScreen .active-chat {
       width: 100%;
-
       height: 100%;
 
       min-width: 0;
-
       min-height: 0;
 
       display: flex;
@@ -277,11 +278,9 @@
       flex-direction: column;
 
       width: 100%;
-
       height: 100%;
 
       min-width: 0;
-
       min-height: 0;
 
       overflow: hidden;
@@ -303,13 +302,11 @@
       width: 100%;
 
       min-height: 64px;
-
       height: 64px;
 
       display: flex;
 
       align-items: center;
-
       justify-content: space-between;
 
       padding: 0 16px;
@@ -341,7 +338,7 @@
     }
 
     #chatScreen .chat-user strong {
-      max-width: 280px;
+      max-width: 300px;
 
       overflow: hidden;
 
@@ -381,11 +378,9 @@
       width: 100%;
 
       min-width: 0;
-
       min-height: 0;
 
       overflow-y: auto;
-
       overflow-x: hidden;
 
       padding: 16px;
@@ -603,7 +598,6 @@
       display: flex;
 
       align-items: center;
-
       justify-content: center;
 
       cursor: pointer;
@@ -627,7 +621,6 @@
 
     #emptyChat {
       width: 100%;
-
       height: 100%;
 
       min-height: 0;
@@ -637,7 +630,6 @@
       flex-direction: column;
 
       align-items: center;
-
       justify-content: center;
 
       text-align: center;
@@ -671,54 +663,34 @@
 
     @media (max-width: 800px) {
 
-      #chatScreen .sidebar {
-        flex: 0 0 76px;
+      #chatScreen .top-bar {
+        min-height: 58px;
 
-        width: 76px;
+        height: 58px;
 
-        min-width: 76px;
-
-        max-width: 76px;
+        padding:
+          7px
+          10px
+          7px
+          10px;
       }
 
-      #chatScreen .sidebar-header {
-        min-height: 60px;
+      #chatScreen .top-bar-brand strong {
+        max-width: 150px;
 
-        padding: 8px 6px;
-
-        justify-content: center;
+        font-size: 15px;
       }
 
-      #chatScreen .sidebar-header .profile {
-        justify-content: center;
+      #chatScreen .top-bar-brand span {
+        display: none;
       }
 
-      #chatScreen .sidebar .profile-info {
+      #chatScreen .top-profile-info {
         display: none !important;
       }
 
-      #chatScreen .sidebar-header .profile {
-        flex: 0 0 auto;
-      }
-
-      #groupChatNavBtn {
-        width: calc(100% - 12px);
-
-        min-height: 48px;
-
-        margin: 8px 6px;
-
-        padding: 8px 4px;
-
-        justify-content: center;
-
-        font-size: 0;
-
-        text-align: center;
-      }
-
-      #groupChatNavBtn::first-letter {
-        font-size: 19px;
+      #chatScreen .top-bar-right {
+        gap: 5px;
       }
 
       #chatScreen .chat-header {
@@ -734,7 +706,7 @@
       }
 
       #chatScreen .chat-user strong {
-        max-width: 170px;
+        max-width: 190px;
       }
 
       #chatScreen .messages {
@@ -787,28 +759,20 @@
 
     @media (max-width: 430px) {
 
-      #chatScreen .sidebar {
-        flex: 0 0 68px;
+      #chatScreen .top-bar {
+        padding-left: 7px;
 
-        width: 68px;
-
-        min-width: 68px;
-
-        max-width: 68px;
+        padding-right: 7px;
       }
 
-      #chatScreen .sidebar-header {
-        padding-left: 4px;
-
-        padding-right: 4px;
+      #chatScreen .top-bar-brand {
+        gap: 6px;
       }
 
-      #groupChatNavBtn {
-        width: calc(100% - 8px);
+      #chatScreen .top-bar-brand strong {
+        max-width: 125px;
 
-        margin-left: 4px;
-
-        margin-right: 4px;
+        font-size: 14px;
       }
 
       #chatScreen .chat-header {
@@ -818,7 +782,7 @@
       }
 
       #chatScreen .chat-user strong {
-        max-width: 145px;
+        max-width: 155px;
       }
 
       #chatScreen .messages {
@@ -840,6 +804,12 @@
     ====================================================== */
 
     @media (max-height: 520px) {
+
+      #chatScreen .top-bar {
+        min-height: 52px;
+
+        height: 52px;
+      }
 
       #chatScreen .chat-header {
         min-height: 54px;
@@ -871,14 +841,6 @@
     ====================================================== */
 
     @media (hover: none) {
-
-      #groupChatNavBtn:hover {
-        background:
-          rgba(255, 255, 255, 0.045);
-
-        border-color:
-          rgba(255, 255, 255, 0.08);
-      }
 
       #groupMessages
       .group-message-user:hover {
@@ -1116,19 +1078,56 @@
 
 
     <!-- ===================================================
-         SIDEBAR
+         TOP BAR
     ==================================================== -->
 
-    <aside class="sidebar">
+    <header class="top-bar">
 
 
-      <!-- ================================================
-           PROFILE
-      ================================================= -->
+      <!-- =================================================
+           TOP BAR LEFT
+      ================================================== -->
 
-      <div class="sidebar-header">
+      <div class="top-bar-left">
 
-        <div class="profile">
+        <div class="top-bar-brand">
+
+          <div
+            class="brand-icon"
+            aria-hidden="true"
+          >
+            D
+          </div>
+
+          <div>
+
+            <strong>
+              Dark Chat
+            </strong>
+
+            <span>
+              Private messaging
+            </span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- =================================================
+           TOP BAR RIGHT
+      ================================================== -->
+
+      <div class="top-bar-right">
+
+
+        <!-- ===============================================
+             OWN PROFILE
+        ================================================ -->
+
+        <div class="top-profile">
 
           <button
             id="myAvatarBtn"
@@ -1148,7 +1147,7 @@
           </button>
 
 
-          <div class="profile-info">
+          <div class="top-profile-info">
 
             <strong id="myUsername">
               User
@@ -1163,6 +1162,25 @@
         </div>
 
 
+        <!-- ===============================================
+             GROUP CHAT BUTTON
+        ================================================ -->
+
+        <button
+          id="groupChatNavBtn"
+          class="icon-btn"
+          type="button"
+          title="Group Chat"
+          aria-label="Open Group Chat"
+        >
+          👥
+        </button>
+
+
+        <!-- ===============================================
+             LOGOUT
+        ================================================ -->
+
         <button
           id="logoutBtn"
           class="icon-btn"
@@ -1175,22 +1193,7 @@
 
       </div>
 
-
-      <!-- ================================================
-           GROUP CHAT BUTTON
-      ================================================= -->
-
-      <button
-        id="groupChatNavBtn"
-        type="button"
-        title="Group Chat"
-        aria-label="Open Group Chat"
-      >
-        👥 Group Chat
-      </button>
-
-
-    </aside>
+    </header>
 
 
 
@@ -1531,74 +1534,6 @@
 ======================================================== -->
 
 <script src="/app.js"></script>
-
-
-<script>
-
-  /*
-   * ==========================================================
-   * GROUP CHAT NAVIGATION
-   * ==========================================================
-   *
-   * Sidebar မှာ Group Chat button ကိုနှိပ်ရင်
-   * Public Group Chat ပြန်ဖွင့်ပေးမယ်။
-   *
-   * Private Chat ကို app.js ကနေဖွင့်တဲ့ logic
-   * မထိခိုက်အောင် သီးသန့်ထားထားပါတယ်။
-   */
-
-  document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-      const navBtn =
-        document.getElementById(
-          "groupChatNavBtn"
-        );
-
-      const groupChat =
-        document.getElementById(
-          "groupChat"
-        );
-
-      const privateChat =
-        document.getElementById(
-          "privateChat"
-        );
-
-
-      if (!navBtn) {
-        return;
-      }
-
-
-      navBtn.addEventListener(
-        "click",
-        () => {
-
-          if (
-            groupChat &&
-            privateChat
-          ) {
-
-            privateChat.classList.add(
-              "hidden"
-            );
-
-            groupChat.classList.remove(
-              "hidden"
-            );
-
-          }
-
-        }
-      );
-
-    }
-  );
-
-</script>
-
 
 </body>
 
