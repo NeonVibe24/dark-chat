@@ -1,3 +1,4 @@
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
@@ -506,7 +507,8 @@ export default {
         if (!email || !password) {
 
           return json({
-            success: falsconst          error:
+            success: false,
+            error:
               "Email and password are required"
           }, 400);
 
