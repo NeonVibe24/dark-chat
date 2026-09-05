@@ -17,6 +17,12 @@ const authScreen =
 const chatScreen =
   document.getElementById("chatScreen");
 
+const loginBox =
+  document.getElementById("loginBox");
+
+const registerBox =
+  document.getElementById("registerBox");
+
 const loginForm =
   document.getElementById("loginForm");
 
@@ -457,10 +463,6 @@ function setAvatar(
     null;
 
 
-  /*
-   * IMG element
-   */
-
   if (
     element.tagName ===
     "IMG"
@@ -496,14 +498,9 @@ function setAvatar(
   }
 
 
-  /*
-   * Element containing
-   * fallback/image children
-   */
-
   const image =
     element.querySelector(
-     ("img")
+      "img"
     );
 
   const fallback =
@@ -512,9 +509,7 @@ function setAvatar(
     );
 
 
-  if (
-    image
-  ) {
+  if (image) {
 
     if (photo) {
 
@@ -544,9 +539,7 @@ function setAvatar(
   }
 
 
-  if (
-    fallback
-  ) {
+  if (fallback) {
 
     fallback.textContent =
       avatarLetter(username);
@@ -668,10 +661,6 @@ function setAvatarData(
       avatarLetter(username);
   }
 
-
-  /*
-   * Dynamic simple avatar div
-   */
 
   if (
     !image &&
@@ -853,22 +842,31 @@ function openRegisterForm(event) {
   }
 
 
-  if (loginForm) {
+  /*
+   * IMPORTANT:
+   * registerBox ကို ဖော်ရမယ်။
+   * registerForm တစ်ခုတည်းကို ဖော်တာမလုံလောက်ပါ။
+   */
 
-    loginForm.classList.add(
+  if (loginBox) {
+
+    loginBox.classList.add(
       "hidden"
     );
+
+    loginBox.style.display =
+      "none";
   }
 
 
-  if (registerForm) {
+  if (registerBox) {
 
-    registerForm.classList.remove(
+    registerBox.classList.remove(
       "hidden"
     );
 
-    registerForm.style.display =
-      "";
+    registerBox.style.display =
+      "block";
   }
 
 
@@ -894,14 +892,16 @@ function openRegisterForm(event) {
   }
 
 
+  const username =
+    document.getElementById(
+      "registerUsername"
+    );
+
+
   setTimeout(
     () => {
 
-      document
-        .getElementById(
-          "registerUsername"
-        )
-        ?.focus();
+      username?.focus();
 
     },
     50
@@ -918,22 +918,30 @@ function openLoginForm(event) {
   }
 
 
-  if (registerForm) {
+  /*
+   * IMPORTANT:
+   * loginBox ကို ဖော်ရမယ်။
+   */
 
-    registerForm.classList.add(
+  if (registerBox) {
+
+    registerBox.classList.add(
       "hidden"
     );
+
+    registerBox.style.display =
+      "none";
   }
 
 
-  if (loginForm) {
+  if (loginBox) {
 
-    loginForm.classList.remove(
+    loginBox.classList.remove(
       "hidden"
     );
 
-    loginForm.style.display =
-      "";
+    loginBox.style.display =
+      "block";
   }
 
 
@@ -959,14 +967,16 @@ function openLoginForm(event) {
   }
 
 
+  const username =
+    document.getElementById(
+      "loginUsername"
+    );
+
+
   setTimeout(
     () => {
 
-      document
-        .getElementById(
-          "loginUsername"
-        )
-        ?.focus();
+      username?.focus();
 
     },
     50
@@ -974,9 +984,9 @@ function openLoginForm(event) {
 }
 
 
-/*
- * Direct event
- */
+/* ============================================================
+   AUTH SWITCH BUTTONS
+============================================================ */
 
 if (showRegister) {
 
@@ -1003,11 +1013,7 @@ if (showLogin) {
 
 
 /*
- * Delegated event
- *
- * HTML ထဲမှာ button ကို
- * dynamically ပြောင်းသွားရင်တောင်
- * အလုပ်လုပ်စေမယ်။
+ * Extra delegated protection
  */
 
 document.addEventListener(
@@ -1042,7 +1048,8 @@ document.addEventListener(
 
       return;
     }
-  }
+  },
+  true
 );
 
 
@@ -1192,14 +1199,12 @@ if (registerForm) {
         registerForm.reset();
 
 
-        registerForm.classList.add(
-          "hidden"
-        );
+        /*
+         * Register ပြီးရင်
+         * Login Box ပြန်ဖော်မယ်။
+         */
 
-
-        loginForm?.classList.remove(
-          "hidden"
-        );
+        openLoginForm();
 
 
         const loginUsername =
@@ -1526,19 +1531,29 @@ function showAuth() {
   }
 
 
-  if (registerForm) {
+  /*
+   * Login ကို default ပြန်ထားမယ်။
+   */
 
-    registerForm.classList.add(
+  if (registerBox) {
+
+    registerBox.classList.add(
       "hidden"
     );
+
+    registerBox.style.display =
+      "none";
   }
 
 
-  if (loginForm) {
+  if (loginBox) {
 
-    loginForm.classList.remove(
+    loginBox.classList.remove(
       "hidden"
     );
+
+    loginBox.style.display =
+      "block";
   }
 }
 
@@ -1844,10 +1859,6 @@ function renderGroupMessages(
         );
 
 
-      /*
-       * OTHER USER
-       */
-
       if (!mine) {
 
         const senderBox =
@@ -1972,10 +1983,6 @@ function renderGroupMessages(
         );
       }
 
-
-      /*
-       * MESSAGE
-       */
 
       const content =
         document.createElement(
