@@ -16,13 +16,20 @@
    - NO user-created groups
    - NO group name/avatar creation
    - NO voice/video calls
-   - Compatible with the new index.html + app.js
+   - Frontend assets served through Cloudflare Assets
    ============================================================ */
+
+
+/* ============================================================
+   CORS
+============================================================ */
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Methods":
+    "GET,POST,PUT,DELETE,OPTIONS",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization",
   "Access-Control-Max-Age": "86400"
 };
 
@@ -32,27 +39,37 @@ const CORS_HEADERS = {
 ============================================================ */
 
 function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      ...CORS_HEADERS,
-      "Content-Type": "application/json; charset=utf-8"
+
+  return new Response(
+    JSON.stringify(data),
+    {
+      status,
+      headers: {
+        ...CORS_HEADERS,
+        "Content-Type":
+          "application/json; charset=utf-8"
+      }
     }
-  });
+  );
 }
+
 
 function text(
   data,
   status = 200,
   contentType = "text/plain; charset=utf-8"
 ) {
-  return new Response(data, {
-    status,
-    headers: {
-      ...CORS_HEADERS,
-      "Content-Type": contentType
+
+  return new Response(
+    data,
+    {
+      status,
+      headers: {
+        ...CORS_HEADERS,
+        "Content-Type": contentType
+      }
     }
-  });
+  );
 }
 
 
@@ -61,15 +78,23 @@ function text(
 ============================================================ */
 
 async function hashPassword(password) {
-  const data = new TextEncoder().encode(password);
 
-  const hash = await crypto.subtle.digest(
-    "SHA-256",
-    data
-  );
+  const data =
+    new TextEncoder().encode(password);
+
+  const hash =
+    await crypto.subtle.digest(
+      "SHA-256",
+      data
+    );
 
   return [...new Uint8Array(hash)]
-    .map(b => b.toString(16).padStart(2, "0"))
+    .map(
+      b =>
+        b
+          .toString(16)
+          .padStart(2, "0")
+    )
     .join("");
 }
 
@@ -79,21 +104,53 @@ async function hashPassword(password) {
 ============================================================ */
 
 function randomToken() {
-  const bytes = new Uint8Array(32);
+
+  const bytes =
+    new Uint8Array(32);
 
   crypto.getRandomValues(bytes);
 
   return [...bytes]
-    .map(b => b.toString(16).padStart(2, "0"))
+    .map(
+      b =>
+        b
+          .toString(16)
+          .padStart(2, "0")
+    )
     .join("");
 }
 
 
 /* ============================================================
    DATABASE INITIALIZATION
+   ------------------------------------------------------------
+   Only executed for API requests.
 ============================================================ */
 
+let databaseInitPromise = null;
+
+
 async function initDatabase(db) {
+
+  if (!databaseInitPromise) {
+
+    databaseInitPromise =
+      initializeDatabase(db)
+        .catch(error => {
+
+          databaseInitPromise = null;
+
+          throw error;
+
+        });
+
+  }
+
+  return databaseInitPromise;
+}
+
+
+async function initializeDatabase(db) {
 
   /* ----------------------------------------------------------
      USERS
@@ -113,21 +170,30 @@ async function initDatabase(db) {
      PROFILE PHOTO MIGRATION
   ---------------------------------------------------------- */
 
-  const userColumns = await db
-    .prepare(`PRAGMA table_info(users)`)
-    .all();
+  const userColumns =
+    await db
+      .prepare(`
+        PRAGMA table_info(users)
+      `)
+      .all();
 
-  const columns = userColumns.results || [];
+  const columns =
+    userColumns.results || [];
 
-  const hasProfilePhoto = columns.some(
-    column => column.name === "profile_photo"
-  );
+  const hasProfilePhoto =
+    columns.some(
+      column =>
+        column.name === "profile_photo"
+    );
+
 
   if (!hasProfilePhoto) {
+
     await db.prepare(`
       ALTER TABLE users
       ADD COLUMN profile_photo TEXT
     `).run();
+
   }
 
 
@@ -138,12 +204,14 @@ async function initDatabase(db) {
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+
       user_id INTEGER NOT NULL,
+
       token TEXT NOT NULL UNIQUE,
 
       FOREIGN KEY(user_id)
-      REFERENCES users(id)
-      ON DELETE CASCADE
+        REFERENCES users(id)
+        ON DELETE CASCADE
     )
   `).run();
 
@@ -157,17 +225,18 @@ async function initDatabase(db) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
 
       user1_id INTEGER NOT NULL,
+
       user2_id INTEGER NOT NULL,
 
       UNIQUE(user1_id, user2_id),
 
       FOREIGN KEY(user1_id)
-      REFERENCES users(id)
-      ON DELETE CASCADE,
+        REFERENCES users(id)
+        ON DELETE CASCADE,
 
       FOREIGN KEY(user2_id)
-      REFERENCES users(id)
-      ON DELETE CASCADE
+        REFERENCES users(id)
+        ON DELETE CASCADE
     )
   `).run();
 
@@ -183,21 +252,22 @@ async function initDatabase(db) {
       conversation_id INTEGER NOT NULL,
 
       sender_id INTEGER NOT NULL,
+
       receiver_id INTEGER NOT NULL,
 
       message TEXT NOT NULL,
 
       FOREIGN KEY(conversation_id)
-      REFERENCES conversations(id)
-      ON DELETE CASCADE,
+        REFERENCES conversations(id)
+        ON DELETE CASCADE,
 
       FOREIGN KEY(sender_id)
-      REFERENCES users(id)
-      ON DELETE CASCADE,
+        REFERENCES users(id)
+        ON DELETE CASCADE,
 
       FOREIGN KEY(receiver_id)
-      REFERENCES users(id)
-      ON DELETE CASCADE
+        REFERENCES users(id)
+        ON DELETE CASCADE
     )
   `).run();
 
@@ -217,10 +287,69 @@ async function initDatabase(db) {
       created_at INTEGER NOT NULL,
 
       FOREIGN KEY(sender_id)
-      REFERENCES users(id)
-      ON DELETE CASCADE
+        REFERENCES users(id)
+        ON DELETE CASCADE
     )
   `).run();
+
+
+  /* ----------------------------------------------------------
+     INDEXES
+  ---------------------------------------------------------- */
+
+  try {
+
+    await db.prepare(`
+      CREATE INDEX IF NOT EXISTS
+      idx_sessions_token
+      ON sessions(token)
+    `).run();
+
+  } catch (error) {
+
+    console.error(
+      "SESSION INDEX ERROR:",
+      error
+    );
+
+  }
+
+
+  try {
+
+    await db.prepare(`
+      CREATE INDEX IF NOT EXISTS
+      idx_messages_conversation
+      ON messages(conversation_id)
+    `).run();
+
+  } catch (error) {
+
+    console.error(
+      "MESSAGE INDEX ERROR:",
+      error
+    );
+
+  }
+
+
+  try {
+
+    await db.prepare(`
+      CREATE INDEX IF NOT EXISTS
+      idx_group_messages_created
+      ON global_group_messages(created_at)
+    `).run();
+
+  } catch (error) {
+
+    console.error(
+      "GROUP INDEX ERROR:",
+      error
+    );
+
+  }
+
 }
 
 
@@ -235,15 +364,19 @@ function formatUser(row) {
   }
 
   return {
+
     id: Number(row.id),
 
-    username: row.username || "",
+    username:
+      row.username || "",
 
-    email: row.email || "",
+    email:
+      row.email || "",
 
     profile_photo:
       row.profile_photo ||
       null
+
   };
 }
 
@@ -252,53 +385,75 @@ function formatUser(row) {
    AUTHENTICATION
 ============================================================ */
 
-async function getUserFromRequest(request, db) {
+async function getUserFromRequest(
+  request,
+  db
+) {
 
-  const auth = request.headers.get(
-    "Authorization"
-  );
+  const auth =
+    request.headers.get(
+      "Authorization"
+    );
+
 
   if (!auth) {
     return null;
   }
 
-  if (!auth.startsWith("Bearer ")) {
+
+  if (
+    !auth.startsWith(
+      "Bearer "
+    )
+  ) {
+
     return null;
+
   }
 
-  const token = auth
-    .slice(7)
-    .trim();
+
+  const token =
+    auth
+      .slice(7)
+      .trim();
+
 
   if (!token) {
     return null;
   }
 
-  const result = await db.prepare(`
-    SELECT
-      users.id,
-      users.username,
-      users.email,
-      users.profile_photo
 
-    FROM sessions
+  const result =
+    await db.prepare(`
+      SELECT
 
-    INNER JOIN users
-      ON users.id = sessions.user_id
+        users.id,
 
-    WHERE sessions.token = ?
+        users.username,
 
-    LIMIT 1
-  `)
-    .bind(token)
-    .first();
+        users.email,
+
+        users.profile_photo
+
+      FROM sessions
+
+      INNER JOIN users
+        ON users.id = sessions.user_id
+
+      WHERE sessions.token = ?
+
+      LIMIT 1
+    `)
+      .bind(token)
+      .first();
+
 
   return formatUser(result);
 }
 
 
 /* ============================================================
-   PRIVATE CONVERSATION HELPERS
+   PRIVATE CONVERSATION
 ============================================================ */
 
 async function getConversation(
@@ -307,26 +462,34 @@ async function getConversation(
   userB
 ) {
 
-  const first = Math.min(
-    Number(userA),
-    Number(userB)
-  );
+  const first =
+    Math.min(
+      Number(userA),
+      Number(userB)
+    );
 
-  const second = Math.max(
-    Number(userA),
-    Number(userB)
-  );
+  const second =
+    Math.max(
+      Number(userA),
+      Number(userB)
+    );
+
 
   return await db.prepare(`
     SELECT *
+
     FROM conversations
 
     WHERE user1_id = ?
+
       AND user2_id = ?
 
     LIMIT 1
   `)
-    .bind(first, second)
+    .bind(
+      first,
+      second
+    )
     .first();
 }
 
@@ -337,15 +500,18 @@ async function createConversation(
   userB
 ) {
 
-  const first = Math.min(
-    Number(userA),
-    Number(userB)
-  );
+  const first =
+    Math.min(
+      Number(userA),
+      Number(userB)
+    );
 
-  const second = Math.max(
-    Number(userA),
-    Number(userB)
-  );
+  const second =
+    Math.max(
+      Number(userA),
+      Number(userB)
+    );
+
 
   await db.prepare(`
     INSERT OR IGNORE INTO conversations
@@ -353,10 +519,15 @@ async function createConversation(
       user1_id,
       user2_id
     )
+
     VALUES (?, ?)
   `)
-    .bind(first, second)
+    .bind(
+      first,
+      second
+    )
     .run();
+
 
   return await getConversation(
     db,
@@ -376,22 +547,24 @@ function formatGroupMessage(row) {
     return null;
   }
 
-  const createdAt = Number(
-    row.created_at
-  );
+
+  const createdAt =
+    Number(row.created_at);
+
 
   const isoDate =
     Number.isFinite(createdAt)
       ? new Date(createdAt).toISOString()
       : row.created_at;
 
+
   return {
 
-    id: Number(row.id),
+    id:
+      Number(row.id),
 
-    sender_id: Number(
-      row.sender_id
-    ),
+    sender_id:
+      Number(row.sender_id),
 
     message:
       row.message || "",
@@ -408,9 +581,8 @@ function formatGroupMessage(row) {
 
     sender: {
 
-      id: Number(
-        row.sender_id
-      ),
+      id:
+        Number(row.sender_id),
 
       username:
         row.sender_username || "",
@@ -421,7 +593,9 @@ function formatGroupMessage(row) {
       profile_photo:
         row.sender_profile_photo ||
         null
+
     }
+
   };
 }
 
@@ -432,7 +606,10 @@ function formatGroupMessage(row) {
 
 export default {
 
-  async fetch(request, env) {
+  async fetch(
+    request,
+    env
+  ) {
 
     try {
 
@@ -440,26 +617,19 @@ export default {
          CORS PREFLIGHT
       ====================================================== */
 
-      if (request.method === "OPTIONS") {
+      if (
+        request.method ===
+        "OPTIONS"
+      ) {
 
-        return new Response(null, {
-          status: 204,
-          headers: CORS_HEADERS
-        });
-
-      }
-
-
-      /* ======================================================
-         DATABASE CHECK
-      ====================================================== */
-
-      if (!env.DB) {
-
-        return json({
-          success: false,
-          error: "Database binding is missing."
-        }, 500);
+        return new Response(
+          null,
+          {
+            status: 204,
+            headers:
+              CORS_HEADERS
+          }
+        );
 
       }
 
@@ -475,7 +645,56 @@ export default {
 
 
       /* ======================================================
-         DATABASE INIT
+         FRONTEND ASSETS
+         
+         IMPORTANT:
+         Static files are served BEFORE database
+         initialization.
+      ====================================================== */
+
+      if (
+        !path.startsWith("/api/")
+      ) {
+
+        if (env.ASSETS) {
+
+          return env.ASSETS.fetch(
+            request
+          );
+
+        }
+
+
+        return text(
+          "Dark Chat Worker is running.",
+          200
+        );
+
+      }
+
+
+      /* ======================================================
+         DATABASE BINDING CHECK
+      ====================================================== */
+
+      if (!env.DB) {
+
+        return json(
+          {
+            success: false,
+            error:
+              "Database binding is missing."
+          },
+          500
+        );
+
+      }
+
+
+      /* ======================================================
+         DATABASE INITIALIZATION
+         
+         Only API requests reach here.
       ====================================================== */
 
       await initDatabase(
@@ -498,7 +717,8 @@ export default {
 
           status: "ok",
 
-          app: "Dark Chat"
+          app:
+            "Dark Chat"
 
         });
 
@@ -516,6 +736,7 @@ export default {
 
         let body;
 
+
         try {
 
           body =
@@ -523,10 +744,14 @@ export default {
 
         } catch {
 
-          return json({
-            success: false,
-            error: "Invalid JSON."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid JSON."
+            },
+            400
+          );
 
         }
 
@@ -536,27 +761,12 @@ export default {
             body.username || ""
           ).trim();
 
+
         const password =
           String(
             body.password || ""
           );
 
-
-        /*
-          Email is OPTIONAL now.
-
-          The frontend only needs:
-
-          username
-          password
-
-          Existing database still requires
-          email NOT NULL UNIQUE.
-
-          Therefore an internal unique
-          placeholder email is generated
-          when email is not supplied.
-        */
 
         let email =
           String(
@@ -575,69 +785,95 @@ export default {
           !password
         ) {
 
-          return json({
-            success: false,
-            error:
-              "Username and password are required."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Username and password are required."
+            },
+            400
+          );
 
         }
 
 
-        if (username.length < 2) {
+        if (
+          username.length < 2
+        ) {
 
-          return json({
-            success: false,
-            error:
-              "Username is too short."
-          }, 400);
-
-        }
-
-
-        if (username.length > 50) {
-
-          return json({
-            success: false,
-            error:
-              "Username is too long."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Username is too short."
+            },
+            400
+          );
 
         }
 
 
-        if (password.length < 4) {
+        if (
+          username.length > 50
+        ) {
 
-          return json({
-            success: false,
-            error:
-              "Password is too short."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Username is too long."
+            },
+            400
+          );
 
         }
 
 
-        if (password.length > 500) {
+        if (
+          password.length < 4
+        ) {
 
-          return json({
-            success: false,
-            error:
-              "Password is too long."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Password is too short."
+            },
+            400
+          );
+
+        }
+
+
+        if (
+          password.length > 500
+        ) {
+
+          return json(
+            {
+              success: false,
+              error:
+                "Password is too long."
+            },
+            400
+          );
 
         }
 
 
         /* ----------------------------------------------------
            USERNAME DUPLICATE CHECK
+           
+           Case-insensitive.
         ---------------------------------------------------- */
 
         const existingUsername =
           await env.DB.prepare(`
             SELECT id
+
             FROM users
 
-            WHERE username = ?
+            WHERE username = ? COLLATE NOCASE
 
             LIMIT 1
           `)
@@ -647,11 +883,14 @@ export default {
 
         if (existingUsername) {
 
-          return json({
-            success: false,
-            error:
-              "Username already exists."
-          }, 409);
+          return json(
+            {
+              success: false,
+              error:
+                "Username already exists."
+            },
+            409
+          );
 
         }
 
@@ -665,6 +904,7 @@ export default {
           const existingEmail =
             await env.DB.prepare(`
               SELECT id
+
               FROM users
 
               WHERE email = ?
@@ -677,22 +917,18 @@ export default {
 
           if (existingEmail) {
 
-            return json({
-              success: false,
-              error:
-                "Email already exists."
-            }, 409);
+            return json(
+              {
+                success: false,
+                error:
+                  "Email already exists."
+              },
+              409
+            );
 
           }
 
         } else {
-
-          /*
-            Generate unique internal email.
-
-            Example:
-            username + random token
-          */
 
           email =
             `user_${Date.now()}_${randomToken().slice(0, 12)}@local.darkchat`;
@@ -711,8 +947,11 @@ export default {
 
 
         /* ----------------------------------------------------
-           INSERT USER
+           CREATE USER
         ---------------------------------------------------- */
+
+        let userId;
+
 
         try {
 
@@ -735,17 +974,43 @@ export default {
               .run();
 
 
-          const userId =
-            result.meta.last_row_id;
+          userId =
+            Number(
+              result.meta.last_row_id
+            );
 
 
-          /* --------------------------------------------------
-             AUTO LOGIN SESSION
-          -------------------------------------------------- */
+        } catch (error) {
 
-          const token =
-            randomToken();
+          console.error(
+            "REGISTER INSERT ERROR:",
+            error
+          );
 
+
+          return json(
+            {
+              success: false,
+              error:
+                "Registration failed.",
+              detail:
+                error.message
+            },
+            500
+          );
+
+        }
+
+
+        /* ----------------------------------------------------
+           AUTO LOGIN
+        ---------------------------------------------------- */
+
+        const token =
+          randomToken();
+
+
+        try {
 
           await env.DB.prepare(`
             INSERT INTO sessions
@@ -762,30 +1027,56 @@ export default {
             )
             .run();
 
+        } catch (error) {
 
-          /* --------------------------------------------------
-             GET USER
-          -------------------------------------------------- */
-
-          const user =
-            await env.DB.prepare(`
-              SELECT
-                id,
-                username,
-                email,
-                profile_photo
-
-              FROM users
-
-              WHERE id = ?
-
-              LIMIT 1
-            `)
-              .bind(userId)
-              .first();
+          console.error(
+            "SESSION CREATE ERROR:",
+            error
+          );
 
 
-          return json({
+          return json(
+            {
+              success: false,
+              error:
+                "Account created, but login session could not be created.",
+              detail:
+                error.message
+            },
+            500
+          );
+
+        }
+
+
+        /* ----------------------------------------------------
+           GET CREATED USER
+        ---------------------------------------------------- */
+
+        const user =
+          await env.DB.prepare(`
+            SELECT
+
+              id,
+
+              username,
+
+              email,
+
+              profile_photo
+
+            FROM users
+
+            WHERE id = ?
+
+            LIMIT 1
+          `)
+            .bind(userId)
+            .first();
+
+
+        return json(
+          {
 
             success: true,
 
@@ -794,29 +1085,9 @@ export default {
             user:
               formatUser(user)
 
-          }, 201);
-
-
-        } catch (error) {
-
-          console.error(
-            "REGISTER ERROR:",
-            error
-          );
-
-          return json({
-
-            success: false,
-
-            error:
-              "Registration failed.",
-
-            detail:
-              error.message
-
-          }, 500);
-
-        }
+          },
+          201
+        );
 
       }
 
@@ -832,6 +1103,7 @@ export default {
 
         let body;
 
+
         try {
 
           body =
@@ -839,34 +1111,23 @@ export default {
 
         } catch {
 
-          return json({
-            success: false,
-            error: "Invalid JSON."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid JSON."
+            },
+            400
+          );
 
         }
 
-
-        /*
-          Supports both:
-
-          {
-            username,
-            password
-          }
-
-          and
-
-          {
-            email,
-            password
-          }
-        */
 
         const username =
           String(
             body.username || ""
           ).trim();
+
 
         const email =
           String(
@@ -874,6 +1135,7 @@ export default {
           )
             .trim()
             .toLowerCase();
+
 
         const password =
           String(
@@ -886,11 +1148,14 @@ export default {
           !password
         ) {
 
-          return json({
-            success: false,
-            error:
-              "Username/email and password are required."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Username/email and password are required."
+            },
+            400
+          );
 
         }
 
@@ -901,7 +1166,7 @@ export default {
           );
 
 
-        let user;
+        let user = null;
 
 
         /* ----------------------------------------------------
@@ -913,14 +1178,19 @@ export default {
           user =
             await env.DB.prepare(`
               SELECT
+
                 id,
+
                 username,
+
                 email,
+
                 profile_photo
 
               FROM users
 
               WHERE email = ?
+
                 AND password = ?
 
               LIMIT 1
@@ -938,19 +1208,27 @@ export default {
            USERNAME LOGIN
         ---------------------------------------------------- */
 
-        if (!user && username) {
+        if (
+          !user &&
+          username
+        ) {
 
           user =
             await env.DB.prepare(`
               SELECT
+
                 id,
+
                 username,
+
                 email,
+
                 profile_photo
 
               FROM users
 
-              WHERE username = ?
+              WHERE username = ? COLLATE NOCASE
+
                 AND password = ?
 
               LIMIT 1
@@ -966,17 +1244,20 @@ export default {
 
         if (!user) {
 
-          return json({
-            success: false,
-            error:
-              "Invalid username/email or password."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid username/email or password."
+            },
+            401
+          );
 
         }
 
 
         /* ----------------------------------------------------
-           SESSION
+           NEW SESSION
         ---------------------------------------------------- */
 
         const token =
@@ -1030,7 +1311,9 @@ export default {
 
         if (
           auth &&
-          auth.startsWith("Bearer ")
+          auth.startsWith(
+            "Bearer "
+          )
         ) {
 
           const token =
@@ -1055,7 +1338,9 @@ export default {
 
 
         return json({
+
           success: true
+
         });
 
       }
@@ -1079,10 +1364,14 @@ export default {
 
         if (!user) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
@@ -1116,15 +1405,20 @@ export default {
 
         if (!user) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
 
         let body;
+
 
         try {
 
@@ -1133,20 +1427,17 @@ export default {
 
         } catch {
 
-          return json({
-            success: false,
-            error: "Invalid JSON."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid JSON."
+            },
+            400
+          );
 
         }
 
-
-        /*
-          Support BOTH frontend names:
-
-          profile_photo
-          photo
-        */
 
         const photo =
           String(
@@ -1158,28 +1449,31 @@ export default {
 
         if (!photo) {
 
-          return json({
-            success: false,
-            error: "Photo is required."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Photo is required."
+            },
+            400
+          );
 
         }
 
-
-        /*
-          Maximum stored string size.
-        */
 
         if (
           photo.length >
           5_000_000
         ) {
 
-          return json({
-            success: false,
-            error:
-              "Photo is too large."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Photo is too large."
+            },
+            400
+          );
 
         }
 
@@ -1201,9 +1495,13 @@ export default {
         const updatedUser =
           await env.DB.prepare(`
             SELECT
+
               id,
+
               username,
+
               email,
+
               profile_photo
 
             FROM users
@@ -1221,7 +1519,9 @@ export default {
           success: true,
 
           user:
-            formatUser(updatedUser)
+            formatUser(
+              updatedUser
+            )
 
         });
 
@@ -1246,10 +1546,14 @@ export default {
 
         if (!user) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
@@ -1268,9 +1572,13 @@ export default {
         const updatedUser =
           await env.DB.prepare(`
             SELECT
+
               id,
+
               username,
+
               email,
+
               profile_photo
 
             FROM users
@@ -1288,7 +1596,9 @@ export default {
           success: true,
 
           user:
-            formatUser(updatedUser)
+            formatUser(
+              updatedUser
+            )
 
         });
 
@@ -1297,10 +1607,6 @@ export default {
 
       /* ======================================================
          USERS
-         
-         Kept for API compatibility.
-         
-         Frontend does NOT display a sidebar user list.
       ====================================================== */
 
       if (
@@ -1317,10 +1623,14 @@ export default {
 
         if (!currentUser) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
@@ -1328,9 +1638,13 @@ export default {
         const result =
           await env.DB.prepare(`
             SELECT
+
               id,
+
               username,
+
               email,
+
               profile_photo
 
             FROM users
@@ -1351,8 +1665,9 @@ export default {
           success: true,
 
           users:
-            (result.results || [])
-              .map(formatUser)
+            (
+              result.results || []
+            ).map(formatUser)
 
         });
 
@@ -1383,10 +1698,14 @@ export default {
 
         if (!currentUser) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
@@ -1400,9 +1719,13 @@ export default {
         const user =
           await env.DB.prepare(`
             SELECT
+
               id,
+
               username,
+
               email,
+
               profile_photo
 
             FROM users
@@ -1417,10 +1740,14 @@ export default {
 
         if (!user) {
 
-          return json({
-            success: false,
-            error: "User not found."
-          }, 404);
+          return json(
+            {
+              success: false,
+              error:
+                "User not found."
+            },
+            404
+          );
 
         }
 
@@ -1455,15 +1782,20 @@ export default {
 
         if (!currentUser) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
 
         let body;
+
 
         try {
 
@@ -1472,10 +1804,14 @@ export default {
 
         } catch {
 
-          return json({
-            success: false,
-            error: "Invalid JSON."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid JSON."
+            },
+            400
+          );
 
         }
 
@@ -1493,11 +1829,14 @@ export default {
           otherUserId <= 0
         ) {
 
-          return json({
-            success: false,
-            error:
-              "Invalid user_id."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid user_id."
+            },
+            400
+          );
 
         }
 
@@ -1507,11 +1846,14 @@ export default {
           currentUser.id
         ) {
 
-          return json({
-            success: false,
-            error:
-              "You cannot create a chat with yourself."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "You cannot create a chat with yourself."
+            },
+            400
+          );
 
         }
 
@@ -1526,17 +1868,22 @@ export default {
 
             LIMIT 1
           `)
-            .bind(otherUserId)
+            .bind(
+              otherUserId
+            )
             .first();
 
 
         if (!otherUser) {
 
-          return json({
-            success: false,
-            error:
-              "User not found."
-          }, 404);
+          return json(
+            {
+              success: false,
+              error:
+                "User not found."
+            },
+            404
+          );
 
         }
 
@@ -1561,7 +1908,7 @@ export default {
 
 
       /* ======================================================
-         CONVERSATIONS LIST
+         CONVERSATIONS
       ====================================================== */
 
       if (
@@ -1578,10 +1925,14 @@ export default {
 
         if (!currentUser) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
@@ -1598,46 +1949,30 @@ export default {
 
 
               CASE
-
                 WHEN c.user1_id = ?
-
                 THEN u2.id
-
                 ELSE u1.id
-
               END AS other_user_id,
 
 
               CASE
-
                 WHEN c.user1_id = ?
-
                 THEN u2.username
-
                 ELSE u1.username
-
               END AS other_username,
 
 
               CASE
-
                 WHEN c.user1_id = ?
-
                 THEN u2.email
-
                 ELSE u1.email
-
               END AS other_email,
 
 
               CASE
-
                 WHEN c.user1_id = ?
-
                 THEN u2.profile_photo
-
                 ELSE u1.profile_photo
-
               END AS other_profile_photo
 
 
@@ -1662,7 +1997,6 @@ export default {
 
             ORDER BY
               c.id DESC
-
           `)
             .bind(
               currentUser.id,
@@ -1705,15 +2039,20 @@ export default {
 
         if (!currentUser) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
 
         let body;
+
 
         try {
 
@@ -1722,10 +2061,14 @@ export default {
 
         } catch {
 
-          return json({
-            success: false,
-            error: "Invalid JSON."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid JSON."
+            },
+            400
+          );
 
         }
 
@@ -1749,22 +2092,28 @@ export default {
           receiverId <= 0
         ) {
 
-          return json({
-            success: false,
-            error:
-              "Invalid receiver_id."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid receiver_id."
+            },
+            400
+          );
 
         }
 
 
         if (!message) {
 
-          return json({
-            success: false,
-            error:
-              "Message cannot be empty."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Message cannot be empty."
+            },
+            400
+          );
 
         }
 
@@ -1774,11 +2123,14 @@ export default {
           10000
         ) {
 
-          return json({
-            success: false,
-            error:
-              "Message is too long."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Message is too long."
+            },
+            400
+          );
 
         }
 
@@ -1788,11 +2140,14 @@ export default {
           currentUser.id
         ) {
 
-          return json({
-            success: false,
-            error:
-              "You cannot send a private message to yourself."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "You cannot send a private message to yourself."
+            },
+            400
+          );
 
         }
 
@@ -1807,17 +2162,22 @@ export default {
 
             LIMIT 1
           `)
-            .bind(receiverId)
+            .bind(
+              receiverId
+            )
             .first();
 
 
         if (!receiver) {
 
-          return json({
-            success: false,
-            error:
-              "Receiver not found."
-          }, 404);
+          return json(
+            {
+              success: false,
+              error:
+                "Receiver not found."
+            },
+            404
+          );
 
         }
 
@@ -1832,11 +2192,14 @@ export default {
 
         if (!conversation) {
 
-          return json({
-            success: false,
-            error:
-              "Could not create conversation."
-          }, 500);
+          return json(
+            {
+              success: false,
+              error:
+                "Could not create conversation."
+            },
+            500
+          );
 
         }
 
@@ -1863,7 +2226,9 @@ export default {
 
 
         const messageId =
-          result.meta.last_row_id;
+          Number(
+            result.meta.last_row_id
+          );
 
 
         const savedMessage =
@@ -1880,33 +2245,27 @@ export default {
 
               m.message,
 
-
               u.username
                 AS sender_username,
-
 
               u.email
                 AS sender_email,
 
-
               u.profile_photo
                 AS sender_profile_photo
 
-
             FROM messages m
-
 
             INNER JOIN users u
               ON u.id = m.sender_id
 
-
             WHERE m.id = ?
 
-
             LIMIT 1
-
           `)
-            .bind(messageId)
+            .bind(
+              messageId
+            )
             .first();
 
 
@@ -1940,10 +2299,14 @@ export default {
 
         if (!currentUser) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
@@ -1963,11 +2326,14 @@ export default {
           targetId <= 0
         ) {
 
-          return json({
-            success: false,
-            error:
-              "Invalid user_id."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid user_id."
+            },
+            400
+          );
 
         }
 
@@ -1978,8 +2344,11 @@ export default {
         ) {
 
           return json({
+
             success: true,
+
             messages: []
+
           });
 
         }
@@ -2020,36 +2389,27 @@ export default {
 
               m.message,
 
-
               u.username
                 AS sender_username,
-
 
               u.email
                 AS sender_email,
 
-
               u.profile_photo
                 AS sender_profile_photo
 
-
             FROM messages m
-
 
             INNER JOIN users u
               ON u.id = m.sender_id
 
-
             WHERE
               m.conversation_id = ?
-
 
             ORDER BY
               m.id ASC
 
-
             LIMIT 500
-
           `)
             .bind(
               conversation.id
@@ -2093,10 +2453,14 @@ export default {
 
         if (!currentUser) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
@@ -2117,27 +2481,28 @@ export default {
 
               receiver_id
 
-
             FROM messages
-
 
             WHERE id = ?
 
-
             LIMIT 1
-
           `)
-            .bind(messageId)
+            .bind(
+              messageId
+            )
             .first();
 
 
         if (!message) {
 
-          return json({
-            success: false,
-            error:
-              "Message not found."
-          }, 404);
+          return json(
+            {
+              success: false,
+              error:
+                "Message not found."
+            },
+            404
+          );
 
         }
 
@@ -2150,11 +2515,14 @@ export default {
             Number(currentUser.id)
         ) {
 
-          return json({
-            success: false,
-            error:
-              "You cannot delete this message."
-          }, 403);
+          return json(
+            {
+              success: false,
+              error:
+                "You cannot delete this message."
+            },
+            403
+          );
 
         }
 
@@ -2164,19 +2532,23 @@ export default {
 
           WHERE id = ?
         `)
-          .bind(messageId)
+          .bind(
+            messageId
+          )
           .run();
 
 
         return json({
+
           success: true
+
         });
 
       }
 
 
       /* ======================================================
-         PUBLIC GROUP CHAT INFO
+         PUBLIC GROUP INFO
       ====================================================== */
 
       if (
@@ -2193,10 +2565,14 @@ export default {
 
         if (!currentUser) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
@@ -2207,7 +2583,8 @@ export default {
 
           group: {
 
-            id: "global",
+            id:
+              "global",
 
             name:
               "Public Group Chat",
@@ -2223,8 +2600,7 @@ export default {
 
 
       /* ======================================================
-         PUBLIC GROUP CHAT
-         GET MESSAGES
+         PUBLIC GROUP - GET MESSAGES
       ====================================================== */
 
       if (
@@ -2241,10 +2617,14 @@ export default {
 
         if (!currentUser) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
@@ -2261,39 +2641,35 @@ export default {
 
               gm.created_at,
 
-
               u.username
                 AS sender_username,
-
 
               u.email
                 AS sender_email,
 
-
               u.profile_photo
                 AS sender_profile_photo
 
-
             FROM global_group_messages gm
-
 
             INNER JOIN users u
               ON u.id = gm.sender_id
 
-
             ORDER BY
               gm.id ASC
 
-
             LIMIT 200
-
           `)
             .all();
 
 
         const messages =
-          (result.results || [])
-            .map(formatGroupMessage);
+          (
+            result.results || []
+          )
+            .map(
+              formatGroupMessage
+            );
 
 
         return json({
@@ -2308,8 +2684,7 @@ export default {
 
 
       /* ======================================================
-         PUBLIC GROUP CHAT
-         SEND MESSAGE
+         PUBLIC GROUP - SEND MESSAGE
       ====================================================== */
 
       if (
@@ -2326,15 +2701,20 @@ export default {
 
         if (!currentUser) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
 
         let body;
+
 
         try {
 
@@ -2343,10 +2723,14 @@ export default {
 
         } catch {
 
-          return json({
-            success: false,
-            error: "Invalid JSON."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid JSON."
+            },
+            400
+          );
 
         }
 
@@ -2359,11 +2743,14 @@ export default {
 
         if (!message) {
 
-          return json({
-            success: false,
-            error:
-              "Message cannot be empty."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Message cannot be empty."
+            },
+            400
+          );
 
         }
 
@@ -2373,11 +2760,14 @@ export default {
           10000
         ) {
 
-          return json({
-            success: false,
-            error:
-              "Message is too long."
-          }, 400);
+          return json(
+            {
+              success: false,
+              error:
+                "Message is too long."
+            },
+            400
+          );
 
         }
 
@@ -2396,7 +2786,6 @@ export default {
             )
 
             VALUES (?, ?, ?)
-
           `)
             .bind(
               currentUser.id,
@@ -2407,7 +2796,9 @@ export default {
 
 
         const messageId =
-          result.meta.last_row_id;
+          Number(
+            result.meta.last_row_id
+          );
 
 
         const savedMessage =
@@ -2422,33 +2813,27 @@ export default {
 
               gm.created_at,
 
-
               u.username
                 AS sender_username,
-
 
               u.email
                 AS sender_email,
 
-
               u.profile_photo
                 AS sender_profile_photo
 
-
             FROM global_group_messages gm
-
 
             INNER JOIN users u
               ON u.id = gm.sender_id
 
-
             WHERE gm.id = ?
 
-
             LIMIT 1
-
           `)
-            .bind(messageId)
+            .bind(
+              messageId
+            )
             .first();
 
 
@@ -2490,10 +2875,14 @@ export default {
 
         if (!currentUser) {
 
-          return json({
-            success: false,
-            error: "Unauthorized."
-          }, 401);
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
 
         }
 
@@ -2512,27 +2901,28 @@ export default {
 
               sender_id
 
-
             FROM global_group_messages
-
 
             WHERE id = ?
 
-
             LIMIT 1
-
           `)
-            .bind(messageId)
+            .bind(
+              messageId
+            )
             .first();
 
 
         if (!message) {
 
-          return json({
-            success: false,
-            error:
-              "Message not found."
-          }, 404);
+          return json(
+            {
+              success: false,
+              error:
+                "Message not found."
+            },
+            404
+          );
 
         }
 
@@ -2542,11 +2932,14 @@ export default {
           Number(currentUser.id)
         ) {
 
-          return json({
-            success: false,
-            error:
-              "You can only delete your own message."
-          }, 403);
+          return json(
+            {
+              success: false,
+              error:
+                "You can only delete your own message."
+            },
+            403
+          );
 
         }
 
@@ -2556,56 +2949,67 @@ export default {
 
           WHERE id = ?
         `)
-          .bind(messageId)
+          .bind(
+            messageId
+          )
           .run();
 
 
         return json({
+
           success: true
+
         });
 
       }
 
 
       /* ======================================================
-         OLD USER-CREATED GROUP API
+         OLD USER-CREATED GROUP API DISABLED
       ====================================================== */
 
       if (
+        path === "/api/groups" ||
         path.startsWith(
-          "/api/groups"
+          "/api/groups/"
         )
       ) {
 
-        return json({
-
-          success: false,
-
-          error:
-            "User-created groups are disabled. Use Public Group Chat."
-
-        }, 404);
+        return json(
+          {
+            success: false,
+            error:
+              "User-created groups are disabled. Use Public Group Chat."
+          },
+          404
+        );
 
       }
 
 
       /* ======================================================
-         CALL API DISABLED
+         VOICE / VIDEO CALL API DISABLED
       ====================================================== */
 
       if (
-        path.startsWith("/api/call") ||
-        path.startsWith("/api/calls")
+        path === "/api/call" ||
+        path.startsWith(
+          "/api/call/"
+        ) ||
+        path === "/api/calls" ||
+        path.startsWith(
+          "/api/calls/"
+        )
       ) {
 
-        return json({
-
-          success: false,
-
-          error:
-            "Voice and video calls are disabled."
-
-        }, 404);
+        return json(
+          {
+            success: false,
+            error:
+              "Voice and video calls are disabled."
+          },
+          404
+        );
 
       }
 
@@ -2614,39 +3018,13 @@ export default {
          UNKNOWN API
       ====================================================== */
 
-      if (
-        path.startsWith("/api/")
-      ) {
-
-        return json({
-
+      return json(
+        {
           success: false,
-
           error:
             "API endpoint not found."
-
-        }, 404);
-
-      }
-
-
-      /* ======================================================
-         FRONTEND ASSETS
-      ====================================================== */
-
-      if (env.ASSETS) {
-
-        return env.ASSETS.fetch(
-          request
-        );
-
-      }
-
-
-      return text(
-        "Dark Chat Worker is running.",
-        200,
-        "text/plain; charset=utf-8"
+        },
+        404
       );
 
 
@@ -2658,17 +3036,20 @@ export default {
       );
 
 
-      return json({
+      return json(
+        {
+          success: false,
 
-        success: false,
+          error:
+            "Internal server error.",
 
-        error:
-          "Internal server error.",
+          detail:
+            error?.message ||
+            String(error)
 
-        detail:
-          error.message
-
-      }, 500);
+        },
+        500
+      );
 
     }
 
