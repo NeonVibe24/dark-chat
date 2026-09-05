@@ -506,7 +506,7 @@ export default {
         if (!email || !password) {
 
           return json({
-            success: falseconst         error:
+            success: falsconst          error:
               "Email and password are required"
           }, 400);
 
