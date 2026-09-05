@@ -181,6 +181,7 @@ const removeProfilePhoto =
 ============================================================ */
 
 function getToken() {
+
   return localStorage.getItem(
     "dark_chat_token"
   );
@@ -358,6 +359,7 @@ function formatTime(value) {
     let number =
       Number(value);
 
+
     /*
      * seconds timestamp ဖြစ်ရင်
      * milliseconds ပြောင်းမယ်။
@@ -371,6 +373,7 @@ function formatTime(value) {
       number *= 1000;
     }
 
+
     date =
       new Date(number);
 
@@ -378,6 +381,7 @@ function formatTime(value) {
 
     let text =
       String(value);
+
 
     /*
      * SQLite datetime
@@ -396,6 +400,7 @@ function formatTime(value) {
           "T"
         ) + "Z";
     }
+
 
     date =
       new Date(text);
@@ -434,6 +439,7 @@ function setAvatar(
   if (!element) {
     return;
   }
+
 
   element.textContent =
     "";
@@ -480,6 +486,7 @@ function setAvatarData(
     return;
   }
 
+
   element.textContent =
     "";
 
@@ -524,6 +531,7 @@ function showGroupView() {
     );
   }
 
+
   if (privateChat) {
 
     privateChat.classList.add(
@@ -531,11 +539,13 @@ function showGroupView() {
     );
   }
 
+
   if (groupChat) {
 
     groupChat.classList.remove(
       "hidden"
     );
+
 
     /*
      * CSS တစ်နေရာက display:none
@@ -563,12 +573,14 @@ function showPrivateView() {
     );
   }
 
+
   if (groupChat) {
 
     groupChat.classList.add(
       "hidden"
     );
   }
+
 
   if (privateChat) {
 
@@ -664,12 +676,16 @@ if (showRegister) {
         "hidden"
       );
 
+
       if (loginError) {
+
         loginError.textContent =
           "";
       }
 
+
       if (registerError) {
+
         registerError.textContent =
           "";
       }
@@ -692,12 +708,16 @@ if (showLogin) {
         "hidden"
       );
 
+
       if (loginError) {
+
         loginError.textContent =
           "";
       }
 
+
       if (registerError) {
+
         registerError.textContent =
           "";
       }
@@ -776,9 +796,11 @@ if (registerForm) {
 
         registerForm.reset();
 
+
         registerForm.classList.add(
           "hidden"
         );
+
 
         loginForm.classList.remove(
           "hidden"
@@ -789,6 +811,7 @@ if (registerForm) {
           document.getElementById(
             "loginEmail"
           );
+
 
         if (loginEmail) {
 
@@ -1074,7 +1097,6 @@ async function openGroupChat() {
 
 
   /*
-   * IMPORTANT
    * Group Chat မှာ input မပျောက်အောင်။
    */
 
@@ -1110,6 +1132,7 @@ async function loadGroupMessages() {
   if (!currentUser) {
     return;
   }
+
 
   if (!groupMessages) {
     return;
@@ -1176,20 +1199,19 @@ function renderGroupMessages(
         "div"
       );
 
+
     empty.className =
       "loading";
 
+
     empty.textContent =
       "No messages yet. Say hello!";
+
 
     groupMessages.appendChild(
       empty
     );
 
-
-    /*
-     * Form မပျောက်အောင်
-     */
 
     ensureGroupComposer();
 
@@ -1514,17 +1536,9 @@ function renderGroupMessages(
   );
 
 
-  /*
-   * အောက်ဆုံးကို scroll
-   */
-
   groupMessages.scrollTop =
     groupMessages.scrollHeight;
 
-
-  /*
-   * Input ကို မပျောက်စေဘူး
-   */
 
   ensureGroupComposer();
 }
@@ -1829,7 +1843,30 @@ async function openPrivateChatFromGroup(
 
 
 /* ============================================================
-   USERS
+   USERS / CHAT LIST
+============================================================ */
+
+/*
+ * IMPORTANT:
+ *
+ * /users က User အားလုံးကို ပြန်ပေးနိုင်တယ်။
+ *
+ * Sidebar မှာ User အားလုံးကို မပြဘူး။
+ *
+ * Private message history ရှိတဲ့ User တွေပဲ
+ * Chat list ထဲမှာ ပြမယ်။
+ *
+ * ဒါကြောင့် -
+ *
+ * User register လုပ်ထားတာနဲ့ မပေါ်။
+ *
+ * ကိုယ်က စာပို့လိုက်ရင် ပေါ်။
+ *
+ * သူက ကိုယ့်ကို စာပို့လာရင် ပေါ်။
+ *
+ * နှစ်ဖက်လုံး စာမပို့ဖူးရင် မပေါ်။
+ *
+ * Group Chat ကတော့ သီးသန့်ရှိနေမယ်။
 ============================================================ */
 
 async function loadUsers() {
@@ -1841,12 +1878,17 @@ async function loadUsers() {
 
   usersList.innerHTML = `
     <div class="loading">
-      Loading users...
+      Loading chats...
     </div>
   `;
 
 
   try {
+
+    /*
+     * User information ရဖို့
+     * User အားလုံးကိုယူမယ်။
+     */
 
     const data =
       await api(
@@ -1854,12 +1896,145 @@ async function loadUsers() {
       );
 
 
-    renderUsers(
-      Array.isArray(
-        data.users
-      )
+    const allUsers =
+      Array.isArray(data.users)
         ? data.users
-        : []
+        : [];
+
+
+    /*
+     * ကိုယ့် account ကို ဖယ်မယ်။
+     */
+
+    const otherUsers =
+      allUsers.filter(
+        user =>
+          currentUser &&
+          Number(user.id) !==
+            Number(
+              currentUser.id
+            )
+      );
+
+
+    /*
+     * User တစ်ယောက်ချင်းစီရဲ့
+     * private message history ကို စစ်မယ်။
+     */
+
+    const chatUsers =
+      await Promise.all(
+
+        otherUsers.map(
+          async user => {
+
+            try {
+
+              const messageData =
+                await api(
+                  `/messages?user_id=${encodeURIComponent(
+                    user.id
+                  )}`
+                );
+
+
+              const messages =
+                Array.isArray(
+                  messageData.messages
+                )
+                  ? messageData.messages
+                  : [];
+
+
+              /*
+               * Message တစ်ကြောင်းတောင်
+               * ရှိရင် Chat ဖြစ်ပြီ။
+               */
+
+              if (
+                messages.length > 0
+              ) {
+
+                const lastMessage =
+                  messages[
+                    messages.length - 1
+                  ];
+
+
+                return {
+
+                  ...user,
+
+                  last_message_at:
+                    lastMessage?.created_at ||
+                    null,
+
+                  last_message:
+                    lastMessage?.message ||
+                    ""
+                };
+              }
+
+
+              /*
+               * စာမပို့ဖူးသေးရင်
+               * Sidebar မှာ မပြ။
+               */
+
+              return null;
+
+
+            } catch {
+
+              /*
+               * Message API error ဖြစ်ရင်
+               * အဲဒီ User ကိုမပြ။
+               */
+
+              return null;
+            }
+          }
+        )
+      );
+
+
+    /*
+     * null တွေဖယ်မယ်။
+     */
+
+    const chats =
+      chatUsers.filter(
+        Boolean
+      );
+
+
+    /*
+     * နောက်ဆုံး message အချိန်အလိုက်
+     * Recent Chat အပေါ်ဆုံးမှာထားမယ်။
+     */
+
+    chats.sort(
+      (a, b) => {
+
+        const timeA =
+          getMessageTimestamp(
+            a.last_message_at
+          );
+
+
+        const timeB =
+          getMessageTimestamp(
+            b.last_message_at
+          );
+
+
+        return timeB - timeA;
+      }
+    );
+
+
+    renderUsers(
+      chats
     );
 
 
@@ -1877,7 +2052,93 @@ async function loadUsers() {
 
 
 /* ============================================================
-   RENDER USERS
+   MESSAGE TIMESTAMP HELPER
+============================================================ */
+
+function getMessageTimestamp(
+  value
+) {
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+
+    return 0;
+  }
+
+
+  /*
+   * Numeric timestamp
+   */
+
+  if (
+    typeof value === "number" ||
+    /^\d+$/.test(
+      String(value)
+    )
+  ) {
+
+    let number =
+      Number(value);
+
+
+    if (
+      number > 0 &&
+      number < 100000000000
+    ) {
+
+      number *= 1000;
+    }
+
+
+    return Number.isFinite(
+      number
+    )
+      ? number
+      : 0;
+  }
+
+
+  /*
+   * SQLite datetime
+   */
+
+  let text =
+    String(value);
+
+
+  if (
+    !text.endsWith("Z") &&
+    !text.includes("+") &&
+    /^\d{4}-\d{2}-\d{2} /.test(text)
+  ) {
+
+    text =
+      text.replace(
+        " ",
+        "T"
+      ) + "Z";
+  }
+
+
+  const timestamp =
+    new Date(
+      text
+    ).getTime();
+
+
+  return Number.isFinite(
+    timestamp
+  )
+    ? timestamp
+    : 0;
+}
+
+
+/* ============================================================
+   RENDER CHAT USERS
 ============================================================ */
 
 function renderUsers(
@@ -1893,7 +2154,17 @@ function renderUsers(
     "";
 
 
-  const otherUsers =
+  if (!Array.isArray(users)) {
+
+    users = [];
+  }
+
+
+  /*
+   * ကိုယ့် account ကို ထပ်ပြီးဖယ်မယ်။
+   */
+
+  const chatUsers =
     users.filter(
       user =>
         !currentUser ||
@@ -1904,11 +2175,16 @@ function renderUsers(
     );
 
 
-  if (!otherUsers.length) {
+  /*
+   * Chat မရှိသေးရင်
+   * User အားလုံးကို မပြဘူး။
+   */
+
+  if (!chatUsers.length) {
 
     usersList.innerHTML = `
-      <div class="loading">
-        No other users yet.
+      <div class="loading chat-list-empty">
+        No chats yet.
       </div>
     `;
 
@@ -1916,7 +2192,11 @@ function renderUsers(
   }
 
 
-  otherUsers.forEach(
+  /*
+   * Chat ဖြစ်ပြီးသား User တွေပဲ render လုပ်မယ်။
+   */
+
+  chatUsers.forEach(
     user => {
 
       const item =
@@ -1932,6 +2212,10 @@ function renderUsers(
       item.className =
         "user-item";
 
+
+      /*
+       * လက်ရှိရွေးထားတဲ့ Chat
+       */
 
       if (
         selectedUser &&
@@ -1970,7 +2254,7 @@ function renderUsers(
 
 
       /*
-       * Info
+       * User information
        */
 
       const info =
@@ -1994,15 +2278,41 @@ function renderUsers(
         "User";
 
 
-      const email =
+      /*
+       * Email မပြတော့ဘူး။
+       *
+       * Chat list ဖြစ်တဲ့အတွက်
+       * နောက်ဆုံး message ကို
+       * ပြမယ်။
+       */
+
+      const lastMessage =
         document.createElement(
           "span"
         );
 
 
-      email.textContent =
-        user.email ||
-        "";
+      if (
+        user.last_message
+      ) {
+
+        lastMessage.textContent =
+          user.last_message;
+
+      } else if (
+        user.last_message_at
+      ) {
+
+        lastMessage.textContent =
+          formatTime(
+            user.last_message_at
+          );
+
+      } else {
+
+        lastMessage.textContent =
+          "Chat";
+      }
 
 
       info.appendChild(
@@ -2011,7 +2321,7 @@ function renderUsers(
 
 
       info.appendChild(
-        email
+        lastMessage
       );
 
 
@@ -2026,7 +2336,8 @@ function renderUsers(
 
 
       /*
-       * Sidebar User Click
+       * Chat ကိုနှိပ်ရင်
+       * Private Chat ဖွင့်မယ်။
        */
 
       item.addEventListener(
@@ -2062,6 +2373,14 @@ function renderUsersHighlight() {
   if (!currentUser) {
     return;
   }
+
+
+  /*
+   * Chat list ကိုပြန် load လုပ်မယ်။
+   *
+   * selectedUser က ဆက်ရှိနေတဲ့အတွက်
+   * active class ပြန်ထည့်ပေးမယ်။
+   */
 
   loadUsers();
 }
@@ -2324,7 +2643,25 @@ if (messageForm) {
           "";
 
 
+        /*
+         * စာပို့ပြီးတာနဲ့
+         * Chat list ထဲမှာ
+         * အဲဒီ User ပေါ်လာအောင်
+         * refresh လုပ်မယ်။
+         */
+
         await loadMessages();
+
+
+        await loadUsers();
+
+
+        /*
+         * လက်ရှိ Chat ကို active
+         * ပြန်ထားမယ်။
+         */
+
+        renderUsersHighlight();
 
 
       } catch (error) {
@@ -2383,6 +2720,15 @@ function startPrivateMessageRefresh() {
 
         await loadMessages();
 
+
+        /*
+         * Message အသစ်ဝင်လာရင်
+         * Chat list ရဲ့ last message / time
+         * လည်း update ဖြစ်စေမယ်။
+         */
+
+        await loadUsers();
+
       },
       3000
     );
@@ -2434,6 +2780,8 @@ if (reloadMessages) {
       event.preventDefault();
 
       await loadMessages();
+
+      await loadUsers();
     }
   );
 }
