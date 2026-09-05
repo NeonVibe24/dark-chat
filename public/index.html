@@ -35,26 +35,26 @@
       height: 100%;
       margin: 0;
       padding: 0;
-    }
-
-    body {
       overflow: hidden;
     }
 
     #app {
       width: 100%;
       height: 100%;
+      display: flex;
+      overflow: hidden;
     }
 
     /* =====================================================
        CHAT SCREEN
-    ====================================================== */
+    ====================================================== -->
 
     #chatScreen {
       width: 100%;
       height: 100%;
       min-height: 0;
       display: flex;
+      flex-direction: row;
       overflow: hidden;
     }
 
@@ -65,25 +65,30 @@
 
     /* =====================================================
        SIDEBAR
-    ====================================================== */
+    ====================================================== -->
 
     #chatScreen .sidebar {
-      flex: 0 0 320px;
-      width: 320px;
-      min-width: 280px;
+      flex: 0 0 280px;
+      width: 280px;
+      min-width: 260px;
+      max-width: 320px;
       height: 100%;
       min-height: 0;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
+      box-sizing: border-box;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
     }
 
 
     /* =====================================================
        MAIN CHAT AREA
-    ====================================================== */
+    ====================================================== -->
 
     #chatScreen .chat-area {
       flex: 1 1 auto;
-      width: auto;
+      width: 0;
       min-width: 0;
       height: 100%;
       min-height: 0;
@@ -96,7 +101,7 @@
 
     /* =====================================================
        ACTIVE CHAT
-    ====================================================== */
+    ====================================================== -->
 
     #chatScreen .active-chat {
       width: 100%;
@@ -115,7 +120,7 @@
 
     /* =====================================================
        GROUP CHAT
-    ====================================================== */
+    ====================================================== -->
 
     #groupChat {
       display: flex;
@@ -132,7 +137,7 @@
 
     /* =====================================================
        PRIVATE CHAT
-    ====================================================== */
+    ====================================================== -->
 
     #privateChat {
       display: flex;
@@ -149,19 +154,25 @@
 
     /* =====================================================
        CHAT HEADER
-    ====================================================== */
+    ====================================================== -->
 
     #chatScreen .chat-header {
       flex: 0 0 auto;
       width: 100%;
-      min-height: 72px;
+      min-height: 64px;
+      max-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
       box-sizing: border-box;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
 
     /* =====================================================
        MESSAGES
-    ====================================================== */
+    ====================================================== -->
 
     #chatScreen .messages {
       flex: 1 1 auto;
@@ -169,22 +180,26 @@
       min-height: 0;
       overflow-y: auto;
       overflow-x: hidden;
+      padding: 16px;
       box-sizing: border-box;
     }
 
 
     /* =====================================================
        GROUP MESSAGE FORM
-    ====================================================== */
+    ====================================================== -->
 
     #groupMessageForm {
       flex: 0 0 auto !important;
       display: flex !important;
+      align-items: center;
       width: 100%;
       min-height: 64px;
+      padding: 10px 16px;
       box-sizing: border-box;
       position: relative;
       z-index: 5;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     #groupMessageInput {
@@ -193,21 +208,27 @@
       opacity: 1 !important;
       flex: 1 1 auto;
       min-width: 0;
+      height: 40px;
+      padding: 0 12px;
+      box-sizing: border-box;
     }
 
 
     /* =====================================================
        PRIVATE MESSAGE FORM
-    ====================================================== */
+    ====================================================== -->
 
     #messageForm {
       flex: 0 0 auto !important;
       display: flex !important;
+      align-items: center;
       width: 100%;
       min-height: 64px;
+      padding: 10px 16px;
       box-sizing: border-box;
       position: relative;
       z-index: 5;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     #messageInput {
@@ -216,28 +237,38 @@
       opacity: 1 !important;
       flex: 1 1 auto;
       min-width: 0;
+      height: 40px;
+      padding: 0 12px;
+      box-sizing: border-box;
     }
 
 
     /* =====================================================
        SEND BUTTON
-    ====================================================== */
+    ====================================================== -->
 
     #groupMessageForm .send-btn,
     #messageForm .send-btn {
       flex: 0 0 auto;
       cursor: pointer;
+      height: 40px;
+      min-width: 40px;
+      margin-left: 8px;
     }
 
 
     /* =====================================================
        EMPTY CHAT
-    ====================================================== */
+    ====================================================== -->
 
     #emptyChat {
       width: 100%;
       height: 100%;
       min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     #emptyChat.hidden {
@@ -247,7 +278,7 @@
 
     /* =====================================================
        PROFILE CLICKABLE AREA
-    ====================================================== */
+    ====================================================== -->
 
     .avatar-button {
       cursor: pointer;
@@ -261,8 +292,7 @@
 
     /* =====================================================
        GROUP PROFILE BUTTONS
-       Used by app.js when rendering group messages.
-    ====================================================== */
+    ====================================================== -->
 
     .group-profile-button,
     .group-message-user,
@@ -292,7 +322,7 @@
 
     /* =====================================================
        GROUP MESSAGE STRUCTURE
-    ====================================================== */
+    ====================================================== -->
 
     .group-message-row {
       display: flex;
@@ -323,105 +353,60 @@
 
 
     /* =====================================================
-       MOBILE
-       Keep BOTH People and Chat visible.
-    ====================================================== */
+       MOBILE RESPONSIVE FIX
+    ====================================================== -->
 
     @media (max-width: 800px) {
 
-      #chatScreen {
-        display: flex !important;
-        flex-direction: row !important;
-      }
-
       #chatScreen .sidebar {
-        flex: 0 0 34%;
-        width: 34%;
-        min-width: 0;
-        max-width: 34%;
-        height: 100%;
+        flex: 0 0 90px;
+        width: 90px;
+        min-width: 90px;
+        max-width: 90px;
       }
 
-      #chatScreen .chat-area {
-        flex: 1 1 66%;
-        width: 66%;
-        min-width: 0;
-        max-width: 66%;
-        height: 100%;
-        display: flex !important;
+      #chatScreen .sidebar .profile-info,
+      #chatScreen .sidebar .sidebar-title span,
+      #chatScreen .users-list .user-info span {
+        display: none !important;
       }
 
       #chatScreen .sidebar-header {
-        padding-left: 12px;
-        padding-right: 12px;
+        padding: 10px;
+        justify-content: center;
       }
 
       #chatScreen .sidebar-title {
-        padding-left: 12px;
-        padding-right: 12px;
+        padding: 10px;
+        justify-content: center;
       }
 
-      #chatScreen .profile-info {
-        min-width: 0;
+      #chatScreen .users-list .user-item {
+        padding: 10px;
+        justify-content: center;
       }
 
-      #chatScreen .profile-info strong {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      #chatScreen .users-list {
-        overflow-x: hidden;
-      }
-
-      #chatScreen .user-item {
-        min-width: 0;
-      }
-
-      #chatScreen .user-info {
-        min-width: 0;
-      }
-
-      #chatScreen .user-info strong,
-      #chatScreen .user-info span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      #chatScreen .chat-header {
-        min-height: 68px;
-        padding-left: 10px;
-        padding-right: 10px;
-      }
-
-      #chatScreen .chat-user {
-        min-width: 0;
-      }
-
-      #chatScreen .chat-user > div:last-child {
-        min-width: 0;
-      }
-
-      #chatScreen .chat-user strong,
-      #chatScreen .chat-user span {
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+      #chatScreen .chat-area {
+        flex: 1 1 auto;
+        width: 0;
       }
 
       #groupMessageForm,
       #messageForm {
-        min-height: 58px;
         padding: 8px;
+        min-height: 56px;
       }
 
       #groupMessageInput,
       #messageInput {
-        min-width: 0;
-        font-size: 15px;
+        font-size: 14px;
+        height: 36px;
+      }
+
+      #groupMessageForm .send-btn,
+      #messageForm .send-btn {
+        height: 36px;
+        min-width: 36px;
       }
 
     }
@@ -429,81 +414,15 @@
 
     /* =====================================================
        VERY SMALL PHONES
-    ====================================================== */
+    ====================================================== -->
 
     @media (max-width: 430px) {
 
       #chatScreen .sidebar {
-        flex-basis: 38%;
-        width: 38%;
-        max-width: 38%;
-      }
-
-      #chatScreen .chat-area {
-        flex-basis: 62%;
-        width: 62%;
-        max-width: 62%;
-      }
-
-      #chatScreen .sidebar-header {
-        padding: 10px;
-      }
-
-      #chatScreen .sidebar-title {
-        padding: 10px;
-      }
-
-      #chatScreen .profile {
-        gap: 7px;
-      }
-
-      #chatScreen .profile-info {
-        display: none;
-      }
-
-      #chatScreen .sidebar .avatar {
-        width: 42px;
-        height: 42px;
-      }
-
-      #chatScreen .users-list .user-item {
-        padding: 9px 7px;
-      }
-
-      #chatScreen .users-list .avatar {
-        width: 38px;
-        height: 38px;
-      }
-
-      #chatScreen .user-info span {
-        display: none;
-      }
-
-      #chatScreen .chat-header {
-        min-height: 62px;
-      }
-
-      #chatScreen .chat-header .avatar {
-        width: 38px;
-        height: 38px;
-      }
-
-      #chatScreen .chat-header strong {
-        font-size: 14px;
-      }
-
-      #chatScreen .chat-header span {
-        font-size: 12px;
-      }
-
-      #groupMessageInput,
-      #messageInput {
-        font-size: 14px;
-      }
-
-      #groupMessageForm .send-btn,
-      #messageForm .send-btn {
-        min-width: 42px;
+        flex: 0 0 75px;
+        width: 75px;
+        min-width: 75px;
+        max-width: 75px;
       }
 
     }
