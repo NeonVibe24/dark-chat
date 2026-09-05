@@ -59,6 +59,21 @@ function randomToken() {
 
 
 /* =========================================================
+   RANDOM CALL ID
+========================================================= */
+
+function randomCallId() {
+  const bytes = new Uint8Array(16);
+
+  crypto.getRandomValues(bytes);
+
+  return Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+
+/* =========================================================
    DATABASE INITIALIZATION
 ========================================================= */
 
@@ -107,6 +122,22 @@ async function initDatabase(db) {
         message TEXT NOT NULL,
         FOREIGN KEY (conversation_id)
           REFERENCES conversations(id),
+        FOREIGN KEY (sender_id)
+          REFERENCES users(id),
+        FOREIGN KEY (receiver_id)
+          REFERENCES users(id)
+      )
+    `),
+
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS call_signals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        call_id TEXT NOT NULL,
+        sender_id INTEGER NOT NULL,
+        receiver_id INTEGER NOT NULL,
+        signal_type TEXT NOT NULL,
+        signal_data TEXT,
+        created_at INTEGER NOT NULL,
         FOREIGN KEY (sender_id)
           REFERENCES users(id),
         FOREIGN KEY (receiver_id)
@@ -475,8 +506,7 @@ export default {
         if (!email || !password) {
 
           return json({
-            success: false,
-            error:
+            success: falseconst         error:
               "Email and password are required"
           }, 400);
 
@@ -1319,6 +1349,545 @@ export default {
           success: true,
           deleted:
             result.meta.changes > 0
+        });
+
+      }
+
+
+      /* ===================================================
+         SEND CALL SIGNAL
+      =================================================== */
+
+      if (
+        url.pathname === "/api/calls/signal" &&
+        request.method === "POST"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
+
+        if (!user) {
+
+          return json({
+            success: false,
+            error: "Unauthorized"
+          }, 401);
+
+        }
+
+
+        const body =
+          await request.json();
+
+        const receiverId =
+          Number(body.receiver_id);
+
+        const signalType =
+          String(
+            body.signal_type || ""
+          ).trim();
+
+        let signalData =
+          body.signal_data;
+
+        let callId =
+          String(
+            body.call_id || ""
+          ).trim();
+
+
+        if (!callId) {
+          callId = randomCallId();
+        }
+
+
+        const allowedTypes = [
+          "offer",
+          "answer",
+          "ice-candidate",
+          "reject",
+          "end",
+          "busy"
+        ];
+
+
+        if (!receiverId) {
+
+          return json({
+            success: false,
+            error:
+              "receiver_id is required"
+          }, 400);
+
+        }
+
+
+        if (receiverId === user.id) {
+
+          return json({
+            success: false,
+            error:
+              "Invalid receiver"
+          }, 400);
+
+        }
+
+
+        if (
+          !allowedTypes.includes(signalType)
+        ) {
+
+          return json({
+            success: false,
+            error:
+              "Invalid signal type"
+          }, 400);
+
+        }
+
+
+        const receiver =
+          await env.DB
+            .prepare(`
+              SELECT id
+              FROM users
+              WHERE id = ?
+              LIMIT 1
+            `)
+            .bind(receiverId)
+            .first();
+
+
+        if (!receiver) {
+
+          return json({
+            success: false,
+            error:
+              "Receiver not found"
+          }, 404);
+
+        }
+
+
+        if (
+          signalData !== null &&
+          signalData !== undefined &&
+          typeof signalData !== "string"
+        ) {
+
+          signalData =
+            JSON.stringify(signalData);
+
+        }
+
+
+        if (
+          typeof signalData === "string" &&
+          signalData.length > 500000
+        ) {
+
+          return json({
+            success: false,
+            error:
+              "Signal data is too large"
+          }, 413);
+
+        }
+
+
+        const createdAt =
+          Date.now();
+
+
+        const result =
+          await env.DB
+            .prepare(`
+              INSERT INTO call_signals
+              (
+                call_id,
+                sender_id,
+                receiver_id,
+                signal_type,
+                signal_data,
+                created_at
+              )
+              VALUES (?, ?, ?, ?, ?, ?)
+            `)
+            .bind(
+              callId,
+              user.id,
+              receiverId,
+              signalType,
+              signalData || null,
+              createdAt
+            )
+            .run();
+
+
+        return json({
+          success: true,
+          id: result.meta.last_row_id,
+          call_id: callId,
+          created_at: createdAt
+        });
+
+      }
+
+
+      /* ===================================================
+         GET CALL SIGNALS
+      =================================================== */
+
+      if (
+        url.pathname === "/api/calls/signals" &&
+        request.method === "GET"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
+
+        if (!user) {
+
+          return json({
+            success: false,
+            error: "Unauthorized"
+          }, 401);
+
+        }
+
+
+        const callId =
+          String(
+            url.searchParams.get("call_id") || ""
+          ).trim();
+
+
+        if (!callId) {
+
+          return json({
+            success: false,
+            error:
+              "call_id is required"
+          }, 400);
+
+        }
+
+
+        const signals =
+          await env.DB
+            .prepare(`
+              SELECT
+                cs.id,
+                cs.call_id,
+                cs.sender_id,
+                cs.receiver_id,
+                cs.signal_type,
+                cs.signal_data,
+                cs.created_at,
+
+                u.username AS sender_username,
+                u.email AS sender_email,
+                u.profile_photo AS sender_profile_photo
+
+              FROM call_signals cs
+
+              INNER JOIN users u
+                ON u.id = cs.sender_id
+
+              WHERE
+                cs.call_id = ?
+                AND
+                cs.receiver_id = ?
+
+              ORDER BY cs.id ASC
+            `)
+            .bind(
+              callId,
+              user.id
+            )
+            .all();
+
+
+        const result =
+          (signals.results || []).map(signal => ({
+            id: signal.id,
+            call_id: signal.call_id,
+            sender_id: signal.sender_id,
+            receiver_id: signal.receiver_id,
+            signal_type: signal.signal_type,
+            signal_data: signal.signal_data,
+            created_at: signal.created_at,
+
+            sender: {
+              id: signal.sender_id,
+              username: signal.sender_username,
+              email: signal.sender_email,
+              profile_photo:
+                signal.sender_profile_photo || null
+            }
+          }));
+
+
+        return json({
+          success: true,
+          signals: result
+        });
+
+      }
+
+
+      /* ===================================================
+         DELETE CALL SIGNALS
+      =================================================== */
+
+      if (
+        url.pathname === "/api/calls/signals" &&
+        request.method === "DELETE"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
+
+        if (!user) {
+
+          return json({
+            success: false,
+            error: "Unauthorized"
+          }, 401);
+
+        }
+
+
+        const callId =
+          String(
+            url.searchParams.get("call_id") || ""
+          ).trim();
+
+
+        if (!callId) {
+
+          return json({
+            success: false,
+            error:
+              "call_id is required"
+          }, 400);
+
+        }
+
+
+        await env.DB
+          .prepare(`
+            DELETE FROM call_signals
+            WHERE
+              call_id = ?
+              AND
+              (
+                sender_id = ?
+                OR
+                receiver_id = ?
+              )
+          `)
+          .bind(
+            callId,
+            user.id,
+            user.id
+          )
+          .run();
+
+
+        return json({
+          success: true
+        });
+
+      }
+
+
+      /* ===================================================
+         INCOMING CALLS
+      =================================================== */
+
+      if (
+        url.pathname === "/api/calls/incoming" &&
+        request.method === "GET"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
+
+        if (!user) {
+
+          return json({
+            success: false,
+            error: "Unauthorized"
+          }, 401);
+
+        }
+
+
+        const sinceParam =
+          url.searchParams.get("since");
+
+        const since =
+          sinceParam !== null
+            ? Number(sinceParam) || 0
+            : Date.now() - 30000;
+
+
+        const calls =
+          await env.DB
+            .prepare(`
+              SELECT
+                cs.id,
+                cs.call_id,
+                cs.sender_id,
+                cs.receiver_id,
+                cs.signal_type,
+                cs.signal_data,
+                cs.created_at,
+
+                u.username AS sender_username,
+                u.email AS sender_email,
+                u.profile_photo AS sender_profile_photo
+
+              FROM call_signals cs
+
+              INNER JOIN users u
+                ON u.id = cs.sender_id
+
+              WHERE
+                cs.receiver_id = ?
+                AND cs.signal_type = 'offer'
+                AND cs.created_at >= ?
+
+              ORDER BY cs.id DESC
+              LIMIT 20
+            `)
+            .bind(
+              user.id,
+              since
+            )
+            .all();
+
+
+        const result =
+          (calls.results || []).map(call => {
+
+            let offerData = null;
+
+            try {
+
+              offerData =
+                call.signal_data
+                  ? JSON.parse(call.signal_data)
+                  : null;
+
+            } catch {
+
+              offerData =
+                call.signal_data;
+
+            }
+
+
+            return {
+              id: call.id,
+              call_id: call.call_id,
+              sender_id: call.sender_id,
+              receiver_id: call.receiver_id,
+              signal_type: call.signal_type,
+              signal_data: call.signal_data,
+              created_at: call.created_at,
+
+              sender: {
+                id: call.sender_id,
+                username: call.sender_username,
+                email: call.sender_email,
+                profile_photo:
+                  call.sender_profile_photo || null
+              },
+
+              offer: offerData
+            };
+
+          });
+
+
+        return json({
+          success: true,
+          calls: result
+        });
+
+      }
+
+
+      /* ===================================================
+         CLEAN OLD CALL SIGNALS
+      =================================================== */
+
+      if (
+        url.pathname === "/api/calls/cleanup" &&
+        request.method === "POST"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
+
+        if (!user) {
+
+          return json({
+            success: false,
+            error: "Unauthorized"
+          }, 401);
+
+        }
+
+
+        const oldTime =
+          Date.now() - (60 * 60 * 1000);
+
+
+        await env.DB
+          .prepare(`
+            DELETE FROM call_signals
+            WHERE
+              created_at < ?
+              AND
+              (
+                sender_id = ?
+                OR
+                receiver_id = ?
+              )
+          `)
+          .bind(
+            oldTime,
+            user.id,
+            user.id
+          )
+          .run();
+
+
+        return json({
+          success: true
         });
 
       }
