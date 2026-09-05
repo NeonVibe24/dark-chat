@@ -21,13 +21,6 @@ const CALL_MESSAGE_PREFIX =
    CALL STATE
 ============================================================ */
 
-/*
- * WebRTC မသုံးတော့ပါ။
- *
- * Call တစ်ခုစတင်ရင် fixed Videolink2me room
- * https://videolink2me.com/zm1nec ကို အသုံးပြုမယ်။
- */
-
 let currentCallType = null;
 let currentCallUser = null;
 
@@ -246,7 +239,7 @@ function fixCallButtons() {
 
 
 /* ============================================================
-   CALL BUTTON EVENTS
+   CALL BUTTON EVENTS (ခလုတ်နှိပ်လျှင် Link တန်းပို့ပြီး Room ဝင်မည်)
 ============================================================ */
 
 document.addEventListener(
@@ -280,14 +273,44 @@ document.addEventListener(
     }
 
     if (voice) {
-      startCall("voice");
+      triggerDirectCall("voice");
     }
 
     if (video) {
-      startCall("video");
+      triggerDirectCall("video");
     }
   }
 );
+
+
+/* ============================================================
+   DIRECT CALL TRIGGER
+============================================================ */
+
+async function triggerDirectCall(type) {
+  if (!selectedUser) {
+    showToast("Select a user first");
+    return;
+  }
+
+  try {
+    const message = createCallMessage(type);
+
+    await api("/messages", {
+      method: "POST",
+      body: JSON.stringify({
+        receiver_id: selectedUser.id,
+        message
+      })
+    });
+
+    await loadMessages();
+    openVideolink2me(VIDEOLINK2ME_ROOM);
+
+  } catch (error) {
+    showToast(error.message || "Could not start call");
+  }
+}
 
 
 /* ============================================================
@@ -381,7 +404,6 @@ const removeProfilePhoto =
 
 /* ============================================================
    OLD CALL ELEMENTS
-   Kept for HTML compatibility
 ============================================================ */
 
 const incomingCall =
@@ -2362,462 +2384,6 @@ function imageToDataURL(
 
 
 /* ============================================================
-   VIDEOLINK2ME CALL
-============================================================ */
-
-function startCall(
-  type
-) {
-
-  if (!selectedUser) {
-
-    showToast(
-      "Select a user first"
-    );
-
-    return;
-  }
-
-  currentCallType =
-    type;
-
-  currentCallUser = {
-    ...selectedUser
-  };
-
-  showCallDialog(
-    type
-  );
-}
-
-
-/* ============================================================
-   CALL DIALOG
-============================================================ */
-
-function showCallDialog(
-  type
-) {
-
-  const old =
-    document.getElementById(
-      "videolink2meCallDialog"
-    );
-
-  if (old) {
-    old.remove();
-  }
-
-  const overlay =
-    document.createElement(
-      "div"
-    );
-
-  overlay.id =
-    "videolink2meCallDialog";
-
-  overlay.style.position =
-    "fixed";
-
-  overlay.style.inset =
-    "0";
-
-  overlay.style.background =
-    "rgba(0,0,0,.78)";
-
-  overlay.style.display =
-    "flex";
-
-  overlay.style.alignItems =
-    "center";
-
-  overlay.style.justifyContent =
-    "center";
-
-  overlay.style.padding =
-    "20px";
-
-  overlay.style.boxSizing =
-    "border-box";
-
-  overlay.style.zIndex =
-    "999999";
-
-  const card =
-    document.createElement(
-      "div"
-    );
-
-  card.style.width =
-    "100%";
-
-  card.style.maxWidth =
-    "390px";
-
-  card.style.background =
-    "#161616";
-
-  card.style.color =
-    "#fff";
-
-  card.style.borderRadius =
-    "20px";
-
-  card.style.padding =
-    "24px";
-
-  card.style.boxSizing =
-    "border-box";
-
-  const icon =
-    document.createElement(
-      "div"
-    );
-
-  icon.textContent =
-    type === "voice"
-      ? "📞"
-      : "📹";
-
-  icon.style.fontSize =
-    "42px";
-
-  icon.style.marginBottom =
-    "10px";
-
-  const title =
-    document.createElement(
-      "div"
-    );
-
-  title.textContent =
-    type === "voice"
-      ? "Voice Call"
-      : "Video Call";
-
-  title.style.fontSize =
-    "22px";
-
-  title.style.fontWeight =
-    "700";
-
-  title.style.marginBottom =
-    "8px";
-
-  const description =
-    document.createElement(
-      "div"
-    );
-
-  description.textContent =
-    "Videolink2me room ကို အသုံးပြုပြီး call ဝင်ပါမယ်။";
-
-  description.style.fontSize =
-    "14px";
-
-  description.style.lineHeight =
-    "1.6";
-
-  description.style.color =
-    "#aaa";
-
-  description.style.marginBottom =
-    "18px";
-
-  const roomBox =
-    document.createElement(
-      "div"
-    );
-
-  roomBox.textContent =
-    VIDEOLINK2ME_ROOM;
-
-  roomBox.style.background =
-    "#242424";
-
-  roomBox.style.borderRadius =
-    "12px";
-
-  roomBox.style.padding =
-    "12px";
-
-  roomBox.style.fontSize =
-    "13px";
-
-  roomBox.style.wordBreak =
-    "break-all";
-
-  roomBox.style.marginBottom =
-    "18px";
-
-  const joinButton =
-    document.createElement(
-      "button"
-    );
-
-  joinButton.type =
-    "button";
-
-  joinButton.textContent =
-    "Join Call";
-
-  joinButton.style.width =
-    "100%";
-
-  joinButton.style.padding =
-    "14px";
-
-  joinButton.style.border =
-    "0";
-
-  joinButton.style.borderRadius =
-    "12px";
-
-  joinButton.style.background =
-    "#5865f2";
-
-  joinButton.style.color =
-    "#fff";
-
-  joinButton.style.fontSize =
-    "15px";
-
-  joinButton.style.fontWeight =
-    "700";
-
-  joinButton.style.cursor =
-    "pointer";
-
-  joinButton.style.marginBottom =
-    "10px";
-
-  joinButton.addEventListener(
-    "click",
-    () => {
-
-      overlay.remove();
-
-      openVideolink2me(
-        VIDEOLINK2ME_ROOM
-      );
-    }
-  );
-
-  const sendButton =
-    document.createElement(
-      "button"
-    );
-
-  sendButton.type =
-    "button";
-
-  sendButton.textContent =
-    "Send Room Link";
-
-  sendButton.style.width =
-    "100%";
-
-  sendButton.style.padding =
-    "14px";
-
-  sendButton.style.border =
-    "0";
-
-  sendButton.style.borderRadius =
-    "12px";
-
-  sendButton.style.background =
-    "#292929";
-
-  sendButton.style.color =
-    "#fff";
-
-  sendButton.style.fontSize =
-    "15px";
-
-  sendButton.style.fontWeight =
-    "700";
-
-  sendButton.style.cursor =
-    "pointer";
-
-  sendButton.style.marginBottom =
-    "10px";
-
-  sendButton.addEventListener(
-    "click",
-    async () => {
-
-      overlay.remove();
-
-      await sendCallLink(
-        type
-      );
-    }
-  );
-
-  const cancelButton =
-    document.createElement(
-      "button"
-    );
-
-  cancelButton.type =
-    "button";
-
-  cancelButton.textContent =
-    "Cancel";
-
-  cancelButton.style.width =
-    "100%";
-
-  cancelButton.style.padding =
-    "12px";
-
-  cancelButton.style.border =
-    "0";
-
-  cancelButton.style.background =
-    "transparent";
-
-  cancelButton.style.color =
-    "#aaa";
-
-  cancelButton.style.fontSize =
-    "14px";
-
-  cancelButton.style.cursor =
-    "pointer";
-
-  cancelButton.addEventListener(
-    "click",
-    () => {
-
-      overlay.remove();
-
-      currentCallType =
-        null;
-
-      currentCallUser =
-        null;
-    }
-  );
-
-  card.appendChild(
-    icon
-  );
-
-  card.appendChild(
-    title
-  );
-
-  card.appendChild(
-    description
-  );
-
-  card.appendChild(
-    roomBox
-  );
-
-  card.appendChild(
-    joinButton
-  );
-
-  card.appendChild(
-    sendButton
-  );
-
-  card.appendChild(
-    cancelButton
-  );
-
-  overlay.appendChild(
-    card
-  );
-
-  document.body.appendChild(
-    overlay
-  );
-
-  overlay.addEventListener(
-    "click",
-    event => {
-
-      if (
-        event.target ===
-        overlay
-      ) {
-
-        overlay.remove();
-
-        currentCallType =
-          null;
-
-        currentCallUser =
-          null;
-      }
-    }
-  );
-}
-
-
-/* ============================================================
-   SEND CALL LINK
-============================================================ */
-
-async function sendCallLink(
-  type
-) {
-
-  if (!selectedUser) {
-
-    showToast(
-      "Select a user first"
-    );
-
-    return;
-  }
-
-  try {
-
-    const message =
-      createCallMessage(
-        type
-      );
-
-    await api(
-      "/messages",
-      {
-        method: "POST",
-
-        body:
-          JSON.stringify({
-            receiver_id:
-              selectedUser.id,
-
-            message
-          })
-      }
-    );
-
-    await loadMessages();
-
-    showToast(
-      type === "voice"
-        ? "Voice call link sent"
-        : "Video call link sent"
-    );
-
-  } catch (error) {
-
-    showToast(
-      error.message ||
-      "Could not send call link"
-    );
-  }
-}
-
-
-/* ============================================================
    OPEN VIDEOLINK2ME
 ============================================================ */
 
@@ -2838,13 +2404,6 @@ function openVideolink2me(
     return;
   }
 
-  /*
-   * Same WebView ထဲမှာ တိုက်ရိုက်ဖွင့်မယ်။
-   *
-   * Android WebView မှာ camera / microphone သုံးဖို့
-   * native WebView permission handling လိုပါမယ်။
-   */
-
   window.location.href =
     url;
 }
@@ -2852,7 +2411,6 @@ function openVideolink2me(
 
 /* ============================================================
    OLD CALL UI
-   Disable old WebRTC interface
 ============================================================ */
 
 function hideOldCallUI() {
@@ -2871,58 +2429,21 @@ hideOldCallUI();
 
 /* ============================================================
    OLD INCOMING CALL FUNCTIONS
-   Kept as no-op for compatibility
 ============================================================ */
 
-function startIncomingCallPolling() {
-  /*
-   * Videolink2me fixed-room calls များအတွက်
-   * /calls/incoming polling မလိုတော့ပါ။
-   */
-}
-
-function stopIncomingCallPolling() {
-  /*
-   * No-op
-   */
-}
-
-async function checkIncomingCalls() {
-  /*
-   * No-op
-   */
-}
+function startIncomingCallPolling() {}
+function stopIncomingCallPolling() {}
+async function checkIncomingCalls() {}
 
 
 /* ============================================================
    OLD SIGNAL FUNCTIONS
-   Kept as no-op for compatibility
 ============================================================ */
 
-function startSignalPolling() {
-  /*
-   * WebRTC signaling မသုံးတော့ပါ။
-   */
-}
-
-function stopSignalPolling() {
-  /*
-   * WebRTC signaling မသုံးတော့ပါ။
-   */
-}
-
-async function sendSignal() {
-  /*
-   * WebRTC signaling မသုံးတော့ပါ။
-   */
-  return null;
-}
-
-async function pollCallSignals() {
-  /*
-   * No-op
-   */
-}
+function startSignalPolling() {}
+function stopSignalPolling() {}
+async function sendSignal() { return null; }
+async function pollCallSignals() {}
 
 
 /* ============================================================
@@ -2945,7 +2466,6 @@ async function endCall() {
 
 /* ============================================================
    OLD CALL BUTTONS
-   Do not use old WebRTC controls
 ============================================================ */
 
 if (acceptCallBtn) {
@@ -3041,15 +2561,6 @@ document.addEventListener(
       event.key ===
       "Escape"
     ) {
-
-      const callDialog =
-        document.getElementById(
-          "videolink2meCallDialog"
-        );
-
-      if (callDialog) {
-        callDialog.remove();
-      }
 
       closeProfile();
     }
