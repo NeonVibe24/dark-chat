@@ -1,296 +1,1915 @@
 const API = "/api";
 
-/* ============================================================
-   GLOBAL STATE
-============================================================ */
-
 let currentUser = null;
 let selectedUser = null;
 
 let messageTimer = null;
 
-
 /* ============================================================
-   VIDEO LINK SETTINGS
+   VIDEOLINK2ME CALL STATE
 ============================================================ */
 
 const VIDEOLINK2ME_START =
-    "https://videolink2me.com/start";
+  "https://videolink2me.com/start";
 
-const VIDEOLINK2ME_HOST =
-    "videolink2me.com";
+const CALL_PREFIX =
+  "__PRIVATE_CHAT_CALL__";
 
-let currentVideoRoom = null;
-
-
-/* ============================================================
-   DOM HELPERS
-============================================================ */
-
-function $(id){
-    return document.getElementById(id);
-}
-
-
-function show(id){
-    const el = $(id);
-    if(el) el.classList.remove("hidden");
-}
-
-
-function hide(id){
-    const el = $(id);
-    if(el) el.classList.add("hidden");
-}
-
-
-function text(id,value){
-    const el = $(id);
-    if(el) el.textContent = value ?? "";
-}
-
-
-function escapeHtml(value){
-    return String(value ?? "")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
-}
-
-
-function initials(name){
-    const s = String(name || "U").trim();
-
-    if(!s) return "U";
-
-    return s
-        .split(/\s+/)
-        .slice(0,2)
-        .map(x => x.charAt(0).toUpperCase())
-        .join("");
-}
-
-
-function showToast(message){
-    const el = $("toast");
-
-    if(!el) return;
-
-    el.textContent = message;
-
-    el.classList.add("show");
-
-    clearTimeout(showToast.timer);
-
-    showToast.timer = setTimeout(() => {
-        el.classList.remove("show");
-    },3000);
-}
+let currentCallType = null;
+let currentCallUser = null;
+let callWindow = null;
 
 
 /* ============================================================
-   API
+   ELEMENTS
 ============================================================ */
 
-async function apiRequest(
-    url,
-    options = {}
-){
+const authScreen =
+  document.getElementById("authScreen");
 
-    const config = {
-        credentials:"include",
-        ...options,
-        headers:{
-            "Content-Type":"application/json",
-            ...(options.headers || {})
-        }
-    };
+const chatScreen =
+  document.getElementById("chatScreen");
 
-    const response =
-        await fetch(
-            API + url,
-            config
-        );
+const loginForm =
+  document.getElementById("loginForm");
 
-    let data = null;
+const registerForm =
+  document.getElementById("registerForm");
 
-    try{
-        data = await response.json();
-    }catch{
-        data = {};
-    }
+const showRegister =
+  document.getElementById("showRegister");
 
-    if(!response.ok){
+const showLogin =
+  document.getElementById("showLogin");
 
-        throw new Error(
-            data.error ||
-            data.message ||
-            `Request failed (${response.status})`
-        );
+const loginError =
+  document.getElementById("loginError");
 
-    }
+const registerError =
+  document.getElementById("registerError");
 
-    return data;
-}
+const usersList =
+  document.getElementById("usersList");
+
+const emptyChat =
+  document.getElementById("emptyChat");
+
+const activeChat =
+  document.getElementById("activeChat");
+
+const messagesBox =
+  document.getElementById("messages");
+
+const messageForm =
+  document.getElementById("messageForm");
+
+const messageInput =
+  document.getElementById("messageInput");
+
+const myUsername =
+  document.getElementById("myUsername");
+
+const myAvatar =
+  document.getElementById("myAvatar");
+
+const chatUsername =
+  document.getElementById("chatUsername");
+
+const chatAvatar =
+  document.getElementById("chatAvatar");
+
+const chatStatus =
+  document.getElementById("chatStatus");
+
+const logoutBtn =
+  document.getElementById("logoutBtn");
+
+const refreshUsers =
+  document.getElementById("refreshUsers");
+
+const reloadMessages =
+  document.getElementById("reloadMessages");
+
+const toast =
+  document.getElementById("toast");
 
 
 /* ============================================================
-   AUTH
+   CALL BUTTONS
 ============================================================ */
 
-async function login(
-    email,
-    password
-){
+function getVoiceCallButton() {
+  return document.getElementById(
+    "voiceCallBtn"
+  );
+}
 
-    return await apiRequest(
-        "/login",
-        {
-            method:"POST",
-            body:JSON.stringify({
-                email,
-                password
-            })
-        }
+function getVideoCallButton() {
+  return document.getElementById(
+    "videoCallBtn"
+  );
+}
+
+function fixCallButtons() {
+
+  const actions =
+    document.querySelector(
+      ".chat-header .chat-actions"
     );
 
+  const voice =
+    getVoiceCallButton();
+
+  const video =
+    getVideoCallButton();
+
+  if (!actions || !voice || !video) {
+    return;
+  }
+
+  actions.style.setProperty(
+    "display",
+    "flex",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "align-items",
+    "center",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "justify-content",
+    "flex-end",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "visibility",
+    "visible",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "opacity",
+    "1",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "flex-shrink",
+    "0",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "position",
+    "relative",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "z-index",
+    "50",
+    "important"
+  );
+
+  [voice, video].forEach(
+    button => {
+
+      button.style.setProperty(
+        "display",
+        "flex",
+        "important"
+      );
+
+      button.style.setProperty(
+        "visibility",
+        "visible",
+        "important"
+      );
+
+      button.style.setProperty(
+        "opacity",
+        "1",
+        "important"
+      );
+
+      button.style.setProperty(
+        "flex",
+        "0 0 auto",
+        "important"
+      );
+
+      button.style.setProperty(
+        "pointer-events",
+        "auto",
+        "important"
+      );
+
+      button.style.setProperty(
+        "position",
+        "relative",
+        "important"
+      );
+
+      button.style.setProperty(
+        "z-index",
+        "51",
+        "important"
+      );
+    }
+  );
 }
 
 
-async function register(
-    username,
-    email,
-    password
-){
+/* ============================================================
+   CALL BUTTON EVENTS
+============================================================ */
 
-    return await apiRequest(
-        "/register",
-        {
-            method:"POST",
-            body:JSON.stringify({
+document.addEventListener(
+  "click",
+  event => {
+
+    const voice =
+      event.target.closest(
+        "#voiceCallBtn"
+      );
+
+    const video =
+      event.target.closest(
+        "#videoCallBtn"
+      );
+
+    if (!voice && !video) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!selectedUser) {
+
+      showToast(
+        "Select a user first"
+      );
+
+      return;
+    }
+
+    if (voice) {
+      startCall("voice");
+      return;
+    }
+
+    if (video) {
+      startCall("video");
+      return;
+    }
+  }
+);
+
+
+/* ============================================================
+   CALL LINK BUTTONS
+============================================================ */
+
+document.addEventListener(
+  "click",
+  event => {
+
+    const joinButton =
+      event.target.closest(
+        "[data-call-url]"
+      );
+
+    if (!joinButton) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const url =
+      joinButton.getAttribute(
+        "data-call-url"
+      );
+
+    if (!url) {
+      return;
+    }
+
+    openCallLink(url);
+  }
+);
+
+
+/* ============================================================
+   KEEP BUTTONS VISIBLE
+============================================================ */
+
+window.addEventListener(
+  "resize",
+  fixCallButtons
+);
+
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    fixCallButtons();
+
+    setTimeout(
+      fixCallButtons,
+      100
+    );
+
+    setTimeout(
+      fixCallButtons,
+      500
+    );
+  }
+);
+
+
+/* ============================================================
+   PROFILE ELEMENTS
+============================================================ */
+
+const myAvatarBtn =
+  document.getElementById(
+    "myAvatarBtn"
+  );
+
+const profilePanel =
+  document.getElementById(
+    "profilePanel"
+  );
+
+const profilePanelBackdrop =
+  document.getElementById(
+    "profilePanelBackdrop"
+  );
+
+const closeProfilePanel =
+  document.getElementById(
+    "closeProfilePanel"
+  );
+
+const profilePhotoBtn =
+  document.getElementById(
+    "profilePhotoBtn"
+  );
+
+const profilePhotoLarge =
+  document.getElementById(
+    "profilePhotoLarge"
+  );
+
+const profilePanelName =
+  document.getElementById(
+    "profilePanelName"
+  );
+
+const profilePanelEmail =
+  document.getElementById(
+    "profilePanelEmail"
+  );
+
+const profilePhotoInput =
+  document.getElementById(
+    "profilePhotoInput"
+  );
+
+const changeProfilePhoto =
+  document.getElementById(
+    "changeProfilePhoto"
+  );
+
+const removeProfilePhoto =
+  document.getElementById(
+    "removeProfilePhoto"
+  );
+
+
+/* ============================================================
+   OLD CALL ELEMENTS
+   Kept so existing index.html does not break.
+============================================================ */
+
+const incomingCall =
+  document.getElementById(
+    "incomingCall"
+  );
+
+const incomingCallAvatar =
+  document.getElementById(
+    "incomingCallAvatar"
+  );
+
+const incomingCallName =
+  document.getElementById(
+    "incomingCallName"
+  );
+
+const incomingCallType =
+  document.getElementById(
+    "incomingCallType"
+  );
+
+const rejectCallBtn =
+  document.getElementById(
+    "rejectCallBtn"
+  );
+
+const acceptCallBtn =
+  document.getElementById(
+    "acceptCallBtn"
+  );
+
+const callScreen =
+  document.getElementById(
+    "callScreen"
+  );
+
+const remoteVideo =
+  document.getElementById(
+    "remoteVideo"
+  );
+
+const voiceCallView =
+  document.getElementById(
+    "voiceCallView"
+  );
+
+const voiceCallAvatar =
+  document.getElementById(
+    "voiceCallAvatar"
+  );
+
+const voiceCallName =
+  document.getElementById(
+    "voiceCallName"
+  );
+
+const voiceCallStatus =
+  document.getElementById(
+    "voiceCallStatus"
+  );
+
+const localVideo =
+  document.getElementById(
+    "localVideo"
+  );
+
+const callUserName =
+  document.getElementById(
+    "callUserName"
+  );
+
+const callDuration =
+  document.getElementById(
+    "callDuration"
+  );
+
+const muteCallBtn =
+  document.getElementById(
+    "muteCallBtn"
+  );
+
+const cameraCallBtn =
+  document.getElementById(
+    "cameraCallBtn"
+  );
+
+const switchCameraBtn =
+  document.getElementById(
+    "switchCameraBtn"
+  );
+
+const endCallBtn =
+  document.getElementById(
+    "endCallBtn"
+  );
+
+const remoteAudio =
+  document.getElementById(
+    "remoteAudio"
+  );
+
+const ringtone =
+  document.getElementById(
+    "ringtone"
+  );
+
+
+/* ============================================================
+   HELPERS
+============================================================ */
+
+function getToken() {
+
+  return localStorage.getItem(
+    "dark_chat_token"
+  );
+}
+
+function setToken(token) {
+
+  localStorage.setItem(
+    "dark_chat_token",
+    token
+  );
+}
+
+function removeToken() {
+
+  localStorage.removeItem(
+    "dark_chat_token"
+  );
+}
+
+function headers() {
+
+  const token =
+    getToken();
+
+  const result = {
+    "Content-Type":
+      "application/json"
+  };
+
+  if (token) {
+
+    result.Authorization =
+      `Bearer ${token}`;
+  }
+
+  return result;
+}
+
+async function api(
+  path,
+  options = {}
+) {
+
+  const response =
+    await fetch(
+      API + path,
+      {
+        ...options,
+
+        headers: {
+          ...headers(),
+          ...(options.headers || {})
+        }
+      }
+    );
+
+  let data = {};
+
+  try {
+
+    data =
+      await response.json();
+
+  } catch {}
+
+  if (!response.ok) {
+
+    throw new Error(
+      data.error ||
+      "Something went wrong"
+    );
+  }
+
+  return data;
+}
+
+function avatarLetter(name) {
+
+  return String(
+    name || "U"
+  )
+    .trim()
+    .charAt(0)
+    .toUpperCase();
+}
+
+function showToast(text) {
+
+  if (!toast) {
+    return;
+  }
+
+  toast.textContent =
+    text;
+
+  toast.classList.add(
+    "show"
+  );
+
+  setTimeout(
+    () => {
+      toast.classList.remove(
+        "show"
+      );
+    },
+    2500
+  );
+}
+
+function formatTime(
+  dateString
+) {
+
+  if (!dateString) {
+    return "";
+  }
+
+  let value =
+    String(dateString);
+
+  if (
+    !value.endsWith("Z") &&
+    !value.includes("+")
+  ) {
+
+    value =
+      value.replace(
+        " ",
+        "T"
+      ) + "Z";
+  }
+
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+
+    return "";
+  }
+
+  return date.toLocaleTimeString(
+    [],
+    {
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  );
+}
+
+function setAvatar(
+  element,
+  user
+) {
+
+  if (!element) {
+    return;
+  }
+
+  element.textContent =
+    "";
+
+  element.style.backgroundImage =
+    "";
+
+  if (user?.profile_photo) {
+
+    element.style.backgroundImage =
+      `url("${user.profile_photo}")`;
+
+    element.style.backgroundSize =
+      "cover";
+
+    element.style.backgroundPosition =
+      "center";
+
+    element.style.backgroundRepeat =
+      "no-repeat";
+
+    return;
+  }
+
+  element.textContent =
+    avatarLetter(
+      user?.username
+    );
+}
+
+function setAvatarData(
+  element,
+  username,
+  photo
+) {
+
+  if (!element) {
+    return;
+  }
+
+  element.textContent =
+    "";
+
+  element.style.backgroundImage =
+    "";
+
+  if (photo) {
+
+    element.style.backgroundImage =
+      `url("${photo}")`;
+
+    element.style.backgroundSize =
+      "cover";
+
+    element.style.backgroundPosition =
+      "center";
+
+    element.style.backgroundRepeat =
+      "no-repeat";
+
+  } else {
+
+    element.textContent =
+      avatarLetter(
+        username
+      );
+  }
+}
+
+function escapeHTML(value) {
+
+  const div =
+    document.createElement(
+      "div"
+    );
+
+  div.textContent =
+    String(
+      value ?? ""
+    );
+
+  return div.innerHTML;
+}
+
+
+/* ============================================================
+   VIDEOLINK2ME HELPERS
+============================================================ */
+
+/*
+ * Videolink2me room links are HTTPS URLs.
+ *
+ * We deliberately do not try to read the generated room URL
+ * from videolink2me.com because the page is cross-origin.
+ */
+
+function isValidVideolink(
+  value
+) {
+
+  try {
+
+    const url =
+      new URL(
+        String(value || "").trim()
+      );
+
+    return (
+      url.protocol === "https:" &&
+      (
+        url.hostname ===
+          "videolink2me.com" ||
+        url.hostname.endsWith(
+          ".videolink2me.com"
+        )
+      )
+    );
+
+  } catch {
+
+    return false;
+  }
+}
+
+function normalizeCallLink(
+  value
+) {
+
+  return String(
+    value || ""
+  )
+    .trim()
+    .replace(
+      /^["']|["']$/g,
+      ""
+    );
+}
+
+function makeCallMessage(
+  type,
+  url
+) {
+
+  return (
+    CALL_PREFIX +
+    JSON.stringify({
+      type:
+        type === "video"
+          ? "video"
+          : "voice",
+
+      url:
+        normalizeCallLink(
+          url
+        )
+    })
+  );
+}
+
+function parseCallMessage(
+  message
+) {
+
+  if (
+    typeof message !==
+    "string"
+  ) {
+
+    return null;
+  }
+
+  if (
+    !message.startsWith(
+      CALL_PREFIX
+    )
+  ) {
+
+    return null;
+  }
+
+  try {
+
+    const data =
+      JSON.parse(
+        message.slice(
+          CALL_PREFIX.length
+        )
+      );
+
+    if (
+      !data ||
+      !data.url ||
+      !isValidVideolink(
+        data.url
+      )
+    ) {
+
+      return null;
+    }
+
+    return {
+      type:
+        data.type === "video"
+          ? "video"
+          : "voice",
+
+      url:
+        data.url
+    };
+
+  } catch {
+
+    return null;
+  }
+}
+
+
+/* ============================================================
+   OPEN CALL LINK
+============================================================ */
+
+function openCallLink(
+  url
+) {
+
+  const link =
+    normalizeCallLink(
+      url
+    );
+
+  if (!isValidVideolink(link)) {
+
+    showToast(
+      "Invalid Videolink2me link"
+    );
+
+    return;
+  }
+
+  /*
+   * Try to open in a new browsing context first.
+   *
+   * Android WebView may handle this differently depending
+   * on the native WebView configuration.
+   */
+
+  try {
+
+    callWindow =
+      window.open(
+        link,
+        "_blank"
+      );
+
+    if (
+      callWindow &&
+      !callWindow.closed
+    ) {
+
+      return;
+    }
+
+  } catch {}
+
+  /*
+   * Fallback.
+   */
+
+  window.location.href =
+    link;
+}
+
+
+/* ============================================================
+   SHOW VIDEOLINK2ME START PAGE
+============================================================ */
+
+function openVideolinkStartPage() {
+
+  try {
+
+    callWindow =
+      window.open(
+        VIDEOLINK2ME_START,
+        "_blank"
+      );
+
+    if (
+      callWindow &&
+      !callWindow.closed
+    ) {
+
+      return true;
+    }
+
+  } catch {}
+
+  /*
+   * If popup/new-tab is blocked,
+   * navigate directly.
+   */
+
+  window.location.href =
+    VIDEOLINK2ME_START;
+
+  return false;
+}
+
+
+/* ============================================================
+   CALL LINK DIALOG
+============================================================ */
+
+function createCallDialog(
+  type
+) {
+
+  const old =
+    document.getElementById(
+      "videolinkCallDialog"
+    );
+
+  if (old) {
+    old.remove();
+  }
+
+  const overlay =
+    document.createElement(
+      "div"
+    );
+
+  overlay.id =
+    "videolinkCallDialog";
+
+  overlay.style.position =
+    "fixed";
+
+  overlay.style.inset =
+    "0";
+
+  overlay.style.zIndex =
+    "99999";
+
+  overlay.style.background =
+    "rgba(0,0,0,.75)";
+
+  overlay.style.display =
+    "flex";
+
+  overlay.style.alignItems =
+    "center";
+
+  overlay.style.justifyContent =
+    "center";
+
+  overlay.style.padding =
+    "20px";
+
+  const box =
+    document.createElement(
+      "div"
+    );
+
+  box.style.width =
+    "min(460px, 100%)";
+
+  box.style.background =
+    "#111";
+
+  box.style.color =
+    "#fff";
+
+  box.style.borderRadius =
+    "18px";
+
+  box.style.padding =
+    "22px";
+
+  box.style.boxSizing =
+    "border-box";
+
+  box.style.boxShadow =
+    "0 20px 60px rgba(0,0,0,.5)";
+
+  const title =
+    document.createElement(
+      "div"
+    );
+
+  title.textContent =
+    type === "video"
+      ? "Video Call"
+      : "Voice Call";
+
+  title.style.fontSize =
+    "22px";
+
+  title.style.fontWeight =
+    "700";
+
+  title.style.marginBottom =
+    "10px";
+
+  const description =
+    document.createElement(
+      "div"
+    );
+
+  description.textContent =
+    "Create a Videolink2me room, copy the room link, then paste it below.";
+
+  description.style.fontSize =
+    "14px";
+
+  description.style.lineHeight =
+    "1.5";
+
+  description.style.opacity =
+    ".8";
+
+  description.style.marginBottom =
+    "18px";
+
+  const openButton =
+    document.createElement(
+      "button"
+    );
+
+  openButton.type =
+    "button";
+
+  openButton.textContent =
+    "Open Videolink2me";
+
+  openButton.style.width =
+    "100%";
+
+  openButton.style.padding =
+    "13px";
+
+  openButton.style.border =
+    "0";
+
+  openButton.style.borderRadius =
+    "12px";
+
+  openButton.style.cursor =
+    "pointer";
+
+  openButton.style.marginBottom =
+    "12px";
+
+  openButton.addEventListener(
+    "click",
+    () => {
+
+      openVideolinkStartPage();
+
+      showToast(
+        "Create the call and copy the room link"
+      );
+    }
+  );
+
+  const input =
+    document.createElement(
+      "input"
+    );
+
+  input.type =
+    "url";
+
+  input.placeholder =
+    "Paste Videolink2me room link";
+
+  input.autocomplete =
+    "off";
+
+  input.style.width =
+    "100%";
+
+  input.style.padding =
+    "13px";
+
+  input.style.borderRadius =
+    "12px";
+
+  input.style.border =
+    "1px solid rgba(255,255,255,.15)";
+
+  input.style.background =
+    "#1b1b1b";
+
+  input.style.color =
+    "#fff";
+
+  input.style.boxSizing =
+    "border-box";
+
+  input.style.marginBottom =
+    "10px";
+
+  const pasteButton =
+    document.createElement(
+      "button"
+    );
+
+  pasteButton.type =
+    "button";
+
+  pasteButton.textContent =
+    "Paste from Clipboard";
+
+  pasteButton.style.width =
+    "100%";
+
+  pasteButton.style.padding =
+    "11px";
+
+  pasteButton.style.border =
+    "1px solid rgba(255,255,255,.15)";
+
+  pasteButton.style.borderRadius =
+    "12px";
+
+  pasteButton.style.background =
+    "transparent";
+
+  pasteButton.style.color =
+    "#fff";
+
+  pasteButton.style.cursor =
+    "pointer";
+
+  pasteButton.style.marginBottom =
+    "12px";
+
+  pasteButton.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        if (
+          !navigator.clipboard ||
+          !navigator.clipboard.readText
+        ) {
+
+          throw new Error(
+            "Clipboard unavailable"
+          );
+        }
+
+        const text =
+          await navigator.clipboard.readText();
+
+        input.value =
+          text.trim();
+
+        showToast(
+          "Link pasted"
+        );
+
+      } catch {
+
+        showToast(
+          "Please paste the link manually"
+        );
+      }
+    }
+  );
+
+  const buttons =
+    document.createElement(
+      "div"
+    );
+
+  buttons.style.display =
+    "flex";
+
+  buttons.style.gap =
+    "10px";
+
+  const cancel =
+    document.createElement(
+      "button"
+    );
+
+  cancel.type =
+    "button";
+
+  cancel.textContent =
+    "Cancel";
+
+  cancel.style.flex =
+    "1";
+
+  cancel.style.padding =
+    "12px";
+
+  cancel.style.border =
+    "1px solid rgba(255,255,255,.15)";
+
+  cancel.style.borderRadius =
+    "12px";
+
+  cancel.style.background =
+    "transparent";
+
+  cancel.style.color =
+    "#fff";
+
+  cancel.style.cursor =
+    "pointer";
+
+  cancel.addEventListener(
+    "click",
+    () => {
+      overlay.remove();
+    }
+  );
+
+  const send =
+    document.createElement(
+      "button"
+    );
+
+  send.type =
+    "button";
+
+  send.textContent =
+    "Send Call Link";
+
+  send.style.flex =
+    "1";
+
+  send.style.padding =
+    "12px";
+
+  send.style.border =
+    "0";
+
+  send.style.borderRadius =
+    "12px";
+
+  send.style.cursor =
+    "pointer";
+
+  send.addEventListener(
+    "click",
+    async () => {
+
+      const url =
+        normalizeCallLink(
+          input.value
+        );
+
+      if (
+        !isValidVideolink(url)
+      ) {
+
+        showToast(
+          "Please enter a valid Videolink2me room link"
+        );
+
+        return;
+      }
+
+      await sendCallLinkMessage(
+        url,
+        type
+      );
+
+      overlay.remove();
+    }
+  );
+
+  buttons.appendChild(
+    cancel
+  );
+
+  buttons.appendChild(
+    send
+  );
+
+  box.appendChild(
+    title
+  );
+
+  box.appendChild(
+    description
+  );
+
+  box.appendChild(
+    openButton
+  );
+
+  box.appendChild(
+    input
+  );
+
+  box.appendChild(
+    pasteButton
+  );
+
+  box.appendChild(
+    buttons
+  );
+
+  overlay.appendChild(
+    box
+  );
+
+  overlay.addEventListener(
+    "click",
+    event => {
+
+      if (
+        event.target ===
+        overlay
+      ) {
+
+        overlay.remove();
+      }
+    }
+  );
+
+  document.body.appendChild(
+    overlay
+  );
+
+  setTimeout(
+    () => {
+      input.focus();
+    },
+    50
+  );
+
+  return overlay;
+}
+
+
+/* ============================================================
+   SEND CALL LINK MESSAGE
+============================================================ */
+
+async function sendCallLinkMessage(
+  link,
+  type
+) {
+
+  if (!selectedUser) {
+
+    showToast(
+      "Select a user first"
+    );
+
+    return;
+  }
+
+  const url =
+    normalizeCallLink(
+      link
+    );
+
+  if (
+    !isValidVideolink(url)
+  ) {
+
+    showToast(
+      "Invalid Videolink2me link"
+    );
+
+    return;
+  }
+
+  const message =
+    makeCallMessage(
+      type,
+      url
+    );
+
+  try {
+
+    await api(
+      "/messages",
+      {
+        method: "POST",
+
+        body:
+          JSON.stringify({
+            receiver_id:
+              selectedUser.id,
+
+            message
+          })
+      }
+    );
+
+    await loadMessages();
+
+    showToast(
+      "Call link sent"
+    );
+
+  } catch (error) {
+
+    showToast(
+      error.message
+    );
+  }
+}
+
+
+/* ============================================================
+   START CALL
+============================================================ */
+
+async function startCall(
+  type
+) {
+
+  if (!selectedUser) {
+
+    showToast(
+      "Select a user first"
+    );
+
+    return;
+  }
+
+  currentCallType =
+    type === "video"
+      ? "video"
+      : "voice";
+
+  currentCallUser = {
+    ...selectedUser
+  };
+
+  /*
+   * Videolink2me does the actual camera/microphone,
+   * screen-sharing and call connection.
+   */
+
+  createCallDialog(
+    currentCallType
+  );
+}
+
+
+/* ============================================================
+   OLD CALL FUNCTIONS
+   Compatibility stubs.
+============================================================ */
+
+function startIncomingCallPolling() {
+  /*
+   * Not used anymore.
+   * Videolink2me uses its own call session.
+   */
+}
+
+function stopIncomingCallPolling() {
+  /*
+   * Not used anymore.
+   */
+}
+
+function startSignalPolling() {
+  /*
+   * Not used anymore.
+   */
+}
+
+function stopSignalPolling() {
+  /*
+   * Not used anymore.
+   */
+}
+
+function stopCallDuration() {
+  /*
+   * Not used anymore.
+   */
+}
+
+async function endCall() {
+
+  currentCallType =
+    null;
+
+  currentCallUser =
+    null;
+
+  if (
+    callWindow &&
+    !callWindow.closed
+  ) {
+
+    try {
+      callWindow.close();
+    } catch {}
+  }
+
+  callWindow =
+    null;
+}
+
+async function cleanupCall() {
+
+  await endCall();
+}
+
+
+/* ============================================================
+   OLD CALL UI
+============================================================ */
+
+function showCallScreen(
+  user,
+  type
+) {
+
+  /*
+   * The actual call is now opened by Videolink2me.
+   * Hide the old built-in WebRTC screen if it exists.
+   */
+
+  if (callScreen) {
+
+    callScreen.classList.add(
+      "hidden"
+    );
+  }
+
+  if (voiceCallStatus) {
+
+    voiceCallStatus.textContent =
+      "Open the Videolink2me call";
+  }
+
+  if (callUserName) {
+
+    callUserName.textContent =
+      user?.username ||
+      "User";
+  }
+}
+
+
+/* ============================================================
+   AUTH SCREEN
+============================================================ */
+
+if (showRegister) {
+
+  showRegister.addEventListener(
+    "click",
+    () => {
+
+      loginForm.classList.add(
+        "hidden"
+      );
+
+      registerForm.classList.remove(
+        "hidden"
+      );
+
+      loginError.textContent =
+        "";
+
+      registerError.textContent =
+        "";
+    }
+  );
+}
+
+if (showLogin) {
+
+  showLogin.addEventListener(
+    "click",
+    () => {
+
+      registerForm.classList.add(
+        "hidden"
+      );
+
+      loginForm.classList.remove(
+        "hidden"
+      );
+
+      loginError.textContent =
+        "";
+
+      registerError.textContent =
+        "";
+    }
+  );
+}
+
+
+/* ============================================================
+   REGISTER
+============================================================ */
+
+if (registerForm) {
+
+  registerForm.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+      registerError.textContent =
+        "";
+
+      const username =
+        document
+          .getElementById(
+            "registerUsername"
+          )
+          .value
+          .trim();
+
+      const email =
+        document
+          .getElementById(
+            "registerEmail"
+          )
+          .value
+          .trim();
+
+      const password =
+        document
+          .getElementById(
+            "registerPassword"
+          )
+          .value;
+
+      try {
+
+        await api(
+          "/register",
+          {
+            method: "POST",
+
+            body:
+              JSON.stringify({
                 username,
                 email,
                 password
-            })
-        }
-    );
-
-}
-
-
-async function logout(){
-
-    try{
-
-        await apiRequest(
-            "/logout",
-            {
-                method:"POST"
-            }
+              })
+          }
         );
 
-    }catch(e){}
+        showToast(
+          "Account created"
+        );
 
-    currentUser = null;
-    selectedUser = null;
+        registerForm.reset();
 
-    stopMessagePolling();
+        registerForm.classList.add(
+          "hidden"
+        );
 
-    hide("chatScreen");
-    show("authScreen");
+        loginForm.classList.remove(
+          "hidden"
+        );
 
-    $("loginPassword").value = "";
+        document.getElementById(
+          "loginEmail"
+        ).value =
+          email;
 
+      } catch (error) {
+
+        registerError.textContent =
+          error.message;
+      }
+    }
+  );
 }
 
 
 /* ============================================================
-   LOAD CURRENT USER
+   LOGIN
 ============================================================ */
 
-async function loadCurrentUser(){
+if (loginForm) {
 
-    try{
+  loginForm.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+      loginError.textContent =
+        "";
+
+      const email =
+        document
+          .getElementById(
+            "loginEmail"
+          )
+          .value
+          .trim();
+
+      const password =
+        document
+          .getElementById(
+            "loginPassword"
+          )
+          .value;
+
+      try {
 
         const data =
-            await apiRequest("/me");
+          await api(
+            "/login",
+            {
+              method: "POST",
+
+              body:
+                JSON.stringify({
+                  email,
+                  password
+                })
+            }
+          );
+
+        setToken(
+          data.token
+        );
 
         currentUser =
-            data.user ||
-            data;
+          data.user;
 
-        if(!currentUser){
+        loginForm.reset();
 
-            throw new Error(
-                "Not authenticated"
-            );
+        openChatApp();
 
-        }
+      } catch (error) {
 
-        renderCurrentUser();
-
-        show("chatScreen");
-        hide("authScreen");
-
-        await loadUsers();
-
-        startMessagePolling();
-
-    }catch(e){
-
-        currentUser = null;
-
-        hide("chatScreen");
-        show("authScreen");
-
+        loginError.textContent =
+          error.message;
+      }
     }
-
+  );
 }
 
 
-function renderCurrentUser(){
+/* ============================================================
+   APP START
+============================================================ */
 
-    if(!currentUser) return;
+async function startApp() {
 
-    text(
-        "myUsername",
-        currentUser.username ||
-        currentUser.name ||
-        "User"
-    );
+  fixCallButtons();
 
-    const avatar =
-        $("myAvatar");
+  const token =
+    getToken();
 
-    if(avatar){
+  if (!token) {
 
-        if(currentUser.avatar ||
-           currentUser.profile_photo){
+    showAuth();
 
-            avatar.innerHTML =
-                `<img src="${
-                    escapeHtml(
-                        currentUser.avatar ||
-                        currentUser.profile_photo
-                    )
-                }" alt="">`;
+    return;
+  }
 
-        }else{
+  try {
 
-            avatar.textContent =
-                initials(
-                    currentUser.username ||
-                    currentUser.name
-                );
+    const data =
+      await api(
+        "/me"
+      );
 
-        }
+    currentUser =
+      data.user;
 
-    }
+    openChatApp();
 
-    renderProfile();
+  } catch {
 
+    removeToken();
+
+    showAuth();
+  }
+}
+
+function showAuth() {
+
+  stopMessageRefresh();
+
+  stopIncomingCallPolling();
+
+  authScreen.classList.remove(
+    "hidden"
+  );
+
+  chatScreen.classList.add(
+    "hidden"
+  );
+}
+
+function openChatApp() {
+
+  authScreen.classList.add(
+    "hidden"
+  );
+
+  chatScreen.classList.remove(
+    "hidden"
+  );
+
+  myUsername.textContent =
+    currentUser.username;
+
+  setAvatar(
+    myAvatar,
+    currentUser
+  );
+
+  updateProfilePanel();
+
+  loadUsers();
+
+  fixCallButtons();
+
+  setTimeout(
+    fixCallButtons,
+    100
+  );
+
+  setTimeout(
+    fixCallButtons,
+    500
+  );
 }
 
 
@@ -298,256 +1917,202 @@ function renderCurrentUser(){
    USERS
 ============================================================ */
 
-async function loadUsers(){
+async function loadUsers() {
 
-    const list =
-        $("usersList");
+  usersList.innerHTML = `
+    <div class="loading">
+      Loading users...
+    </div>
+  `;
 
-    if(!list) return;
+  try {
 
-    list.innerHTML =
-        `<div class="loading">
-            Loading users...
-        </div>`;
+    const data =
+      await api(
+        "/users"
+      );
 
-    try{
+    renderUsers(
+      data.users || []
+    );
 
-        const data =
-            await apiRequest("/users");
+  } catch (error) {
 
-        const users =
-            Array.isArray(data)
-                ? data
-                : (
-                    data.users ||
-                    data.data ||
-                    []
-                );
-
-        const filtered =
-            users.filter(
-                user =>
-                    String(
-                        user.id
-                    ) !== String(
-                        currentUser?.id
-                    )
-            );
-
-        if(!filtered.length){
-
-            list.innerHTML =
-                `<div class="loading">
-                    No users found
-                </div>`;
-
-            return;
-        }
-
-        list.innerHTML =
-            filtered
-            .map(renderUser)
-            .join("");
-
-    }catch(e){
-
-        list.innerHTML =
-            `<div class="loading">
-                Unable to load users
-            </div>`;
-
-    }
-
+    usersList.innerHTML = `
+      <div class="loading">
+        ${escapeHTML(
+          error.message
+        )}
+      </div>
+    `;
+  }
 }
 
+function renderUsers(
+  users
+) {
 
-function renderUser(user){
+  usersList.innerHTML =
+    "";
 
-    const id =
-        escapeHtml(user.id);
+  const otherUsers =
+    users.filter(
+      user =>
+        !currentUser ||
+        user.id !==
+          currentUser.id
+    );
 
-    const name =
-        escapeHtml(
-            user.username ||
-            user.name ||
-            "User"
-        );
+  if (!otherUsers.length) {
 
-    const avatar =
-        user.avatar ||
-        user.profile_photo ||
-        user.photo ||
-        "";
-
-    let avatarHtml;
-
-    if(avatar){
-
-        avatarHtml =
-            `<img
-                src="${escapeHtml(avatar)}"
-                alt=""
-            >`;
-
-    }else{
-
-        avatarHtml =
-            escapeHtml(
-                initials(
-                    user.username ||
-                    user.name
-                )
-            );
-
-    }
-
-    return `
-        <button
-            class="user-item ${
-                selectedUser &&
-                String(selectedUser.id) === String(user.id)
-                    ? "active"
-                    : ""
-            }"
-            data-user-id="${id}"
-            type="button"
-        >
-
-            <div class="avatar">
-                ${avatarHtml}
-            </div>
-
-            <div class="user-item-info">
-
-                <strong>
-                    ${name}
-                </strong>
-
-                <span>
-                    ${user.online ? "Online" : "Offline"}
-                </span>
-
-            </div>
-
-        </button>
+    usersList.innerHTML = `
+      <div class="loading">
+        No other users yet.
+      </div>
     `;
 
-}
+    return;
+  }
 
+  otherUsers.forEach(
+    user => {
 
-async function selectUser(user){
+      const item =
+        document.createElement(
+          "div"
+        );
 
-    if(!user) return;
+      item.className =
+        "user-item";
 
-    selectedUser = user;
+      if (
+        selectedUser &&
+        selectedUser.id ===
+          user.id
+      ) {
 
-    hide("emptyChat");
-    show("activeChat");
+        item.classList.add(
+          "active"
+        );
+      }
 
-    text(
-        "chatUsername",
-        user.username ||
-        user.name ||
-        "User"
-    );
+      const avatar =
+        document.createElement(
+          "div"
+        );
 
-    text(
-        "chatStatus",
-        user.online
-            ? "Online"
-            : "Offline"
-    );
+      avatar.className =
+        "avatar";
 
-    renderChatAvatar(user);
+      setAvatar(
+        avatar,
+        user
+      );
 
-    await loadMessages();
+      const info =
+        document.createElement(
+          "div"
+        );
 
-    refreshUserListActiveState();
+      info.className =
+        "user-info";
 
-}
+      const name =
+        document.createElement(
+          "strong"
+        );
 
+      name.textContent =
+        user.username;
 
-function renderChatAvatar(user){
+      const email =
+        document.createElement(
+          "span"
+        );
 
-    const el =
-        $("chatAvatar");
+      email.textContent =
+        user.email;
 
-    if(!el) return;
+      info.appendChild(
+        name
+      );
 
-    const avatar =
-        user.avatar ||
-        user.profile_photo ||
-        user.photo ||
-        "";
+      info.appendChild(
+        email
+      );
 
-    if(avatar){
+      item.appendChild(
+        avatar
+      );
 
-        el.innerHTML =
-            `<img
-                src="${escapeHtml(avatar)}"
-                alt=""
-            >`;
+      item.appendChild(
+        info
+      );
 
-    }else{
+      item.addEventListener(
+        "click",
+        () => {
 
-        el.textContent =
-            initials(
-                user.username ||
-                user.name
-            );
+          selectUser(
+            user
+          );
+        }
+      );
 
+      usersList.appendChild(
+        item
+      );
     }
-
-}
-
-
-function refreshUserListActiveState(){
-
-    document
-        .querySelectorAll(
-            ".user-item"
-        )
-        .forEach(item => {
-
-            item.classList.toggle(
-                "active",
-                selectedUser &&
-                String(
-                    item.dataset.userId
-                ) ===
-                String(selectedUser.id)
-            );
-
-        });
-
+  );
 }
 
 
 /* ============================================================
-   USER LOOKUP
+   SELECT USER
 ============================================================ */
 
-async function getUserById(id){
+async function selectUser(
+  user
+) {
 
-    const data =
-        await apiRequest(
-            "/users"
-        );
+  selectedUser =
+    user;
 
-    const users =
-        Array.isArray(data)
-            ? data
-            : (
-                data.users ||
-                data.data ||
-                []
-            );
+  chatScreen.classList.add(
+    "chat-open"
+  );
 
-    return users.find(
-        user =>
-            String(user.id) === String(id)
-    );
+  emptyChat.classList.add(
+    "hidden"
+  );
 
+  activeChat.classList.remove(
+    "hidden"
+  );
+
+  chatUsername.textContent =
+    user.username;
+
+  setAvatar(
+    chatAvatar,
+    user
+  );
+
+  chatStatus.textContent =
+    "Available";
+
+  fixCallButtons();
+
+  await loadMessages();
+
+  messageInput.focus();
+
+  startMessageRefresh();
+
+  setTimeout(
+    fixCallButtons,
+    100
+  );
 }
 
 
@@ -555,565 +2120,577 @@ async function getUserById(id){
    MESSAGES
 ============================================================ */
 
-async function loadMessages(){
+async function loadMessages() {
 
-    if(!selectedUser) return;
+  if (!selectedUser) {
+    return;
+  }
 
-    const box =
-        $("messages");
+  try {
 
-    if(!box) return;
+    const data =
+      await api(
+        `/messages?user_id=${selectedUser.id}`
+      );
 
-    try{
-
-        const data =
-            await apiRequest(
-                `/messages?user_id=${
-                    encodeURIComponent(
-                        selectedUser.id
-                    )
-                }`
-            );
-
-        const messages =
-            Array.isArray(data)
-                ? data
-                : (
-                    data.messages ||
-                    data.data ||
-                    []
-                );
-
-        renderMessages(messages);
-
-    }catch(e){
-
-        box.innerHTML =
-            `<div class="loading">
-                Unable to load messages
-            </div>`;
-
-    }
-
-}
-
-
-function renderMessages(messages){
-
-    const box =
-        $("messages");
-
-    if(!box) return;
-
-    const wasBottom =
-        box.scrollHeight -
-        box.scrollTop -
-        box.clientHeight <
-        80;
-
-    box.innerHTML =
-        messages
-        .map(renderMessage)
-        .join("");
-
-    if(wasBottom){
-
-        box.scrollTop =
-            box.scrollHeight;
-
-    }
-
-}
-
-
-function renderMessage(message){
-
-    const senderId =
-        message.sender_id ??
-        message.senderId ??
-        message.from_id;
-
-    const mine =
-        String(senderId) ===
-        String(currentUser?.id);
-
-    const body =
-        String(
-            message.message ??
-            message.text ??
-            ""
-        );
-
-    const time =
-        message.created_at ||
-        message.createdAt ||
-        "";
-
-    const link =
-        extractVideolink(body);
-
-    let content = escapeHtml(body);
-
-    if(link){
-
-        content = `
-            <div class="video-link-message">
-
-                <div>
-                    🎥 Video Call
-                </div>
-
-                <button
-                    type="button"
-                    class="join-video-link"
-                    data-video-url="${escapeHtml(link)}"
-                >
-                    Join Call
-                </button>
-
-            </div>
-        `;
-
-    }
-
-    return `
-        <div class="message-row ${
-            mine ? "mine" : "theirs"
-        }">
-
-            <div class="message-bubble">
-
-                ${content}
-
-                ${
-                    time
-                        ? `<small>${escapeHtml(formatTime(time))}</small>`
-                        : ""
-                }
-
-            </div>
-
-        </div>
-    `;
-
-}
-
-
-function formatTime(value){
-
-    try{
-
-        const date =
-            new Date(value);
-
-        if(Number.isNaN(date.getTime()))
-            return "";
-
-        return date.toLocaleTimeString(
-            [],
-            {
-                hour:"2-digit",
-                minute:"2-digit"
-            }
-        );
-
-    }catch{
-
-        return "";
-
-    }
-
-}
-
-
-async function sendMessage(message){
-
-    if(!selectedUser) return;
-
-    const value =
-        String(message || "").trim();
-
-    if(!value) return;
-
-    await apiRequest(
-        "/messages",
-        {
-            method:"POST",
-            body:JSON.stringify({
-                receiver_id:
-                    selectedUser.id,
-
-                message:value
-            })
-        }
+    renderMessages(
+      data.messages || []
     );
 
-    await loadMessages();
+  } catch (error) {
 
+    messagesBox.innerHTML = `
+      <div class="loading">
+        ${escapeHTML(
+          error.message
+        )}
+      </div>
+    `;
+  }
 }
 
 
 /* ============================================================
-   MESSAGE POLLING
+   RENDER MESSAGES
 ============================================================ */
 
-function startMessagePolling(){
+function renderMessages(
+  messages
+) {
 
-    stopMessagePolling();
+  messagesBox.innerHTML =
+    "";
+
+  if (!messages.length) {
+
+    const empty =
+      document.createElement(
+        "div"
+      );
+
+    empty.className =
+      "loading";
+
+    empty.textContent =
+      "No messages yet. Say hello!";
+
+    messagesBox.appendChild(
+      empty
+    );
+
+    return;
+  }
+
+  messages.forEach(
+    message => {
+
+      const mine =
+        Number(
+          message.sender_id
+        ) ===
+        Number(
+          currentUser.id
+        );
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+      row.className =
+        "message-row" +
+        (mine ? " mine" : "");
+
+      const call =
+        parseCallMessage(
+          message.message
+        );
+
+      /*
+       * CALL MESSAGE
+       */
+
+      if (call) {
+
+        const bubble =
+          document.createElement(
+            "div"
+          );
+
+        bubble.className =
+          "message";
+
+        bubble.style.minWidth =
+          "250px";
+
+        bubble.style.maxWidth =
+          "340px";
+
+        const card =
+          document.createElement(
+            "div"
+          );
+
+        card.style.padding =
+          "4px";
+
+        const icon =
+          document.createElement(
+            "div"
+          );
+
+        icon.textContent =
+          call.type === "video"
+            ? "📹"
+            : "📞";
+
+        icon.style.fontSize =
+          "30px";
+
+        icon.style.marginBottom =
+          "8px";
+
+        const title =
+          document.createElement(
+            "div"
+          );
+
+        title.textContent =
+          call.type === "video"
+            ? "Video Call"
+            : "Voice Call";
+
+        title.style.fontWeight =
+          "700";
+
+        title.style.fontSize =
+          "16px";
+
+        title.style.marginBottom =
+          "5px";
+
+        const status =
+          document.createElement(
+            "div"
+          );
+
+        status.textContent =
+          "Videolink2me call";
+
+        status.style.fontSize =
+          "13px";
+
+        status.style.opacity =
+          ".7";
+
+        status.style.marginBottom =
+          "12px";
+
+        const join =
+          document.createElement(
+            "button"
+          );
+
+        join.type =
+          "button";
+
+        join.textContent =
+          "Join Call";
+
+        join.setAttribute(
+          "data-call-url",
+          call.url
+        );
+
+        join.style.width =
+          "100%";
+
+        join.style.padding =
+          "10px 14px";
+
+        join.style.border =
+          "0";
+
+        join.style.borderRadius =
+          "10px";
+
+        join.style.cursor =
+          "pointer";
+
+        join.style.fontWeight =
+          "600";
+
+        const urlText =
+          document.createElement(
+            "div"
+          );
+
+        let shortUrl =
+          call.url;
+
+        if (
+          shortUrl.length >
+          45
+        ) {
+
+          shortUrl =
+            shortUrl.slice(
+              0,
+              42
+            ) + "...";
+        }
+
+        urlText.textContent =
+          shortUrl;
+
+        urlText.style.fontSize =
+          "11px";
+
+        urlText.style.opacity =
+          ".55";
+
+        urlText.style.marginTop =
+          "9px";
+
+        urlText.style.wordBreak =
+          "break-all";
+
+        card.appendChild(
+          icon
+        );
+
+        card.appendChild(
+          title
+        );
+
+        card.appendChild(
+          status
+        );
+
+        card.appendChild(
+          join
+        );
+
+        card.appendChild(
+          urlText
+        );
+
+        const time =
+          document.createElement(
+            "span"
+          );
+
+        time.className =
+          "message-time";
+
+        time.textContent =
+          formatTime(
+            message.created_at
+          );
+
+        bubble.appendChild(
+          card
+        );
+
+        bubble.appendChild(
+          time
+        );
+
+        row.appendChild(
+          bubble
+        );
+
+        messagesBox.appendChild(
+          row
+        );
+
+        return;
+      }
+
+
+      /*
+       * NORMAL TEXT MESSAGE
+       */
+
+      const bubble =
+        document.createElement(
+          "div"
+        );
+
+      bubble.className =
+        "message";
+
+      const text =
+        document.createElement(
+          "div"
+        );
+
+      text.textContent =
+        message.message;
+
+      const time =
+        document.createElement(
+          "span"
+        );
+
+      time.className =
+        "message-time";
+
+      time.textContent =
+        formatTime(
+          message.created_at
+        );
+
+      bubble.appendChild(
+        text
+      );
+
+      bubble.appendChild(
+        time
+      );
+
+      row.appendChild(
+        bubble
+      );
+
+      messagesBox.appendChild(
+        row
+      );
+    }
+  );
+
+  messagesBox.scrollTop =
+    messagesBox.scrollHeight;
+}
+
+
+/* ============================================================
+   SEND MESSAGE
+============================================================ */
+
+if (messageForm) {
+
+  messageForm.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+      if (!selectedUser) {
+        return;
+      }
+
+      const message =
+        messageInput.value.trim();
+
+      if (!message) {
+        return;
+      }
+
+      messageInput.disabled =
+        true;
+
+      try {
+
+        await api(
+          "/messages",
+          {
+            method: "POST",
+
+            body:
+              JSON.stringify({
+                receiver_id:
+                  selectedUser.id,
+
+                message
+              })
+          }
+        );
+
+        messageInput.value =
+          "";
+
+        await loadMessages();
+
+      } catch (error) {
+
+        showToast(
+          error.message
+        );
+
+      } finally {
+
+        messageInput.disabled =
+          false;
+
+        messageInput.focus();
+      }
+    }
+  );
+}
+
+
+/* ============================================================
+   MESSAGE REFRESH
+============================================================ */
+
+function startMessageRefresh() {
+
+  stopMessageRefresh();
+
+  messageTimer =
+    setInterval(
+      async () => {
+
+        if (
+          selectedUser &&
+          document.visibilityState ===
+            "visible"
+        ) {
+
+          await loadMessages();
+        }
+
+      },
+      3000
+    );
+}
+
+function stopMessageRefresh() {
+
+  if (messageTimer) {
+
+    clearInterval(
+      messageTimer
+    );
 
     messageTimer =
-        setInterval(
-            async () => {
-
-                if(
-                    currentUser &&
-                    selectedUser &&
-                    !document.hidden
-                ){
-
-                    await loadMessages();
-
-                }
-
-            },
-            3000
-        );
-
-}
-
-
-function stopMessagePolling(){
-
-    if(messageTimer){
-
-        clearInterval(
-            messageTimer
-        );
-
-        messageTimer = null;
-
-    }
-
+      null;
+  }
 }
 
 
 /* ============================================================
-   VIDEO LINK DETECTION
+   REFRESH USERS
 ============================================================ */
 
-function extractVideolink(message){
+if (refreshUsers) {
 
-    const text =
-        String(message || "");
+  refreshUsers.addEventListener(
+    "click",
+    async () => {
 
-    const match =
-        text.match(
-            /https?:\/\/(?:www\.)?videolink2me\.com\/[^\s<>"']+/i
-        );
+      await loadUsers();
 
-    if(!match) return null;
-
-    return match[0].replace(
-        /[),.!?]+$/,
-        ""
-    );
-
-}
-
-
-function isValidVideolink(url){
-
-    try{
-
-        const parsed =
-            new URL(url);
-
-        return (
-            parsed.protocol === "https:" &&
-            (
-                parsed.hostname ===
-                    VIDEOLINK2ME_HOST ||
-                parsed.hostname ===
-                    "www." + VIDEOLINK2ME_HOST
-            )
-        );
-
-    }catch{
-
-        return false;
-
+      fixCallButtons();
     }
-
+  );
 }
 
 
 /* ============================================================
-   VIDEO CALL UI
+   REFRESH MESSAGES
 ============================================================ */
 
-function openVideoLinkPanel(){
+if (reloadMessages) {
 
-    if(!selectedUser){
+  reloadMessages.addEventListener(
+    "click",
+    async () => {
 
-        showToast(
-            "Select a user first"
-        );
+      await loadMessages();
 
-        return;
-
+      fixCallButtons();
     }
-
-    const input =
-        $("videoRoomLinkInput");
-
-    if(input){
-
-        input.value = "";
-
-    }
-
-    show("videoLinkPanel");
-
-}
-
-
-function closeVideoLinkPanel(){
-
-    hide("videoLinkPanel");
-
-}
-
-
-function openVideolinkStart(){
-
-    /*
-     * This opens the official room creation page.
-     *
-     * The service creates the room after the user
-     * presses Start video call.
-     */
-
-    openExternalOrSameWindow(
-        VIDEOLINK2ME_START
-    );
-
+  );
 }
 
 
 /* ============================================================
-   OPEN VIDEO ROOM
+   LOGOUT
 ============================================================ */
 
-function openVideoRoom(url){
+if (logoutBtn) {
 
-    if(!isValidVideolink(url)){
+  logoutBtn.addEventListener(
+    "click",
+    async () => {
 
-        showToast(
-            "Invalid Videolink2me link"
+      await endCall();
+
+      try {
+
+        await api(
+          "/logout",
+          {
+            method: "POST"
+          }
         );
 
-        return;
+      } catch {}
 
+      stopMessageRefresh();
+
+      stopIncomingCallPolling();
+
+      removeToken();
+
+      currentUser =
+        null;
+
+      selectedUser =
+        null;
+
+      closeProfile();
+
+      chatScreen.classList.remove(
+        "chat-open"
+      );
+
+      showAuth();
+
+      showToast(
+        "Logged out"
+      );
     }
-
-    currentVideoRoom = url;
-
-    show("callScreen");
-
-    const container =
-        $("videolinkContainer");
-
-    const frame =
-        $("videolinkFrame");
-
-    if(container)
-        container.style.display = "block";
-
-    if(frame){
-
-        frame.src = url;
-
-    }
-
-    text(
-        "callUserName",
-        selectedUser?.username ||
-        selectedUser?.name ||
-        "Video Call"
-    );
-
-    text(
-        "callDuration",
-        "Videolink2me"
-    );
-
-    /*
-     * Iframe may be blocked by Videolink2me's
-     * security headers. If that happens, fall back
-     * to navigating the WebView directly.
-     */
-
-    setTimeout(() => {
-
-        if(
-            frame &&
-            frame.contentWindow
-        ){
-
-            /*
-             * Cross-origin pages cannot be inspected,
-             * so we do not attempt DOM access.
-             */
-
-        }
-
-    },1500);
-
-}
-
-
-function closeVideoRoom(){
-
-    const frame =
-        $("videolinkFrame");
-
-    if(frame){
-
-        frame.src =
-            "about:blank";
-
-    }
-
-    const container =
-        $("videolinkContainer");
-
-    if(container){
-
-        container.style.display =
-            "none";
-
-    }
-
-    currentVideoRoom = null;
-
-    hide("callScreen");
-
+  );
 }
 
 
 /* ============================================================
-   EXTERNAL / WEBVIEW NAVIGATION
+   MOBILE BACK
 ============================================================ */
 
-function openExternalOrSameWindow(url){
+const chatArea =
+  document.querySelector(
+    ".chat-area"
+  );
 
-    try{
+if (chatArea) {
 
-        /*
-         * In Android WebView this normally remains
-         * inside the WebView when the WebViewClient
-         * allows navigation.
-         */
+  chatArea.addEventListener(
+    "click",
+    event => {
 
-        window.location.href = url;
-
-    }catch(e){
-
-        window.open(
-            url,
-            "_blank"
+      const header =
+        document.querySelector(
+          ".chat-header"
         );
 
+      if (
+        window.innerWidth <= 700 &&
+        event.target ===
+          header
+      ) {
+
+        chatScreen.classList.remove(
+          "chat-open"
+        );
+
+        stopMessageRefresh();
+      }
     }
-
-}
-
-
-/* ============================================================
-   VIDEO LINK SEND
-============================================================ */
-
-async function sendVideoRoomLink(){
-
-    if(!selectedUser){
-
-        showToast(
-            "Select a user first"
-        );
-
-        return;
-
-    }
-
-    const input =
-        $("videoRoomLinkInput");
-
-    const url =
-        String(
-            input?.value || ""
-        ).trim();
-
-    if(!isValidVideolink(url)){
-
-        showToast(
-            "Enter a valid Videolink2me room link"
-        );
-
-        return;
-
-    }
-
-    try{
-
-        await sendMessage(url);
-
-        closeVideoLinkPanel();
-
-        showToast(
-            "Video call link sent"
-        );
-
-        openVideoRoom(url);
-
-    }catch(e){
-
-        showToast(
-            e.message ||
-            "Unable to send video link"
-        );
-
-    }
-
-}
-
-
-/* ============================================================
-   VOICE CALL
-============================================================ */
-
-function startVoiceCall(){
-
-    /*
-     * Videolink2me is primarily being used here
-     * as the hosted video-call engine.
-     *
-     * Voice call button therefore opens the same
-     * room flow rather than starting the old
-     * custom WebRTC implementation.
-     */
-
-    if(!selectedUser){
-
-        showToast(
-            "Select a user first"
-        );
-
-        return;
-
-    }
-
-    openVideoLinkPanel();
-
+  );
 }
 
 
@@ -1121,68 +2698,93 @@ function startVoiceCall(){
    PROFILE
 ============================================================ */
 
-function renderProfile(){
+function updateProfilePanel() {
 
-    if(!currentUser) return;
+  if (!currentUser) {
+    return;
+  }
 
-    text(
-        "profilePanelName",
-        currentUser.username ||
-        currentUser.name ||
-        "User"
-    );
+  profilePanelName.textContent =
+    currentUser.username;
 
-    text(
-        "profilePanelEmail",
-        currentUser.email ||
-        "user@email.com"
-    );
+  profilePanelEmail.textContent =
+    currentUser.email;
 
-    const large =
-        $("profilePhotoLarge");
+  setAvatarData(
+    profilePhotoLarge,
+    currentUser.username,
+    currentUser.profile_photo
+  );
 
-    if(!large) return;
-
-    const avatar =
-        currentUser.avatar ||
-        currentUser.profile_photo ||
-        currentUser.photo ||
-        "";
-
-    if(avatar){
-
-        large.innerHTML =
-            `<img
-                src="${escapeHtml(avatar)}"
-                alt=""
-            >`;
-
-    }else{
-
-        large.textContent =
-            initials(
-                currentUser.username ||
-                currentUser.name
-            );
-
-    }
-
+  setAvatarData(
+    myAvatar,
+    currentUser.username,
+    currentUser.profile_photo
+  );
 }
 
+function openProfile() {
 
-function openProfile(){
+  updateProfilePanel();
 
-    renderProfile();
-
-    show("profilePanel");
-
+  profilePanel.classList.remove(
+    "hidden"
+  );
 }
 
+function closeProfile() {
 
-function closeProfile(){
+  profilePanel.classList.add(
+    "hidden"
+  );
 
-    hide("profilePanel");
+  if (profilePhotoInput) {
 
+    profilePhotoInput.value =
+      "";
+  }
+}
+
+if (myAvatarBtn) {
+
+  myAvatarBtn.addEventListener(
+    "click",
+    openProfile
+  );
+}
+
+if (closeProfilePanel) {
+
+  closeProfilePanel.addEventListener(
+    "click",
+    closeProfile
+  );
+}
+
+if (profilePanelBackdrop) {
+
+  profilePanelBackdrop.addEventListener(
+    "click",
+    closeProfile
+  );
+}
+
+if (profilePhotoBtn) {
+
+  profilePhotoBtn.addEventListener(
+    "click",
+    () =>
+      profilePhotoInput.click()
+  );
+}
+
+if (changeProfilePhoto) {
+
+  changeProfilePhoto.addEventListener(
+    "click",
+    () =>
+      profilePhotoInput.click()
+  );
 }
 
 
@@ -1190,598 +2792,511 @@ function closeProfile(){
    PROFILE PHOTO
 ============================================================ */
 
-async function uploadProfilePhoto(file){
+if (profilePhotoInput) {
 
-    if(!file) return;
-
-    /*
-     * Uses multipart/form-data so the server can
-     * receive the original image.
-     */
-
-    const form =
-        new FormData();
-
-    form.append(
-        "photo",
-        file
-    );
-
-    try{
-
-        const response =
-            await fetch(
-                API + "/profile/photo",
-                {
-                    method:"POST",
-                    credentials:"include",
-                    body:form
-                }
-            );
-
-        const data =
-            await response.json();
-
-        if(!response.ok){
-
-            throw new Error(
-                data.error ||
-                "Photo upload failed"
-            );
-
-        }
-
-        currentUser =
-            data.user ||
-            currentUser;
-
-        renderCurrentUser();
-
-        showToast(
-            "Profile photo updated"
-        );
-
-    }catch(e){
-
-        showToast(
-            e.message ||
-            "Unable to upload photo"
-        );
-
-    }
-
-}
-
-
-async function removeProfilePhoto(){
-
-    try{
-
-        const data =
-            await apiRequest(
-                "/profile/photo",
-                {
-                    method:"DELETE"
-                }
-            );
-
-        currentUser =
-            data.user ||
-            currentUser;
-
-        renderCurrentUser();
-
-        showToast(
-            "Profile photo removed"
-        );
-
-    }catch(e){
-
-        showToast(
-            e.message ||
-            "Unable to remove photo"
-        );
-
-    }
-
-}
-
-
-/* ============================================================
-   EVENT LISTENERS
-============================================================ */
-
-function setupEvents(){
-
-
-    /* --------------------------------------------------------
-       LOGIN
-    -------------------------------------------------------- */
-
-    $("loginForm")
-        ?.addEventListener(
-            "submit",
-            async event => {
-
-                event.preventDefault();
-
-                const email =
-                    $("loginEmail").value.trim();
-
-                const password =
-                    $("loginPassword").value;
-
-                const error =
-                    $("loginError");
-
-                if(error)
-                    error.textContent = "";
-
-                try{
-
-                    await login(
-                        email,
-                        password
-                    );
-
-                    await loadCurrentUser();
-
-                }catch(e){
-
-                    if(error){
-
-                        error.textContent =
-                            e.message ||
-                            "Login failed";
-
-                    }
-
-                }
-
-            }
-        );
-
-
-    /* --------------------------------------------------------
-       REGISTER
-    -------------------------------------------------------- */
-
-    $("registerForm")
-        ?.addEventListener(
-            "submit",
-            async event => {
-
-                event.preventDefault();
-
-                const username =
-                    $("registerUsername")
-                        .value
-                        .trim();
-
-                const email =
-                    $("registerEmail")
-                        .value
-                        .trim();
-
-                const password =
-                    $("registerPassword")
-                        .value;
-
-                const error =
-                    $("registerError");
-
-                if(error)
-                    error.textContent = "";
-
-                try{
-
-                    await register(
-                        username,
-                        email,
-                        password
-                    );
-
-                    await login(
-                        email,
-                        password
-                    );
-
-                    await loadCurrentUser();
-
-                }catch(e){
-
-                    if(error){
-
-                        error.textContent =
-                            e.message ||
-                            "Registration failed";
-
-                    }
-
-                }
-
-            }
-        );
-
-
-    /* --------------------------------------------------------
-       LOGIN / REGISTER SWITCH
-    -------------------------------------------------------- */
-
-    $("showRegister")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                hide("loginForm");
-                show("registerForm");
-
-            }
-        );
-
-
-    $("showLogin")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                hide("registerForm");
-                show("loginForm");
-
-            }
-        );
-
-
-    /* --------------------------------------------------------
-       LOGOUT
-    -------------------------------------------------------- */
-
-    $("logoutBtn")
-        ?.addEventListener(
-            "click",
-            logout
-        );
-
-
-    /* --------------------------------------------------------
-       REFRESH USERS
-    -------------------------------------------------------- */
-
-    $("refreshUsers")
-        ?.addEventListener(
-            "click",
-            loadUsers
-        );
-
-
-    $("reloadMessages")
-        ?.addEventListener(
-            "click",
-            loadMessages
-        );
-
-
-    /* --------------------------------------------------------
-       USER LIST
-    -------------------------------------------------------- */
-
-    $("usersList")
-        ?.addEventListener(
-            "click",
-            async event => {
-
-                const item =
-                    event.target.closest(
-                        ".user-item"
-                    );
-
-                if(!item) return;
-
-                const id =
-                    item.dataset.userId;
-
-                try{
-
-                    const user =
-                        await getUserById(id);
-
-                    if(user){
-
-                        await selectUser(
-                            user
-                        );
-
-                    }
-
-                }catch(e){
-
-                    showToast(
-                        "Unable to open conversation"
-                    );
-
-                }
-
-            }
-        );
-
-
-    /* --------------------------------------------------------
-       SEND MESSAGE
-    -------------------------------------------------------- */
-
-    $("messageForm")
-        ?.addEventListener(
-            "submit",
-            async event => {
-
-                event.preventDefault();
-
-                const input =
-                    $("messageInput");
-
-                const value =
-                    input.value.trim();
-
-                if(!value) return;
-
-                try{
-
-                    input.value = "";
-
-                    await sendMessage(
-                        value
-                    );
-
-                }catch(e){
-
-                    input.value = value;
-
-                    showToast(
-                        e.message ||
-                        "Unable to send message"
-                    );
-
-                }
-
-            }
-        );
-
-
-    /* --------------------------------------------------------
-       VIDEO CALL
-    -------------------------------------------------------- */
-
-    $("videoCallBtn")
-        ?.addEventListener(
-            "click",
-            openVideoLinkPanel
-        );
-
-
-    /* --------------------------------------------------------
-       VOICE CALL
-    -------------------------------------------------------- */
-
-    $("voiceCallBtn")
-        ?.addEventListener(
-            "click",
-            startVoiceCall
-        );
-
-
-    /* --------------------------------------------------------
-       VIDEO LINK PANEL
-    -------------------------------------------------------- */
-
-    $("cancelVideoLinkBtn")
-        ?.addEventListener(
-            "click",
-            closeVideoLinkPanel
-        );
-
-
-    $("openVideolinkStartBtn")
-        ?.addEventListener(
-            "click",
-            openVideolinkStart
-        );
-
-
-    $("sendVideoLinkBtn")
-        ?.addEventListener(
-            "click",
-            sendVideoRoomLink
-        );
-
-
-    /* --------------------------------------------------------
-       JOIN VIDEO LINK FROM MESSAGE
-    -------------------------------------------------------- */
-
-    $("messages")
-        ?.addEventListener(
-            "click",
-            event => {
-
-                const button =
-                    event.target.closest(
-                        ".join-video-link"
-                    );
-
-                if(!button) return;
-
-                const url =
-                    button.dataset.videoUrl;
-
-                if(
-                    isValidVideolink(url)
-                ){
-
-                    openVideoRoom(url);
-
-                }
-
-            }
-        );
-
-
-    /* --------------------------------------------------------
-       PROFILE
-    -------------------------------------------------------- */
-
-    $("myAvatarBtn")
-        ?.addEventListener(
-            "click",
-            openProfile
-        );
-
-
-    $("closeProfilePanel")
-        ?.addEventListener(
-            "click",
-            closeProfile
-        );
-
-
-    $("profilePanelBackdrop")
-        ?.addEventListener(
-            "click",
-            closeProfile
-        );
-
-
-    $("profilePhotoBtn")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                $("profilePhotoInput")
-                    ?.click();
-
-            }
-        );
-
-
-    $("changeProfilePhoto")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                $("profilePhotoInput")
-                    ?.click();
-
-            }
-        );
-
-
-    $("profilePhotoInput")
-        ?.addEventListener(
-            "change",
-            async event => {
-
-                const file =
-                    event.target.files?.[0];
-
-                if(file){
-
-                    await uploadProfilePhoto(
-                        file
-                    );
-
-                }
-
-                event.target.value = "";
-
-            }
-        );
-
-
-    $("removeProfilePhoto")
-        ?.addEventListener(
-            "click",
-            removeProfilePhoto
-        );
-
-
-    /* --------------------------------------------------------
-       END CALL
-    -------------------------------------------------------- */
-
-    $("endCallBtn")
-        ?.addEventListener(
-            "click",
-            closeVideoRoom
-        );
-
-
-    /* --------------------------------------------------------
-       ESCAPE
-    -------------------------------------------------------- */
-
-    document.addEventListener(
-        "keydown",
-        event => {
-
-            if(event.key !== "Escape")
-                return;
-
-            if(
-                !$("profilePanel")
-                    ?.classList.contains(
-                        "hidden"
-                    )
-            ){
-
-                closeProfile();
-
-            }
-
-            if(
-                !$("videoLinkPanel")
-                    ?.classList.contains(
-                        "hidden"
-                    )
-            ){
-
-                closeVideoLinkPanel();
-
-            }
-
-        }
-    );
-
-
-    /* --------------------------------------------------------
-       BACK/FORWARD
-    -------------------------------------------------------- */
-
-    window.addEventListener(
-        "pageshow",
-        () => {
-
-            if(currentUser){
-
-                loadUsers();
-
-            }
-
-        }
-    );
-
-}
-
-
-/* ============================================================
-   INITIALIZATION
-============================================================ */
-
-document.addEventListener(
-    "DOMContentLoaded",
+  profilePhotoInput.addEventListener(
+    "change",
     async () => {
 
-        setupEvents();
+      const file =
+        profilePhotoInput.files?.[0];
 
-        await loadCurrentUser();
+      if (!file) {
+        return;
+      }
 
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
+
+        showToast(
+          "Please select an image"
+        );
+
+        return;
+      }
+
+      try {
+
+        showToast(
+          "Uploading..."
+        );
+
+        const imageData =
+          await imageToDataURL(
+            file
+          );
+
+        const data =
+          await api(
+            "/profile/photo",
+            {
+              method: "POST",
+
+              body:
+                JSON.stringify({
+                  profile_photo:
+                    imageData
+                })
+            }
+          );
+
+        currentUser =
+          data.user || {
+            ...currentUser,
+            profile_photo:
+              imageData
+          };
+
+        updateProfilePanel();
+
+        await loadUsers();
+
+        showToast(
+          "Photo updated"
+        );
+
+      } catch (error) {
+
+        showToast(
+          error.message
+        );
+
+      } finally {
+
+        profilePhotoInput.value =
+          "";
+      }
     }
-);
+  );
+}
+
+
+/* ============================================================
+   REMOVE PROFILE PHOTO
+============================================================ */
+
+if (removeProfilePhoto) {
+
+  removeProfilePhoto.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        await api(
+          "/profile/photo",
+          {
+            method: "DELETE"
+          }
+        );
+
+        currentUser.profile_photo =
+          null;
+
+        updateProfilePanel();
+
+        await loadUsers();
+
+        showToast(
+          "Photo removed"
+        );
+
+      } catch (error) {
+
+        showToast(
+          error.message
+        );
+      }
+    }
+  );
+}
+
+
+/* ============================================================
+   IMAGE PROCESSING
+============================================================ */
+
+function imageToDataURL(
+  file
+) {
+
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+
+      const reader =
+        new FileReader();
+
+      reader.onload =
+        () => {
+
+          const img =
+            new Image();
+
+          img.onload =
+            () => {
+
+              const maxSize =
+                720;
+
+              let width =
+                img.width;
+
+              let height =
+                img.height;
+
+              if (
+                width >
+                  maxSize ||
+                height >
+                  maxSize
+              ) {
+
+                const scale =
+                  Math.min(
+                    maxSize /
+                      width,
+
+                    maxSize /
+                      height
+                  );
+
+                width =
+                  Math.round(
+                    width *
+                      scale
+                  );
+
+                height =
+                  Math.round(
+                    height *
+                      scale
+                  );
+              }
+
+              const canvas =
+                document.createElement(
+                  "canvas"
+                );
+
+              canvas.width =
+                width;
+
+              canvas.height =
+                height;
+
+              const ctx =
+                canvas.getContext(
+                  "2d"
+                );
+
+              ctx.drawImage(
+                img,
+                0,
+                0,
+                width,
+                height
+              );
+
+              resolve(
+                canvas.toDataURL(
+                  "image/jpeg",
+                  0.82
+                )
+              );
+            };
+
+          img.onerror =
+            () => {
+
+              reject(
+                new Error(
+                  "Invalid image"
+                )
+              );
+            };
+
+          img.src =
+            reader.result;
+        };
+
+      reader.onerror =
+        () => {
+
+          reject(
+            new Error(
+              "Could not read image"
+            )
+          );
+        };
+
+      reader.readAsDataURL(
+        file
+      );
+    }
+  );
+}
+
+
+/* ============================================================
+   OLD INCOMING CALL UI
+============================================================ */
+
+/*
+ * The old WebRTC incoming-call UI is no longer used.
+ * Hide it if it still exists in index.html.
+ */
+
+function hideOldCallUI() {
+
+  if (incomingCall) {
+
+    incomingCall.classList.add(
+      "hidden"
+    );
+  }
+
+  if (callScreen) {
+
+    callScreen.classList.add(
+      "hidden"
+    );
+  }
+}
+
+hideOldCallUI();
+
+
+/* ============================================================
+   OLD CALL BUTTON CONTROL UI
+============================================================ */
+
+/*
+ * These buttons belonged to the previous WebRTC system.
+ * Videolink2me provides its own microphone/camera controls.
+ */
+
+if (muteCallBtn) {
+
+  muteCallBtn.addEventListener(
+    "click",
+    event => {
+
+      event.preventDefault();
+
+      showToast(
+        "Use the microphone control in Videolink2me"
+      );
+    }
+  );
+}
+
+if (cameraCallBtn) {
+
+  cameraCallBtn.addEventListener(
+    "click",
+    event => {
+
+      event.preventDefault();
+
+      showToast(
+        "Use the camera control in Videolink2me"
+      );
+    }
+  );
+}
+
+if (switchCameraBtn) {
+
+  switchCameraBtn.addEventListener(
+    "click",
+    event => {
+
+      event.preventDefault();
+
+      showToast(
+        "Use the camera controls in Videolink2me"
+      );
+    }
+  );
+}
+
+if (endCallBtn) {
+
+  endCallBtn.addEventListener(
+    "click",
+    async event => {
+
+      event.preventDefault();
+
+      await endCall(true);
+
+      if (callScreen) {
+
+        callScreen.classList.add(
+          "hidden"
+        );
+      }
+    }
+  );
+}
+
+if (acceptCallBtn) {
+
+  acceptCallBtn.addEventListener(
+    "click",
+    event => {
+
+      event.preventDefault();
+
+      hideOldCallUI();
+
+      showToast(
+        "Open the call link from the chat"
+      );
+    }
+  );
+}
+
+if (rejectCallBtn) {
+
+  rejectCallBtn.addEventListener(
+    "click",
+    event => {
+
+      event.preventDefault();
+
+      hideOldCallUI();
+    }
+  );
+}
+
+
+/* ============================================================
+   RINGTONE
+============================================================ */
+
+function playRingtone() {
+
+  if (!ringtone) {
+    return;
+  }
+
+  try {
+
+    if (ringtone.src) {
+
+      ringtone.currentTime =
+        0;
+
+      ringtone
+        .play()
+        .catch(
+          () => {}
+        );
+
+      return;
+    }
+
+    const AudioContext =
+      window.AudioContext ||
+      window.webkitAudioContext;
+
+    if (!AudioContext) {
+      return;
+    }
+
+    const audioContext =
+      new AudioContext();
+
+    const oscillator =
+      audioContext
+        .createOscillator();
+
+    const gain =
+      audioContext
+        .createGain();
+
+    oscillator.type =
+      "sine";
+
+    oscillator.frequency.value =
+      700;
+
+    gain.gain.value =
+      0.035;
+
+    oscillator.connect(
+      gain
+    );
+
+    gain.connect(
+      audioContext.destination
+    );
+
+    oscillator.start();
+
+    setTimeout(
+      () => {
+
+        try {
+
+          oscillator.stop();
+
+          audioContext.close();
+
+        } catch {}
+      },
+      700
+    );
+
+  } catch {}
+}
+
+function stopRingtone() {
+
+  if (!ringtone) {
+    return;
+  }
+
+  try {
+
+    ringtone.pause();
+
+    ringtone.currentTime =
+      0;
+
+  } catch {}
+}
+
+
+/* ============================================================
+   START
+============================================================ */
+
+if (
+  document.readyState ===
+  "loading"
+) {
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+      fixCallButtons();
+
+      startApp();
+    }
+  );
+
+} else {
+
+  fixCallButtons();
+
+  startApp();
+}
