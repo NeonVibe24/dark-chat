@@ -36,7 +36,6 @@
 
     <div class="auth-card">
 
-
       <div class="brand">
 
         <div class="brand-icon">
@@ -237,20 +236,13 @@
   >
 
 
-    <!-- ===================================================
-         SIDEBAR
-    ==================================================== -->
+    <!-- SIDEBAR -->
 
     <aside class="sidebar">
 
-
       <div class="sidebar-header">
 
-
         <div class="profile">
-
-
-          <!-- MY PROFILE PHOTO -->
 
           <button
             id="myAvatarBtn"
@@ -295,8 +287,6 @@
       </div>
 
 
-      <!-- USER LIST -->
-
       <div class="sidebar-title">
 
         <span>
@@ -329,14 +319,10 @@
 
 
 
-    <!-- ===================================================
-         CHAT AREA
-    ==================================================== -->
+    <!-- CHAT -->
 
     <main class="chat-area">
 
-
-      <!-- EMPTY CHAT -->
 
       <div
         id="emptyChat"
@@ -359,10 +345,6 @@
 
 
 
-      <!-- =================================================
-           ACTIVE CHAT
-      ================================================== -->
-
       <div
         id="activeChat"
         class="active-chat hidden"
@@ -373,11 +355,7 @@
 
         <header class="chat-header">
 
-
           <div class="chat-user">
-
-
-            <!-- CHAT USER AVATAR -->
 
             <div
               id="chatAvatar"
@@ -402,10 +380,7 @@
           </div>
 
 
-          <!-- CALL BUTTONS -->
-
           <div class="chat-actions">
-
 
             <button
               id="voiceCallBtn"
@@ -503,7 +478,6 @@
 
   <div class="profile-panel-card">
 
-
     <button
       id="closeProfilePanel"
       class="profile-close"
@@ -549,7 +523,6 @@
 
     <div class="profile-actions">
 
-
       <button
         id="changeProfilePhoto"
         class="primary-btn"
@@ -576,6 +549,92 @@
 
 
 <!-- =======================================================
+     VIDEO LINK PANEL
+======================================================== -->
+
+<div
+  id="videoLinkPanel"
+  class="call-overlay hidden"
+>
+
+  <div class="incoming-call-card">
+
+    <div class="call-avatar">
+      ▣
+    </div>
+
+    <h3>
+      Video Call
+    </h3>
+
+    <div class="incoming-call-type">
+      Create a Videolink2me room
+    </div>
+
+
+    <div style="width:100%;margin-top:18px;">
+
+      <input
+        id="videoRoomLinkInput"
+        type="url"
+        placeholder="Paste Videolink2me room link"
+        autocomplete="off"
+        style="
+          width:100%;
+          box-sizing:border-box;
+          padding:13px 14px;
+          border-radius:12px;
+          border:1px solid rgba(255,255,255,.12);
+          background:rgba(255,255,255,.06);
+          color:inherit;
+          outline:none;
+        "
+      >
+
+    </div>
+
+
+    <div
+      class="incoming-call-actions"
+      style="margin-top:18px;"
+    >
+
+      <button
+        id="cancelVideoLinkBtn"
+        class="call-reject-btn"
+        type="button"
+      >
+        ×
+      </button>
+
+
+      <button
+        id="sendVideoLinkBtn"
+        class="call-accept-btn"
+        type="button"
+      >
+        ✓
+      </button>
+
+    </div>
+
+
+    <button
+      id="openVideolinkStartBtn"
+      type="button"
+      class="switch-btn"
+      style="margin-top:16px;"
+    >
+      Open Videolink2me
+    </button>
+
+  </div>
+
+</div>
+
+
+
+<!-- =======================================================
      INCOMING CALL
 ======================================================== -->
 
@@ -584,9 +643,7 @@
   class="call-overlay hidden"
 >
 
-
   <div class="incoming-call-card">
-
 
     <div
       id="incomingCallAvatar"
@@ -610,7 +667,6 @@
 
 
     <div class="incoming-call-actions">
-
 
       <button
         id="rejectCallBtn"
@@ -646,8 +702,41 @@
   class="call-screen hidden"
 >
 
+  <div
+    id="videolinkContainer"
+    style="
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      background:#000;
+      display:none;
+    "
+  >
 
-  <!-- REMOTE VIDEO -->
+    <iframe
+      id="videolinkFrame"
+      title="Videolink2me"
+      allow="
+        camera;
+        microphone;
+        display-capture;
+        fullscreen;
+        autoplay;
+        clipboard-read;
+        clipboard-write
+      "
+      style="
+        width:100%;
+        height:100%;
+        border:0;
+        display:block;
+        background:#000;
+      "
+    ></iframe>
+
+  </div>
+
 
   <video
     id="remoteVideo"
@@ -656,8 +745,6 @@
     playsinline
   ></video>
 
-
-  <!-- AUDIO ONLY -->
 
   <div
     id="voiceCallView"
@@ -682,8 +769,6 @@
   </div>
 
 
-  <!-- LOCAL VIDEO -->
-
   <video
     id="localVideo"
     class="local-video"
@@ -692,8 +777,6 @@
     playsinline
   ></video>
 
-
-  <!-- CALL HEADER -->
 
   <div class="call-topbar">
 
@@ -708,10 +791,7 @@
   </div>
 
 
-  <!-- CALL CONTROLS -->
-
   <div class="call-controls">
-
 
     <button
       id="muteCallBtn"
@@ -755,8 +835,6 @@
   </div>
 
 
-  <!-- LOCAL MEDIA -->
-
   <audio
     id="remoteAudio"
     autoplay
@@ -778,9 +856,7 @@
 
 
 
-<!-- =======================================================
-     TOAST
-======================================================== -->
+<!-- TOAST -->
 
 <div
   id="toast"
