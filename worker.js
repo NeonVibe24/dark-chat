@@ -112,7 +112,10 @@ async function initDatabase(db) {
         FOREIGN KEY (receiver_id)
           REFERENCES users(id)
       )
-    `)
+    `),
+
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id)`)
 
   ]);
 
