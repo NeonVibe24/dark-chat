@@ -41,7 +41,7 @@
     }
 
     /* =====================================================
-       CHAT SCREEN
+       CHAT SCREEN (Layout တစ်ခုလုံးကို တာဝန်ယူသည်)
     ====================================================== */
 
     #chatScreen {
@@ -59,7 +59,7 @@
 
 
     /* =====================================================
-       SIDEBAR (ပြင်ဆင်ထားသည် - ဖရိုဖရဲမဖြစ်အောင်)
+       SIDEBAR (ဘယ်ဘက် ဘားတန်း)
     ====================================================== */
 
     #chatScreen .sidebar {
@@ -77,8 +77,9 @@
       background: inherit;
     }
 
-    .sidebar-header {
+    #chatScreen .sidebar-header {
       flex: 0 0 auto;
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -87,15 +88,23 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    .profile {
+    #chatScreen .sidebar-header .profile {
       display: flex;
       align-items: center;
       gap: 10px;
       min-width: 0;
+      flex: 1 1 auto;
     }
 
-    .sidebar-title {
+    #chatScreen .sidebar-header .profile-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    #chatScreen .sidebar-title {
       flex: 0 0 auto;
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -106,7 +115,7 @@
       color: rgba(255, 255, 255, 0.6);
     }
 
-    .users-list {
+    #usersList {
       flex: 1 1 auto;
       width: 100%;
       min-height: 0;
@@ -117,7 +126,7 @@
 
 
     /* =====================================================
-       MAIN CHAT AREA
+       MAIN CHAT AREA (ညာဘက် ချတ်ဧရိယာ)
     ====================================================== */
 
     #chatScreen .chat-area {
@@ -153,26 +162,10 @@
 
 
     /* =====================================================
-       GROUP CHAT
+       GROUP CHAT & PRIVATE CHAT
     ====================================================== */
 
-    #groupChat {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: 100%;
-      min-height: 0;
-    }
-
-    #groupChat.hidden {
-      display: none !important;
-    }
-
-
-    /* =====================================================
-       PRIVATE CHAT
-    ====================================================== */
-
+    #groupChat,
     #privateChat {
       display: flex;
       flex-direction: column;
@@ -181,6 +174,7 @@
       min-height: 0;
     }
 
+    #groupChat.hidden,
     #privateChat.hidden {
       display: none !important;
     }
@@ -220,38 +214,10 @@
 
 
     /* =====================================================
-       GROUP MESSAGE FORM
+       MESSAGE FORMS & INPUTS
     ====================================================== */
 
-    #groupMessageForm {
-      flex: 0 0 auto !important;
-      display: flex !important;
-      align-items: center;
-      width: 100%;
-      min-height: 64px;
-      padding: 10px 16px;
-      box-sizing: border-box;
-      position: relative;
-      z-index: 5;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    #groupMessageInput {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      flex: 1 1 auto;
-      min-width: 0;
-      height: 40px;
-      padding: 0 12px;
-      box-sizing: border-box;
-    }
-
-
-    /* =====================================================
-       PRIVATE MESSAGE FORM
-    ====================================================== */
-
+    #groupMessageForm,
     #messageForm {
       flex: 0 0 auto !important;
       display: flex !important;
@@ -265,6 +231,7 @@
       border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
+    #groupMessageInput,
     #messageInput {
       display: block !important;
       visibility: visible !important;
@@ -275,11 +242,6 @@
       padding: 0 12px;
       box-sizing: border-box;
     }
-
-
-    /* =====================================================
-       SEND BUTTON
-    ====================================================== */
 
     #groupMessageForm .send-btn,
     #messageForm .send-btn {
@@ -311,7 +273,7 @@
 
 
     /* =====================================================
-       PROFILE CLICKABLE AREA
+       CLICKABLE ITEMS
     ====================================================== */
 
     .avatar-button {
@@ -323,29 +285,11 @@
       transform: scale(0.97);
     }
 
-
-    /* =====================================================
-       GROUP PROFILE BUTTONS
-    ====================================================== */
-
     .group-profile-button,
     .group-message-user,
     .group-message-sender {
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
-    }
-
-    .group-profile-button {
-      border: 0;
-      padding: 0;
-      margin: 0;
-      background: transparent;
-      color: inherit;
-      font: inherit;
-    }
-
-    .group-message-user,
-    .group-message-sender {
       border: 0;
       background: transparent;
       color: inherit;
@@ -387,16 +331,16 @@
 
 
     /* =====================================================
-       MOBILE RESPONSIVE FIX
+       MOBILE RESPONSIVE (ဖုန်းစခရင်များအတွက် ချိန်ညှိမှု - ပုံ ၂ ပုံစံအတိုင်း)
     ====================================================== */
 
     @media (max-width: 800px) {
 
       #chatScreen .sidebar {
-        flex: 0 0 90px;
-        width: 90px;
-        min-width: 90px;
-        max-width: 90px;
+        flex: 0 0 76px;
+        width: 76px;
+        min-width: 76px;
+        max-width: 76px;
       }
 
       #chatScreen .sidebar .profile-info,
@@ -406,17 +350,17 @@
       }
 
       #chatScreen .sidebar-header {
-        padding: 10px;
+        padding: 8px 6px;
         justify-content: center;
       }
 
       #chatScreen .sidebar-title {
-        padding: 10px;
+        padding: 8px 6px;
         justify-content: center;
       }
 
       #chatScreen .users-list .user-item {
-        padding: 10px;
+        padding: 8px 6px;
         justify-content: center;
       }
 
@@ -453,10 +397,10 @@
     @media (max-width: 430px) {
 
       #chatScreen .sidebar {
-        flex: 0 0 75px;
-        width: 75px;
-        min-width: 75px;
-        max-width: 75px;
+        flex: 0 0 68px;
+        width: 68px;
+        min-width: 68px;
+        max-width: 68px;
       }
 
     }
