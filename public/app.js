@@ -30,6 +30,13 @@ let isCameraOff = false;
 let lastIncomingSignalTime = Date.now() - 15000;
 let pendingIncomingCall = null;
 
+/*
+ * IMPORTANT:
+ * ICE candidates can arrive before remoteDescription.
+ * Keep them here until remoteDescription is ready.
+ */
+let pendingIceCandidates = [];
+
 const processedSignalIds = new Set();
 
 
@@ -73,9 +80,6 @@ const toast = document.getElementById("toast");
 
 /* ============================================================
    CALL BUTTONS
-   IMPORTANT:
-   Do NOT recreate them.
-   Use the buttons already present in index.html.
 ============================================================ */
 
 function getVoiceCallButton() {
@@ -87,41 +91,120 @@ function getVideoCallButton() {
 }
 
 function fixCallButtons() {
-  const actions = document.querySelector(".chat-header .chat-actions");
+  const actions =
+    document.querySelector(".chat-header .chat-actions");
+
   const voice = getVoiceCallButton();
   const video = getVideoCallButton();
 
   if (!actions || !voice || !video) return;
 
-  actions.style.setProperty("display", "flex", "important");
-  actions.style.setProperty("align-items", "center", "important");
-  actions.style.setProperty("justify-content", "flex-end", "important");
-  actions.style.setProperty("visibility", "visible", "important");
-  actions.style.setProperty("opacity", "1", "important");
-  actions.style.setProperty("flex-shrink", "0", "important");
-  actions.style.setProperty("position", "relative", "important");
-  actions.style.setProperty("z-index", "50", "important");
+  actions.style.setProperty(
+    "display",
+    "flex",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "align-items",
+    "center",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "justify-content",
+    "flex-end",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "visibility",
+    "visible",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "opacity",
+    "1",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "flex-shrink",
+    "0",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "position",
+    "relative",
+    "important"
+  );
+
+  actions.style.setProperty(
+    "z-index",
+    "50",
+    "important"
+  );
 
   [voice, video].forEach(button => {
-    button.style.setProperty("display", "flex", "important");
-    button.style.setProperty("visibility", "visible", "important");
-    button.style.setProperty("opacity", "1", "important");
-    button.style.setProperty("flex", "0 0 auto", "important");
-    button.style.setProperty("pointer-events", "auto", "important");
-    button.style.setProperty("position", "relative", "important");
-    button.style.setProperty("z-index", "51", "important");
+
+    button.style.setProperty(
+      "display",
+      "flex",
+      "important"
+    );
+
+    button.style.setProperty(
+      "visibility",
+      "visible",
+      "important"
+    );
+
+    button.style.setProperty(
+      "opacity",
+      "1",
+      "important"
+    );
+
+    button.style.setProperty(
+      "flex",
+      "0 0 auto",
+      "important"
+    );
+
+    button.style.setProperty(
+      "pointer-events",
+      "auto",
+      "important"
+    );
+
+    button.style.setProperty(
+      "position",
+      "relative",
+      "important"
+    );
+
+    button.style.setProperty(
+      "z-index",
+      "51",
+      "important"
+    );
   });
 }
 
 
 /* ============================================================
    CALL BUTTON EVENTS
-   Event delegation = listeners won't disappear if DOM changes.
 ============================================================ */
 
 document.addEventListener("click", event => {
-  const voice = event.target.closest("#voiceCallBtn");
-  const video = event.target.closest("#videoCallBtn");
+
+  const voice =
+    event.target.closest("#voiceCallBtn");
+
+  const video =
+    event.target.closest("#videoCallBtn");
 
   if (!voice && !video) return;
 
@@ -145,52 +228,86 @@ document.addEventListener("click", event => {
 
 /* ============================================================
    KEEP BUTTONS VISIBLE
-   No MutationObserver.
 ============================================================ */
 
-window.addEventListener("resize", fixCallButtons);
+window.addEventListener(
+  "resize",
+  fixCallButtons
+);
 
-document.addEventListener("DOMContentLoaded", () => {
-  fixCallButtons();
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
 
-  setTimeout(fixCallButtons, 100);
-  setTimeout(fixCallButtons, 500);
-});
+    fixCallButtons();
+
+    setTimeout(
+      fixCallButtons,
+      100
+    );
+
+    setTimeout(
+      fixCallButtons,
+      500
+    );
+  }
+);
 
 
 /* ============================================================
    PROFILE ELEMENTS
 ============================================================ */
 
-const myAvatarBtn = document.getElementById("myAvatarBtn");
+const myAvatarBtn =
+  document.getElementById("myAvatarBtn");
 
-const profilePanel = document.getElementById("profilePanel");
+const profilePanel =
+  document.getElementById("profilePanel");
+
 const profilePanelBackdrop =
-  document.getElementById("profilePanelBackdrop");
+  document.getElementById(
+    "profilePanelBackdrop"
+  );
 
 const closeProfilePanel =
-  document.getElementById("closeProfilePanel");
+  document.getElementById(
+    "closeProfilePanel"
+  );
 
 const profilePhotoBtn =
-  document.getElementById("profilePhotoBtn");
+  document.getElementById(
+    "profilePhotoBtn"
+  );
 
 const profilePhotoLarge =
-  document.getElementById("profilePhotoLarge");
+  document.getElementById(
+    "profilePhotoLarge"
+  );
 
 const profilePanelName =
-  document.getElementById("profilePanelName");
+  document.getElementById(
+    "profilePanelName"
+  );
 
 const profilePanelEmail =
-  document.getElementById("profilePanelEmail");
+  document.getElementById(
+    "profilePanelEmail"
+  );
 
 const profilePhotoInput =
-  document.getElementById("profilePhotoInput");
+  document.getElementById(
+    "profilePhotoInput"
+  );
 
 const changeProfilePhoto =
-  document.getElementById("changeProfilePhoto");
+  document.getElementById(
+    "changeProfilePhoto"
+  );
 
 const removeProfilePhoto =
-  document.getElementById("removeProfilePhoto");
+  document.getElementById(
+    "removeProfilePhoto"
+  );
 
 
 /* ============================================================
@@ -198,67 +315,109 @@ const removeProfilePhoto =
 ============================================================ */
 
 const incomingCall =
-  document.getElementById("incomingCall");
+  document.getElementById(
+    "incomingCall"
+  );
 
 const incomingCallAvatar =
-  document.getElementById("incomingCallAvatar");
+  document.getElementById(
+    "incomingCallAvatar"
+  );
 
 const incomingCallName =
-  document.getElementById("incomingCallName");
+  document.getElementById(
+    "incomingCallName"
+  );
 
 const incomingCallType =
-  document.getElementById("incomingCallType");
+  document.getElementById(
+    "incomingCallType"
+  );
 
 const rejectCallBtn =
-  document.getElementById("rejectCallBtn");
+  document.getElementById(
+    "rejectCallBtn"
+  );
 
 const acceptCallBtn =
-  document.getElementById("acceptCallBtn");
+  document.getElementById(
+    "acceptCallBtn"
+  );
 
 const callScreen =
-  document.getElementById("callScreen");
+  document.getElementById(
+    "callScreen"
+  );
 
 const remoteVideo =
-  document.getElementById("remoteVideo");
+  document.getElementById(
+    "remoteVideo"
+  );
 
 const voiceCallView =
-  document.getElementById("voiceCallView");
+  document.getElementById(
+    "voiceCallView"
+  );
 
 const voiceCallAvatar =
-  document.getElementById("voiceCallAvatar");
+  document.getElementById(
+    "voiceCallAvatar"
+  );
 
 const voiceCallName =
-  document.getElementById("voiceCallName");
+  document.getElementById(
+    "voiceCallName"
+  );
 
 const voiceCallStatus =
-  document.getElementById("voiceCallStatus");
+  document.getElementById(
+    "voiceCallStatus"
+  );
 
 const localVideo =
-  document.getElementById("localVideo");
+  document.getElementById(
+    "localVideo"
+  );
 
 const callUserName =
-  document.getElementById("callUserName");
+  document.getElementById(
+    "callUserName"
+  );
 
 const callDuration =
-  document.getElementById("callDuration");
+  document.getElementById(
+    "callDuration"
+  );
 
 const muteCallBtn =
-  document.getElementById("muteCallBtn");
+  document.getElementById(
+    "muteCallBtn"
+  );
 
 const cameraCallBtn =
-  document.getElementById("cameraCallBtn");
+  document.getElementById(
+    "cameraCallBtn"
+  );
 
 const switchCameraBtn =
-  document.getElementById("switchCameraBtn");
+  document.getElementById(
+    "switchCameraBtn"
+  );
 
 const endCallBtn =
-  document.getElementById("endCallBtn");
+  document.getElementById(
+    "endCallBtn"
+  );
 
 const remoteAudio =
-  document.getElementById("remoteAudio");
+  document.getElementById(
+    "remoteAudio"
+  );
 
 const ringtone =
-  document.getElementById("ringtone");
+  document.getElementById(
+    "ringtone"
+  );
 
 
 /* ============================================================
@@ -266,18 +425,26 @@ const ringtone =
 ============================================================ */
 
 function getToken() {
-  return localStorage.getItem("dark_chat_token");
+  return localStorage.getItem(
+    "dark_chat_token"
+  );
 }
 
 function setToken(token) {
-  localStorage.setItem("dark_chat_token", token);
+  localStorage.setItem(
+    "dark_chat_token",
+    token
+  );
 }
 
 function removeToken() {
-  localStorage.removeItem("dark_chat_token");
+  localStorage.removeItem(
+    "dark_chat_token"
+  );
 }
 
 function headers() {
+
   const token = getToken();
 
   const result = {
@@ -285,20 +452,24 @@ function headers() {
   };
 
   if (token) {
-    result.Authorization = `Bearer ${token}`;
+    result.Authorization =
+      `Bearer ${token}`;
   }
 
   return result;
 }
 
 async function api(path, options = {}) {
-  const response = await fetch(API + path, {
-    ...options,
-    headers: {
-      ...headers(),
-      ...(options.headers || {})
-    }
-  });
+
+  const response =
+    await fetch(API + path, {
+      ...options,
+
+      headers: {
+        ...headers(),
+        ...(options.headers || {})
+      }
+    });
 
   let data = {};
 
@@ -308,7 +479,8 @@ async function api(path, options = {}) {
 
   if (!response.ok) {
     throw new Error(
-      data.error || "Something went wrong"
+      data.error ||
+      "Something went wrong"
     );
   }
 
@@ -316,6 +488,7 @@ async function api(path, options = {}) {
 }
 
 function avatarLetter(name) {
+
   return String(name || "U")
     .trim()
     .charAt(0)
@@ -323,9 +496,11 @@ function avatarLetter(name) {
 }
 
 function showToast(text) {
+
   if (!toast) return;
 
   toast.textContent = text;
+
   toast.classList.add("show");
 
   setTimeout(() => {
@@ -334,70 +509,116 @@ function showToast(text) {
 }
 
 function formatTime(dateString) {
+
   if (!dateString) return "";
 
-  let value = String(dateString);
+  let value =
+    String(dateString);
 
   if (
     !value.endsWith("Z") &&
     !value.includes("+")
   ) {
-    value = value.replace(" ", "T") + "Z";
+    value =
+      value.replace(" ", "T") +
+      "Z";
   }
 
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
     return "";
   }
 
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+  return date.toLocaleTimeString(
+    [],
+    {
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  );
 }
 
-function setAvatar(element, user) {
+function setAvatar(
+  element,
+  user
+) {
+
   if (!element) return;
 
   element.textContent = "";
   element.style.backgroundImage = "";
 
   if (user?.profile_photo) {
+
     element.style.backgroundImage =
       `url("${user.profile_photo}")`;
 
-    element.style.backgroundSize = "cover";
-    element.style.backgroundPosition = "center";
-    element.style.backgroundRepeat = "no-repeat";
+    element.style.backgroundSize =
+      "cover";
+
+    element.style.backgroundPosition =
+      "center";
+
+    element.style.backgroundRepeat =
+      "no-repeat";
 
     return;
   }
 
-  element.textContent = avatarLetter(user?.username);
+  element.textContent =
+    avatarLetter(
+      user?.username
+    );
 }
 
-function setAvatarData(element, username, photo) {
+function setAvatarData(
+  element,
+  username,
+  photo
+) {
+
   if (!element) return;
 
   element.textContent = "";
   element.style.backgroundImage = "";
 
   if (photo) {
+
     element.style.backgroundImage =
       `url("${photo}")`;
 
-    element.style.backgroundSize = "cover";
-    element.style.backgroundPosition = "center";
-    element.style.backgroundRepeat = "no-repeat";
+    element.style.backgroundSize =
+      "cover";
+
+    element.style.backgroundPosition =
+      "center";
+
+    element.style.backgroundRepeat =
+      "no-repeat";
+
   } else {
-    element.textContent = avatarLetter(username);
+
+    element.textContent =
+      avatarLetter(username);
   }
 }
 
 function escapeHTML(value) {
-  const div = document.createElement("div");
-  div.textContent = String(value ?? "");
+
+  const div =
+    document.createElement(
+      "div"
+    );
+
+  div.textContent =
+    String(value ?? "");
+
   return div.innerHTML;
 }
 
@@ -407,23 +628,43 @@ function escapeHTML(value) {
 ============================================================ */
 
 if (showRegister) {
-  showRegister.addEventListener("click", () => {
-    loginForm.classList.add("hidden");
-    registerForm.classList.remove("hidden");
 
-    loginError.textContent = "";
-    registerError.textContent = "";
-  });
+  showRegister.addEventListener(
+    "click",
+    () => {
+
+      loginForm.classList.add(
+        "hidden"
+      );
+
+      registerForm.classList.remove(
+        "hidden"
+      );
+
+      loginError.textContent = "";
+      registerError.textContent = "";
+    }
+  );
 }
 
 if (showLogin) {
-  showLogin.addEventListener("click", () => {
-    registerForm.classList.add("hidden");
-    loginForm.classList.remove("hidden");
 
-    loginError.textContent = "";
-    registerError.textContent = "";
-  });
+  showLogin.addEventListener(
+    "click",
+    () => {
+
+      registerForm.classList.add(
+        "hidden"
+      );
+
+      loginForm.classList.remove(
+        "hidden"
+      );
+
+      loginError.textContent = "";
+      registerError.textContent = "";
+    }
+  );
 }
 
 
@@ -432,43 +673,79 @@ if (showLogin) {
 ============================================================ */
 
 if (registerForm) {
-  registerForm.addEventListener("submit", async event => {
-    event.preventDefault();
 
-    registerError.textContent = "";
+  registerForm.addEventListener(
+    "submit",
+    async event => {
 
-    const username =
-      document.getElementById("registerUsername").value.trim();
+      event.preventDefault();
 
-    const email =
-      document.getElementById("registerEmail").value.trim();
+      registerError.textContent = "";
 
-    const password =
-      document.getElementById("registerPassword").value;
+      const username =
+        document
+          .getElementById(
+            "registerUsername"
+          )
+          .value
+          .trim();
 
-    try {
-      await api("/register", {
-        method: "POST",
-        body: JSON.stringify({
-          username,
-          email,
-          password
-        })
-      });
+      const email =
+        document
+          .getElementById(
+            "registerEmail"
+          )
+          .value
+          .trim();
 
-      showToast("Account created");
+      const password =
+        document
+          .getElementById(
+            "registerPassword"
+          )
+          .value;
 
-      registerForm.reset();
+      try {
 
-      registerForm.classList.add("hidden");
-      loginForm.classList.remove("hidden");
+        await api(
+          "/register",
+          {
+            method: "POST",
 
-      document.getElementById("loginEmail").value = email;
+            body:
+              JSON.stringify({
+                username,
+                email,
+                password
+              })
+          }
+        );
 
-    } catch (error) {
-      registerError.textContent = error.message;
+        showToast(
+          "Account created"
+        );
+
+        registerForm.reset();
+
+        registerForm.classList.add(
+          "hidden"
+        );
+
+        loginForm.classList.remove(
+          "hidden"
+        );
+
+        document.getElementById(
+          "loginEmail"
+        ).value = email;
+
+      } catch (error) {
+
+        registerError.textContent =
+          error.message;
+      }
     }
-  });
+  );
 }
 
 
@@ -477,37 +754,62 @@ if (registerForm) {
 ============================================================ */
 
 if (loginForm) {
-  loginForm.addEventListener("submit", async event => {
-    event.preventDefault();
 
-    loginError.textContent = "";
+  loginForm.addEventListener(
+    "submit",
+    async event => {
 
-    const email =
-      document.getElementById("loginEmail").value.trim();
+      event.preventDefault();
 
-    const password =
-      document.getElementById("loginPassword").value;
+      loginError.textContent = "";
 
-    try {
-      const data = await api("/login", {
-        method: "POST",
-        body: JSON.stringify({
-          email,
-          password
-        })
-      });
+      const email =
+        document
+          .getElementById(
+            "loginEmail"
+          )
+          .value
+          .trim();
 
-      setToken(data.token);
-      currentUser = data.user;
+      const password =
+        document
+          .getElementById(
+            "loginPassword"
+          )
+          .value;
 
-      loginForm.reset();
+      try {
 
-      openChatApp();
+        const data =
+          await api(
+            "/login",
+            {
+              method: "POST",
 
-    } catch (error) {
-      loginError.textContent = error.message;
+              body:
+                JSON.stringify({
+                  email,
+                  password
+                })
+            }
+          );
+
+        setToken(data.token);
+
+        currentUser =
+          data.user;
+
+        loginForm.reset();
+
+        openChatApp();
+
+      } catch (error) {
+
+        loginError.textContent =
+          error.message;
+      }
     }
-  });
+  );
 }
 
 
@@ -516,43 +818,69 @@ if (loginForm) {
 ============================================================ */
 
 async function startApp() {
+
   fixCallButtons();
 
-  const token = getToken();
+  const token =
+    getToken();
 
   if (!token) {
+
     showAuth();
+
     return;
   }
 
   try {
-    const data = await api("/me");
 
-    currentUser = data.user;
+    const data =
+      await api("/me");
+
+    currentUser =
+      data.user;
 
     openChatApp();
 
   } catch {
+
     removeToken();
+
     showAuth();
   }
 }
 
 function showAuth() {
+
   stopMessageRefresh();
+
   stopIncomingCallPolling();
 
-  authScreen.classList.remove("hidden");
-  chatScreen.classList.add("hidden");
+  authScreen.classList.remove(
+    "hidden"
+  );
+
+  chatScreen.classList.add(
+    "hidden"
+  );
 }
 
 function openChatApp() {
-  authScreen.classList.add("hidden");
-  chatScreen.classList.remove("hidden");
 
-  myUsername.textContent = currentUser.username;
+  authScreen.classList.add(
+    "hidden"
+  );
 
-  setAvatar(myAvatar, currentUser);
+  chatScreen.classList.remove(
+    "hidden"
+  );
+
+  myUsername.textContent =
+    currentUser.username;
+
+  setAvatar(
+    myAvatar,
+    currentUser
+  );
 
   updateProfilePanel();
 
@@ -562,8 +890,15 @@ function openChatApp() {
 
   fixCallButtons();
 
-  setTimeout(fixCallButtons, 100);
-  setTimeout(fixCallButtons, 500);
+  setTimeout(
+    fixCallButtons,
+    100
+  );
+
+  setTimeout(
+    fixCallButtons,
+    500
+  );
 }
 
 
@@ -572,67 +907,111 @@ function openChatApp() {
 ============================================================ */
 
 async function loadUsers() {
+
   usersList.innerHTML = `
-    <div class="loading">Loading users...</div>
+    <div class="loading">
+      Loading users...
+    </div>
   `;
 
   try {
-    const data = await api("/users");
 
-    renderUsers(data.users || []);
+    const data =
+      await api("/users");
+
+    renderUsers(
+      data.users || []
+    );
 
   } catch (error) {
+
     usersList.innerHTML = `
       <div class="loading">
-        ${escapeHTML(error.message)}
+        ${escapeHTML(
+          error.message
+        )}
       </div>
     `;
   }
 }
 
 function renderUsers(users) {
+
   usersList.innerHTML = "";
 
-  const otherUsers = users.filter(
-    user =>
-      !currentUser ||
-      user.id !== currentUser.id
-  );
+  const otherUsers =
+    users.filter(
+      user =>
+        !currentUser ||
+        user.id !== currentUser.id
+    );
 
   if (!otherUsers.length) {
+
     usersList.innerHTML = `
       <div class="loading">
         No other users yet.
       </div>
     `;
+
     return;
   }
 
   otherUsers.forEach(user => {
-    const item = document.createElement("div");
 
-    item.className = "user-item";
+    const item =
+      document.createElement(
+        "div"
+      );
+
+    item.className =
+      "user-item";
 
     if (
       selectedUser &&
       selectedUser.id === user.id
     ) {
-      item.classList.add("active");
+      item.classList.add(
+        "active"
+      );
     }
 
-    const avatar = document.createElement("div");
-    avatar.className = "avatar";
+    const avatar =
+      document.createElement(
+        "div"
+      );
 
-    setAvatar(avatar, user);
+    avatar.className =
+      "avatar";
 
-    const info = document.createElement("div");
-    info.className = "user-info";
+    setAvatar(
+      avatar,
+      user
+    );
 
-    const name = document.createElement("strong");
-    name.textContent = user.username;
+    const info =
+      document.createElement(
+        "div"
+      );
 
-    const email = document.createElement("span");
-    email.textContent = user.email;
+    info.className =
+      "user-info";
+
+    const name =
+      document.createElement(
+        "strong"
+      );
+
+    name.textContent =
+      user.username;
+
+    const email =
+      document.createElement(
+        "span"
+      );
+
+    email.textContent =
+      user.email;
 
     info.appendChild(name);
     info.appendChild(email);
@@ -640,9 +1019,12 @@ function renderUsers(users) {
     item.appendChild(avatar);
     item.appendChild(info);
 
-    item.addEventListener("click", () => {
-      selectUser(user);
-    });
+    item.addEventListener(
+      "click",
+      () => {
+        selectUser(user);
+      }
+    );
 
     usersList.appendChild(item);
   });
@@ -654,22 +1036,32 @@ function renderUsers(users) {
 ============================================================ */
 
 async function selectUser(user) {
+
   selectedUser = user;
 
-  chatScreen.classList.add("chat-open");
+  chatScreen.classList.add(
+    "chat-open"
+  );
 
-  emptyChat.classList.add("hidden");
-  activeChat.classList.remove("hidden");
+  emptyChat.classList.add(
+    "hidden"
+  );
 
-  chatUsername.textContent = user.username;
+  activeChat.classList.remove(
+    "hidden"
+  );
 
-  setAvatar(chatAvatar, user);
+  chatUsername.textContent =
+    user.username;
 
-  chatStatus.textContent = "Available";
+  setAvatar(
+    chatAvatar,
+    user
+  );
 
-  /* IMPORTANT:
-     Do not rebuild header or buttons here.
-  */
+  chatStatus.textContent =
+    "Available";
+
   fixCallButtons();
 
   await loadMessages();
@@ -678,7 +1070,10 @@ async function selectUser(user) {
 
   startMessageRefresh();
 
-  setTimeout(fixCallButtons, 100);
+  setTimeout(
+    fixCallButtons,
+    100
+  );
 }
 
 
@@ -687,68 +1082,113 @@ async function selectUser(user) {
 ============================================================ */
 
 async function loadMessages() {
+
   if (!selectedUser) return;
 
   try {
-    const data = await api(
-      `/messages?user_id=${selectedUser.id}`
+
+    const data =
+      await api(
+        `/messages?user_id=${selectedUser.id}`
+      );
+
+    renderMessages(
+      data.messages || []
     );
 
-    renderMessages(data.messages || []);
-
   } catch (error) {
+
     messagesBox.innerHTML = `
       <div class="loading">
-        ${escapeHTML(error.message)}
+        ${escapeHTML(
+          error.message
+        )}
       </div>
     `;
   }
 }
 
 function renderMessages(messages) {
+
   messagesBox.innerHTML = "";
 
   if (!messages.length) {
-    const empty = document.createElement("div");
 
-    empty.className = "loading";
-    empty.textContent = "No messages yet. Say hello!";
+    const empty =
+      document.createElement(
+        "div"
+      );
 
-    messagesBox.appendChild(empty);
+    empty.className =
+      "loading";
+
+    empty.textContent =
+      "No messages yet. Say hello!";
+
+    messagesBox.appendChild(
+      empty
+    );
 
     return;
   }
 
-  messages.forEach(message => {
-    const mine =
-      Number(message.sender_id) ===
-      Number(currentUser.id);
+  messages.forEach(
+    message => {
 
-    const row = document.createElement("div");
+      const mine =
+        Number(
+          message.sender_id
+        ) ===
+        Number(
+          currentUser.id
+        );
 
-    row.className =
-      "message-row" +
-      (mine ? " mine" : "");
+      const row =
+        document.createElement(
+          "div"
+        );
 
-    const bubble = document.createElement("div");
-    bubble.className = "message";
+      row.className =
+        "message-row" +
+        (mine ? " mine" : "");
 
-    const text = document.createElement("div");
-    text.textContent = message.message;
+      const bubble =
+        document.createElement(
+          "div"
+        );
 
-    const time = document.createElement("span");
-    time.className = "message-time";
+      bubble.className =
+        "message";
 
-    time.textContent =
-      formatTime(message.created_at);
+      const text =
+        document.createElement(
+          "div"
+        );
 
-    bubble.appendChild(text);
-    bubble.appendChild(time);
+      text.textContent =
+        message.message;
 
-    row.appendChild(bubble);
+      const time =
+        document.createElement(
+          "span"
+        );
 
-    messagesBox.appendChild(row);
-  });
+      time.className =
+        "message-time";
+
+      time.textContent =
+        formatTime(
+          message.created_at
+        );
+
+      bubble.appendChild(text);
+      bubble.appendChild(time);
+
+      row.appendChild(bubble);
+
+      messagesBox.appendChild(row);
+    }
+  );
 
   messagesBox.scrollTop =
     messagesBox.scrollHeight;
@@ -760,39 +1200,58 @@ function renderMessages(messages) {
 ============================================================ */
 
 if (messageForm) {
-  messageForm.addEventListener("submit", async event => {
-    event.preventDefault();
 
-    if (!selectedUser) return;
+  messageForm.addEventListener(
+    "submit",
+    async event => {
 
-    const message =
-      messageInput.value.trim();
+      event.preventDefault();
 
-    if (!message) return;
+      if (!selectedUser) return;
 
-    messageInput.disabled = true;
+      const message =
+        messageInput.value.trim();
 
-    try {
-      await api("/messages", {
-        method: "POST",
-        body: JSON.stringify({
-          receiver_id: selectedUser.id,
-          message
-        })
-      });
+      if (!message) return;
 
-      messageInput.value = "";
+      messageInput.disabled = true;
 
-      await loadMessages();
+      try {
 
-    } catch (error) {
-      showToast(error.message);
+        await api(
+          "/messages",
+          {
+            method: "POST",
 
-    } finally {
-      messageInput.disabled = false;
-      messageInput.focus();
+            body:
+              JSON.stringify({
+                receiver_id:
+                  selectedUser.id,
+
+                message
+              })
+          }
+        );
+
+        messageInput.value = "";
+
+        await loadMessages();
+
+      } catch (error) {
+
+        showToast(
+          error.message
+        );
+
+      } finally {
+
+        messageInput.disabled =
+          false;
+
+        messageInput.focus();
+      }
     }
-  });
+  );
 }
 
 
@@ -801,21 +1260,34 @@ if (messageForm) {
 ============================================================ */
 
 function startMessageRefresh() {
+
   stopMessageRefresh();
 
-  messageTimer = setInterval(async () => {
-    if (
-      selectedUser &&
-      document.visibilityState === "visible"
-    ) {
-      await loadMessages();
-    }
-  }, 3000);
+  messageTimer =
+    setInterval(
+      async () => {
+
+        if (
+          selectedUser &&
+          document.visibilityState ===
+            "visible"
+        ) {
+          await loadMessages();
+        }
+
+      },
+      3000
+    );
 }
 
 function stopMessageRefresh() {
+
   if (messageTimer) {
-    clearInterval(messageTimer);
+
+    clearInterval(
+      messageTimer
+    );
+
     messageTimer = null;
   }
 }
@@ -826,10 +1298,16 @@ function stopMessageRefresh() {
 ============================================================ */
 
 if (refreshUsers) {
-  refreshUsers.addEventListener("click", async () => {
-    await loadUsers();
-    fixCallButtons();
-  });
+
+  refreshUsers.addEventListener(
+    "click",
+    async () => {
+
+      await loadUsers();
+
+      fixCallButtons();
+    }
+  );
 }
 
 
@@ -838,10 +1316,16 @@ if (refreshUsers) {
 ============================================================ */
 
 if (reloadMessages) {
-  reloadMessages.addEventListener("click", async () => {
-    await loadMessages();
-    fixCallButtons();
-  });
+
+  reloadMessages.addEventListener(
+    "click",
+    async () => {
+
+      await loadMessages();
+
+      fixCallButtons();
+    }
+  );
 }
 
 
@@ -850,34 +1334,48 @@ if (reloadMessages) {
 ============================================================ */
 
 if (logoutBtn) {
-  logoutBtn.addEventListener("click", async () => {
 
-    if (peerConnection) {
-      await endCall(false);
+  logoutBtn.addEventListener(
+    "click",
+    async () => {
+
+      if (peerConnection) {
+        await endCall(false);
+      }
+
+      try {
+
+        await api(
+          "/logout",
+          {
+            method: "POST"
+          }
+        );
+
+      } catch {}
+
+      stopMessageRefresh();
+
+      stopIncomingCallPolling();
+
+      removeToken();
+
+      currentUser = null;
+      selectedUser = null;
+
+      closeProfile();
+
+      chatScreen.classList.remove(
+        "chat-open"
+      );
+
+      showAuth();
+
+      showToast(
+        "Logged out"
+      );
     }
-
-    try {
-      await api("/logout", {
-        method: "POST"
-      });
-    } catch {}
-
-    stopMessageRefresh();
-    stopIncomingCallPolling();
-
-    removeToken();
-
-    currentUser = null;
-    selectedUser = null;
-
-    closeProfile();
-
-    chatScreen.classList.remove("chat-open");
-
-    showAuth();
-
-    showToast("Logged out");
-  });
+  );
 }
 
 
@@ -886,23 +1384,34 @@ if (logoutBtn) {
 ============================================================ */
 
 const chatArea =
-  document.querySelector(".chat-area");
+  document.querySelector(
+    ".chat-area"
+  );
 
 if (chatArea) {
-  chatArea.addEventListener("click", event => {
 
-    const header =
-      document.querySelector(".chat-header");
+  chatArea.addEventListener(
+    "click",
+    event => {
 
-    if (
-      window.innerWidth <= 700 &&
-      event.target === header
-    ) {
-      chatScreen.classList.remove("chat-open");
+      const header =
+        document.querySelector(
+          ".chat-header"
+        );
 
-      stopMessageRefresh();
+      if (
+        window.innerWidth <= 700 &&
+        event.target === header
+      ) {
+
+        chatScreen.classList.remove(
+          "chat-open"
+        );
+
+        stopMessageRefresh();
+      }
     }
-  });
+  );
 }
 
 
@@ -911,6 +1420,7 @@ if (chatArea) {
 ============================================================ */
 
 function updateProfilePanel() {
+
   if (!currentUser) return;
 
   profilePanelName.textContent =
@@ -933,12 +1443,19 @@ function updateProfilePanel() {
 }
 
 function openProfile() {
+
   updateProfilePanel();
-  profilePanel.classList.remove("hidden");
+
+  profilePanel.classList.remove(
+    "hidden"
+  );
 }
 
 function closeProfile() {
-  profilePanel.classList.add("hidden");
+
+  profilePanel.classList.add(
+    "hidden"
+  );
 
   if (profilePhotoInput) {
     profilePhotoInput.value = "";
@@ -946,6 +1463,7 @@ function closeProfile() {
 }
 
 if (myAvatarBtn) {
+
   myAvatarBtn.addEventListener(
     "click",
     openProfile
@@ -953,6 +1471,7 @@ if (myAvatarBtn) {
 }
 
 if (closeProfilePanel) {
+
   closeProfilePanel.addEventListener(
     "click",
     closeProfile
@@ -960,6 +1479,7 @@ if (closeProfilePanel) {
 }
 
 if (profilePanelBackdrop) {
+
   profilePanelBackdrop.addEventListener(
     "click",
     closeProfile
@@ -967,16 +1487,20 @@ if (profilePanelBackdrop) {
 }
 
 if (profilePhotoBtn) {
+
   profilePhotoBtn.addEventListener(
     "click",
-    () => profilePhotoInput.click()
+    () =>
+      profilePhotoInput.click()
   );
 }
 
 if (changeProfilePhoto) {
+
   changeProfilePhoto.addEventListener(
     "click",
-    () => profilePhotoInput.click()
+    () =>
+      profilePhotoInput.click()
   );
 }
 
@@ -986,6 +1510,7 @@ if (changeProfilePhoto) {
 ============================================================ */
 
 if (profilePhotoInput) {
+
   profilePhotoInput.addEventListener(
     "change",
     async () => {
@@ -995,42 +1520,69 @@ if (profilePhotoInput) {
 
       if (!file) return;
 
-      if (!file.type.startsWith("image/")) {
-        showToast("Please select an image");
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
+
+        showToast(
+          "Please select an image"
+        );
+
         return;
       }
 
       try {
-        showToast("Uploading...");
+
+        showToast(
+          "Uploading..."
+        );
 
         const imageData =
-          await imageToDataURL(file);
+          await imageToDataURL(
+            file
+          );
 
         const data =
-          await api("/profile/photo", {
-            method: "POST",
-            body: JSON.stringify({
-              profile_photo: imageData
-            })
-          });
+          await api(
+            "/profile/photo",
+            {
+              method: "POST",
+
+              body:
+                JSON.stringify({
+                  profile_photo:
+                    imageData
+                })
+            }
+          );
 
         currentUser =
           data.user || {
             ...currentUser,
-            profile_photo: imageData
+            profile_photo:
+              imageData
           };
 
         updateProfilePanel();
 
         await loadUsers();
 
-        showToast("Photo updated");
+        showToast(
+          "Photo updated"
+        );
 
       } catch (error) {
-        showToast(error.message);
+
+        showToast(
+          error.message
+        );
 
       } finally {
-        profilePhotoInput.value = "";
+
+        profilePhotoInput.value =
+          "";
       }
     }
   );
@@ -1042,25 +1594,36 @@ if (profilePhotoInput) {
 ============================================================ */
 
 if (removeProfilePhoto) {
+
   removeProfilePhoto.addEventListener(
     "click",
     async () => {
 
       try {
-        await api("/profile/photo", {
-          method: "DELETE"
-        });
 
-        currentUser.profile_photo = null;
+        await api(
+          "/profile/photo",
+          {
+            method: "DELETE"
+          }
+        );
+
+        currentUser.profile_photo =
+          null;
 
         updateProfilePanel();
 
         await loadUsers();
 
-        showToast("Photo removed");
+        showToast(
+          "Photo removed"
+        );
 
       } catch (error) {
-        showToast(error.message);
+
+        showToast(
+          error.message
+        );
       }
     }
   );
@@ -1072,93 +1635,198 @@ if (removeProfilePhoto) {
 ============================================================ */
 
 function imageToDataURL(file) {
-  return new Promise((resolve, reject) => {
 
-    const reader = new FileReader();
+  return new Promise(
+    (resolve, reject) => {
 
-    reader.onload = () => {
+      const reader =
+        new FileReader();
 
-      const img = new Image();
+      reader.onload = () => {
 
-      img.onload = () => {
+        const img =
+          new Image();
 
-        const maxSize = 720;
+        img.onload = () => {
 
-        let width = img.width;
-        let height = img.height;
+          const maxSize = 720;
 
-        if (
-          width > maxSize ||
-          height > maxSize
-        ) {
-          const scale =
-            Math.min(
-              maxSize / width,
-              maxSize / height
+          let width =
+            img.width;
+
+          let height =
+            img.height;
+
+          if (
+            width > maxSize ||
+            height > maxSize
+          ) {
+
+            const scale =
+              Math.min(
+                maxSize / width,
+                maxSize / height
+              );
+
+            width =
+              Math.round(
+                width * scale
+              );
+
+            height =
+              Math.round(
+                height * scale
+              );
+          }
+
+          const canvas =
+            document.createElement(
+              "canvas"
             );
 
-          width =
-            Math.round(width * scale);
+          canvas.width =
+            width;
 
-          height =
-            Math.round(height * scale);
-        }
+          canvas.height =
+            height;
 
-        const canvas =
-          document.createElement("canvas");
+          const ctx =
+            canvas.getContext(
+              "2d"
+            );
 
-        canvas.width = width;
-        canvas.height = height;
+          ctx.drawImage(
+            img,
+            0,
+            0,
+            width,
+            height
+          );
 
-        const ctx =
-          canvas.getContext("2d");
+          resolve(
+            canvas.toDataURL(
+              "image/jpeg",
+              0.82
+            )
+          );
+        };
 
-        ctx.drawImage(
-          img,
-          0,
-          0,
-          width,
-          height
-        );
+        img.onerror = () => {
 
-        resolve(
-          canvas.toDataURL(
-            "image/jpeg",
-            0.82
+          reject(
+            new Error(
+              "Invalid image"
+            )
+          );
+        };
+
+        img.src =
+          reader.result;
+      };
+
+      reader.onerror = () => {
+
+        reject(
+          new Error(
+            "Could not read image"
           )
         );
       };
 
-      img.onerror = () => {
-        reject(new Error("Invalid image"));
-      };
-
-      img.src = reader.result;
-    };
-
-    reader.onerror = () => {
-      reject(
-        new Error("Could not read image")
+      reader.readAsDataURL(
+        file
       );
-    };
-
-    reader.readAsDataURL(file);
-  });
+    }
+  );
 }
 
 
 /* ============================================================
-   CALL CONFIG
+   WEBRTC CONFIG
+   METERED TURN
 ============================================================ */
 
+/*
+ * Metered TURN configuration.
+ *
+ * Includes:
+ * 1. Metered STUN
+ * 2. TURN UDP
+ * 3. TURN TCP
+ * 4. TURN 443
+ * 5. TURN TLS 443
+ *
+ * This is what allows WebRTC to work through many
+ * different NAT / mobile-data / Wi-Fi networks.
+ */
+
 const RTC_CONFIG = {
+
   iceServers: [
+
+    /* Metered STUN */
+
     {
-      urls: "stun:stun.l.google.com:19302"
+      urls:
+        "stun:stun.relay.metered.ca:80"
     },
+
+
+    /* Metered TURN UDP */
+
     {
-      urls: "stun:stun1.l.google.com:19302"
+      urls:
+        "turn:global.relay.metered.ca:80",
+
+      username:
+        "e0c5138cb3e8a7809090cea4",
+
+      credential:
+        "33wuSuMwXxdivUyV"
+    },
+
+
+    /* Metered TURN TCP */
+
+    {
+      urls:
+        "turn:global.relay.metered.ca:80?transport=tcp",
+
+      username:
+        "e0c5138cb3e8a7809090cea4",
+
+      credential:
+        "33wuSuMwXxdivUyV"
+    },
+
+
+    /* Metered TURN 443 */
+
+    {
+      urls:
+        "turn:global.relay.metered.ca:443",
+
+      username:
+        "e0c5138cb3e8a7809090cea4",
+
+      credential:
+        "33wuSuMwXxdivUyV"
+    },
+
+
+    /* Metered TURN TLS */
+
+    {
+      urls:
+        "turns:global.relay.metered.ca:443?transport=tcp",
+
+      username:
+        "e0c5138cb3e8a7809090cea4",
+
+      credential:
+        "33wuSuMwXxdivUyV"
     }
+
   ]
 };
 
@@ -1168,10 +1836,12 @@ const RTC_CONFIG = {
 ============================================================ */
 
 function generateCallId() {
+
   if (
     window.crypto &&
     crypto.randomUUID
   ) {
+
     return crypto.randomUUID();
   }
 
@@ -1190,10 +1860,12 @@ function generateCallId() {
 ============================================================ */
 
 async function getMedia(type) {
+
   if (
     !navigator.mediaDevices ||
     !navigator.mediaDevices.getUserMedia
   ) {
+
     throw new Error(
       "Camera and microphone are not supported"
     );
@@ -1201,8 +1873,56 @@ async function getMedia(type) {
 
   return navigator.mediaDevices.getUserMedia({
     audio: true,
-    video: type === "video"
+    video:
+      type === "video"
   });
+}
+
+
+/* ============================================================
+   FLUSH ICE CANDIDATES
+============================================================ */
+
+async function flushPendingIceCandidates() {
+
+  if (
+    !peerConnection ||
+    !peerConnection.remoteDescription
+  ) {
+    return;
+  }
+
+  if (
+    !pendingIceCandidates.length
+  ) {
+    return;
+  }
+
+  const candidates =
+    [...pendingIceCandidates];
+
+  pendingIceCandidates = [];
+
+  for (
+    const candidate of candidates
+  ) {
+
+    try {
+
+      await peerConnection.addIceCandidate(
+        new RTCIceCandidate(
+          candidate
+        )
+      );
+
+    } catch (error) {
+
+      console.warn(
+        "Queued ICE candidate error:",
+        error
+      );
+    }
+  }
 }
 
 
@@ -1213,75 +1933,122 @@ async function getMedia(type) {
 function createPeerConnection() {
 
   if (peerConnection) {
+
     try {
       peerConnection.close();
     } catch {}
   }
 
-  peerConnection =
-    new RTCPeerConnection(RTC_CONFIG);
+  /*
+   * Clear old ICE candidates when
+   * creating a completely new connection.
+   */
+  pendingIceCandidates = [];
 
-  remoteStream = new MediaStream();
+  peerConnection =
+    new RTCPeerConnection(
+      RTC_CONFIG
+    );
+
+  remoteStream =
+    new MediaStream();
 
   if (remoteVideo) {
-    remoteVideo.srcObject = remoteStream;
+    remoteVideo.srcObject =
+      remoteStream;
   }
 
   if (remoteAudio) {
-    remoteAudio.srcObject = remoteStream;
+    remoteAudio.srcObject =
+      remoteStream;
   }
 
-  peerConnection.ontrack = event => {
+  peerConnection.ontrack =
+    event => {
 
-    if (event.streams?.[0]) {
+      if (event.streams?.[0]) {
 
-      event.streams[0]
-        .getTracks()
-        .forEach(track => {
+        event.streams[0]
+          .getTracks()
+          .forEach(track => {
 
-          if (
-            !remoteStream
-              .getTracks()
-              .includes(track)
-          ) {
-            remoteStream.addTrack(track);
-          }
-        });
+            if (
+              !remoteStream
+                .getTracks()
+                .includes(track)
+            ) {
 
-    } else if (event.track) {
+              remoteStream.addTrack(
+                track
+              );
+            }
+          });
+
+      } else if (event.track) {
+
+        if (
+          !remoteStream
+            .getTracks()
+            .includes(
+              event.track
+            )
+        ) {
+
+          remoteStream.addTrack(
+            event.track
+          );
+        }
+      }
+
+      if (remoteVideo) {
+
+        remoteVideo.srcObject =
+          remoteStream;
+
+        remoteVideo
+          .play()
+          .catch(() => {});
+      }
+
+      if (remoteAudio) {
+
+        remoteAudio.srcObject =
+          remoteStream;
+
+        remoteAudio
+          .play()
+          .catch(() => {});
+      }
 
       if (
-        !remoteStream
-          .getTracks()
-          .includes(event.track)
+        currentCallType ===
+        "video"
       ) {
-        remoteStream.addTrack(event.track);
+
+        remoteVideo?.classList.remove(
+          "hidden"
+        );
+
+        voiceCallView?.classList.add(
+          "hidden"
+        );
+
+      } else {
+
+        remoteVideo?.classList.add(
+          "hidden"
+        );
+
+        voiceCallView?.classList.remove(
+          "hidden"
+        );
       }
-    }
+    };
 
-    if (remoteVideo) {
-      remoteVideo.srcObject = remoteStream;
 
-      remoteVideo.play().catch(() => {});
-    }
-
-    if (remoteAudio) {
-      remoteAudio.srcObject = remoteStream;
-
-      remoteAudio.play().catch(() => {});
-    }
-
-    if (currentCallType === "video") {
-
-      remoteVideo?.classList.remove("hidden");
-      voiceCallView?.classList.add("hidden");
-
-    } else {
-
-      remoteVideo?.classList.add("hidden");
-      voiceCallView?.classList.remove("hidden");
-    }
-  };
+  /* ==========================================================
+     SEND ICE CANDIDATES
+  ========================================================== */
 
   peerConnection.onicecandidate =
     async event => {
@@ -1295,11 +2062,14 @@ function createPeerConnection() {
       }
 
       try {
+
         await sendSignal(
           "ice-candidate",
           event.candidate
         );
+
       } catch (error) {
+
         console.error(
           "ICE signal error:",
           error
@@ -1307,27 +2077,113 @@ function createPeerConnection() {
       }
     };
 
-  peerConnection.onconnectionstatechange =
+
+  /* ==========================================================
+     ICE CONNECTION STATE
+  ========================================================== */
+
+  peerConnection.oniceconnectionstatechange =
     () => {
 
-      if (!peerConnection) return;
+      if (!peerConnection) {
+        return;
+      }
 
       const state =
-        peerConnection.connectionState;
+        peerConnection.iceConnectionState;
 
-      if (state === "connected") {
+      console.log(
+        "ICE connection state:",
+        state
+      );
+
+      if (
+        state === "connected" ||
+        state === "completed"
+      ) {
+
         setCallConnected();
 
       } else if (
-        state === "failed" ||
+        state === "checking"
+      ) {
+
+        if (voiceCallStatus) {
+
+          voiceCallStatus.textContent =
+            "Connecting...";
+        }
+
+      } else if (
+        state === "failed"
+      ) {
+
+        if (voiceCallStatus) {
+
+          voiceCallStatus.textContent =
+            "Connection failed";
+        }
+
+      } else if (
         state === "disconnected"
       ) {
+
         if (voiceCallStatus) {
+
           voiceCallStatus.textContent =
             "Connection lost";
         }
       }
     };
+
+
+  /* ==========================================================
+     CONNECTION STATE
+  ========================================================== */
+
+  peerConnection.onconnectionstatechange =
+    () => {
+
+      if (!peerConnection) {
+        return;
+      }
+
+      const state =
+        peerConnection.connectionState;
+
+      console.log(
+        "Peer connection state:",
+        state
+      );
+
+      if (
+        state === "connected"
+      ) {
+
+        setCallConnected();
+
+      } else if (
+        state === "failed"
+      ) {
+
+        if (voiceCallStatus) {
+
+          voiceCallStatus.textContent =
+            "Connection failed";
+        }
+
+      } else if (
+        state === "disconnected"
+      ) {
+
+        if (voiceCallStatus) {
+
+          voiceCallStatus.textContent =
+            "Connection lost";
+        }
+      }
+    };
+
 
   return peerConnection;
 }
@@ -1340,7 +2196,11 @@ function createPeerConnection() {
 async function startCall(type) {
 
   if (!selectedUser) {
-    showToast("Select a user first");
+
+    showToast(
+      "Select a user first"
+    );
+
     return;
   }
 
@@ -1348,7 +2208,11 @@ async function startCall(type) {
     peerConnection ||
     currentCallId
   ) {
-    showToast("Already in a call");
+
+    showToast(
+      "Already in a call"
+    );
+
     return;
   }
 
@@ -1357,13 +2221,15 @@ async function startCall(type) {
     currentCallId =
       generateCallId();
 
-    currentCallType = type;
+    currentCallType =
+      type;
 
     currentCallUser = {
       ...selectedUser
     };
 
-    currentCallDirection = "outgoing";
+    currentCallDirection =
+      "outgoing";
 
     localStream =
       await getMedia(type);
@@ -1373,6 +2239,7 @@ async function startCall(type) {
     localStream
       .getTracks()
       .forEach(track => {
+
         peerConnection.addTrack(
           track,
           localStream
@@ -1409,13 +2276,19 @@ async function startCall(type) {
     await sendSignal(
       "offer",
       {
-        type: offer.type,
-        sdp: offer.sdp,
-        call_type: type
+        type:
+          offer.type,
+
+        sdp:
+          offer.sdp,
+
+        call_type:
+          type
       }
     );
 
     startSignalPolling();
+
     startCallDuration();
 
   } catch (error) {
@@ -1430,7 +2303,9 @@ async function startCall(type) {
       "Could not start call"
     );
 
-    await cleanupCall(false);
+    await cleanupCall(
+      false
+    );
   }
 }
 
@@ -1439,24 +2314,46 @@ async function startCall(type) {
    CALL SCREEN
 ============================================================ */
 
-function showCallScreen(user, type) {
+function showCallScreen(
+  user,
+  type
+) {
 
-  callScreen.classList.remove("hidden");
+  callScreen.classList.remove(
+    "hidden"
+  );
 
   callUserName.textContent =
-    user?.username || "User";
+    user?.username ||
+    "User";
 
   if (type === "video") {
 
-    remoteVideo.classList.remove("hidden");
-    voiceCallView.classList.add("hidden");
-    localVideo.classList.remove("hidden");
+    remoteVideo.classList.remove(
+      "hidden"
+    );
+
+    voiceCallView.classList.add(
+      "hidden"
+    );
+
+    localVideo.classList.remove(
+      "hidden"
+    );
 
   } else {
 
-    remoteVideo.classList.add("hidden");
-    voiceCallView.classList.remove("hidden");
-    localVideo.classList.add("hidden");
+    remoteVideo.classList.add(
+      "hidden"
+    );
+
+    voiceCallView.classList.remove(
+      "hidden"
+    );
+
+    localVideo.classList.add(
+      "hidden"
+    );
   }
 
   if (
@@ -1467,7 +2364,9 @@ function showCallScreen(user, type) {
     localVideo.srcObject =
       localStream;
 
-    localVideo.play().catch(() => {});
+    localVideo
+      .play()
+      .catch(() => {});
   }
 }
 
@@ -1492,7 +2391,11 @@ function startIncomingCallPolling() {
 function stopIncomingCallPolling() {
 
   if (incomingCallTimer) {
-    clearInterval(incomingCallTimer);
+
+    clearInterval(
+      incomingCallTimer
+    );
+
     incomingCallTimer = null;
   }
 }
@@ -1535,7 +2438,9 @@ async function checkIncomingCalls() {
     let newest =
       lastIncomingSignalTime;
 
-    for (const signal of calls) {
+    for (
+      const signal of calls
+    ) {
 
       const created =
         Number(
@@ -1543,14 +2448,21 @@ async function checkIncomingCalls() {
           Date.now()
         );
 
-      if (created > newest) {
-        newest = created;
+      if (
+        created > newest
+      ) {
+
+        newest =
+          created;
       }
     }
 
-    lastIncomingSignalTime = newest;
+    lastIncomingSignalTime =
+      newest;
 
-    for (const signal of calls) {
+    for (
+      const signal of calls
+    ) {
 
       if (
         signal.signal_type !==
@@ -1573,12 +2485,15 @@ async function checkIncomingCalls() {
       }
 
       if (id) {
+
         processedSignalIds.add(
           `incoming-${id}`
         );
       }
 
-      handleIncomingOffer(signal);
+      handleIncomingOffer(
+        signal
+      );
 
       break;
     }
@@ -1597,7 +2512,9 @@ async function checkIncomingCalls() {
    INCOMING OFFER
 ============================================================ */
 
-function handleIncomingOffer(signal) {
+function handleIncomingOffer(
+  signal
+) {
 
   if (
     currentCallId ||
@@ -1665,13 +2582,16 @@ function handleIncomingOffer(signal) {
       null,
 
     type:
-      offerData.call_type === "video"
+      offerData.call_type ===
+      "video"
         ? "video"
         : "voice",
 
     offer: {
+
       type:
-        offerData.type || "offer",
+        offerData.type ||
+        "offer",
 
       sdp:
         offerData.sdp
@@ -1690,7 +2610,9 @@ function handleIncomingOffer(signal) {
    INCOMING UI
 ============================================================ */
 
-function showIncomingCall(call) {
+function showIncomingCall(
+  call
+) {
 
   incomingCallName.textContent =
     call.username;
@@ -1731,7 +2653,9 @@ if (acceptCallBtn) {
     "click",
     async () => {
 
-      if (!pendingIncomingCall) {
+      if (
+        !pendingIncomingCall
+      ) {
         return;
       }
 
@@ -1740,7 +2664,8 @@ if (acceptCallBtn) {
 
       try {
 
-        pendingIncomingCall = null;
+        pendingIncomingCall =
+          null;
 
         hideIncomingCall();
 
@@ -1751,6 +2676,7 @@ if (acceptCallBtn) {
           call.type;
 
         currentCallUser = {
+
           id:
             call.senderId,
 
@@ -1765,13 +2691,16 @@ if (acceptCallBtn) {
           "incoming";
 
         localStream =
-          await getMedia(call.type);
+          await getMedia(
+            call.type
+          );
 
         createPeerConnection();
 
         localStream
           .getTracks()
           .forEach(track => {
+
             peerConnection.addTrack(
               track,
               localStream
@@ -1789,12 +2718,20 @@ if (acceptCallBtn) {
           call.profilePhoto
         );
 
+        /*
+         * Remote description must be set
+         * before queued ICE candidates
+         * are added.
+         */
+
         await peerConnection
           .setRemoteDescription(
             new RTCSessionDescription(
               call.offer
             )
           );
+
+        await flushPendingIceCandidates();
 
         const answer =
           await peerConnection
@@ -1817,6 +2754,7 @@ if (acceptCallBtn) {
         );
 
         startSignalPolling();
+
         startCallDuration();
 
         voiceCallStatus.textContent =
@@ -1834,7 +2772,9 @@ if (acceptCallBtn) {
           "Could not accept call"
         );
 
-        await cleanupCall(false);
+        await cleanupCall(
+          false
+        );
       }
     }
   );
@@ -1854,7 +2794,8 @@ if (rejectCallBtn) {
       const call =
         pendingIncomingCall;
 
-      pendingIncomingCall = null;
+      pendingIncomingCall =
+        null;
 
       hideIncomingCall();
 
@@ -1866,6 +2807,7 @@ if (rejectCallBtn) {
           call.callId;
 
         currentCallUser = {
+
           id:
             call.senderId,
 
@@ -1876,7 +2818,8 @@ if (rejectCallBtn) {
         await sendSignal(
           "reject",
           {
-            reason: "rejected"
+            reason:
+              "rejected"
           }
         );
 
@@ -1889,8 +2832,11 @@ if (rejectCallBtn) {
 
       } finally {
 
-        currentCallId = null;
-        currentCallUser = null;
+        currentCallId =
+          null;
+
+        currentCallUser =
+          null;
       }
     }
   );
@@ -1910,6 +2856,7 @@ async function sendSignal(
     !currentCallId ||
     !currentCallUser
   ) {
+
     throw new Error(
       "Call is not ready"
     );
@@ -1920,28 +2867,30 @@ async function sendSignal(
     {
       method: "POST",
 
-      body: JSON.stringify({
-        call_id:
-          currentCallId,
+      body:
+        JSON.stringify({
 
-        receiver_id:
-          Number(
-            currentCallUser.id
-          ),
+          call_id:
+            currentCallId,
 
-        signal_type:
-          signalType,
+          receiver_id:
+            Number(
+              currentCallUser.id
+            ),
 
-        signal_data:
-          typeof signalData ===
-          "string"
+          signal_type:
+            signalType,
 
-            ? signalData
+          signal_data:
+            typeof signalData ===
+            "string"
 
-            : JSON.stringify(
-                signalData
-              )
-      })
+              ? signalData
+
+              : JSON.stringify(
+                  signalData
+                )
+        })
     }
   );
 }
@@ -1967,7 +2916,11 @@ function startSignalPolling() {
 function stopSignalPolling() {
 
   if (signalTimer) {
-    clearInterval(signalTimer);
+
+    clearInterval(
+      signalTimer
+    );
+
     signalTimer = null;
   }
 }
@@ -1999,7 +2952,9 @@ async function pollCallSignals() {
       return;
     }
 
-    for (const signal of signals) {
+    for (
+      const signal of signals
+    ) {
 
       const signalId =
         signal.id;
@@ -2014,6 +2969,7 @@ async function pollCallSignals() {
       }
 
       if (signalId) {
+
         processedSignalIds.add(
           `signal-${signalId}`
         );
@@ -2038,7 +2994,9 @@ async function pollCallSignals() {
    PROCESS SIGNAL
 ============================================================ */
 
-async function processCallSignal(signal) {
+async function processCallSignal(
+  signal
+) {
 
   if (
     !signal ||
@@ -2067,7 +3025,13 @@ async function processCallSignal(signal) {
       signal.signal_data;
   }
 
-  switch (signal.signal_type) {
+  switch (
+    signal.signal_type
+  ) {
+
+    /* ========================================================
+       ANSWER
+    ======================================================== */
 
     case "answer":
 
@@ -2085,6 +3049,13 @@ async function processCallSignal(signal) {
               )
             );
 
+          /*
+           * Now that remoteDescription exists,
+           * add all ICE candidates that arrived early.
+           */
+
+          await flushPendingIceCandidates();
+
           voiceCallStatus.textContent =
             "Connecting...";
 
@@ -2100,10 +3071,28 @@ async function processCallSignal(signal) {
       break;
 
 
+    /* ========================================================
+       ICE CANDIDATE
+    ======================================================== */
+
     case "ice-candidate":
 
+      if (!data) {
+        break;
+      }
+
+      /*
+       * IMPORTANT FIX:
+       *
+       * Previously candidates were simply ignored when
+       * remoteDescription was not ready.
+       *
+       * That can cause calls to fail on different networks.
+       *
+       * Now we queue them and add them later.
+       */
+
       if (
-        data &&
         peerConnection.remoteDescription
       ) {
 
@@ -2123,34 +3112,68 @@ async function processCallSignal(signal) {
             error
           );
         }
+
+      } else {
+
+        pendingIceCandidates.push(
+          data
+        );
+
+        console.log(
+          "ICE candidate queued"
+        );
       }
 
       break;
 
 
+    /* ========================================================
+       REJECT
+    ======================================================== */
+
     case "reject":
 
-      showToast("Call declined");
+      showToast(
+        "Call declined"
+      );
 
-      await cleanupCall(false);
+      await cleanupCall(
+        false
+      );
 
       break;
 
+
+    /* ========================================================
+       BUSY
+    ======================================================== */
 
     case "busy":
 
-      showToast("User is busy");
+      showToast(
+        "User is busy"
+      );
 
-      await cleanupCall(false);
+      await cleanupCall(
+        false
+      );
 
       break;
 
 
+    /* ========================================================
+       END
+    ======================================================== */
+
     case "end":
 
-      showToast("Call ended");
+      showToast(
+        "Call ended"
+      );
 
-      await cleanupCall(false);
+      await cleanupCall(
+        false
+      );
 
       break;
   }
@@ -2164,11 +3187,13 @@ async function processCallSignal(signal) {
 function setCallConnected() {
 
   if (voiceCallStatus) {
+
     voiceCallStatus.textContent =
       "Connected";
   }
 
   if (chatStatus) {
+
     chatStatus.textContent =
       "In call";
   }
@@ -2183,50 +3208,67 @@ function startCallDuration() {
 
   stopCallDuration();
 
-  callStartedAt = Date.now();
+  callStartedAt =
+    Date.now();
 
-  callDuration.textContent = "00:00";
+  callDuration.textContent =
+    "00:00";
 
   callDurationTimer =
-    setInterval(() => {
+    setInterval(
+      () => {
 
-      if (!callStartedAt) return;
+        if (!callStartedAt) {
+          return;
+        }
 
-      const seconds =
-        Math.floor(
-          (Date.now() -
-            callStartedAt) /
-          1000
-        );
+        const seconds =
+          Math.floor(
+            (
+              Date.now() -
+              callStartedAt
+            ) / 1000
+          );
 
-      const minutes =
-        Math.floor(
-          seconds / 60
-        );
+        const minutes =
+          Math.floor(
+            seconds / 60
+          );
 
-      const remaining =
-        seconds % 60;
+        const remaining =
+          seconds % 60;
 
-      callDuration.textContent =
-        `${String(minutes).padStart(
-          2,
-          "0"
-        )}:${String(remaining).padStart(
-          2,
-          "0"
-        )}`;
+        callDuration.textContent =
+          `${String(
+            minutes
+          ).padStart(
+            2,
+            "0"
+          )}:${String(
+            remaining
+          ).padStart(
+            2,
+            "0"
+          )}`;
 
-    }, 1000);
+      },
+      1000
+    );
 }
 
 function stopCallDuration() {
 
   if (callDurationTimer) {
-    clearInterval(callDurationTimer);
+
+    clearInterval(
+      callDurationTimer
+    );
+
     callDurationTimer = null;
   }
 
-  callStartedAt = null;
+  callStartedAt =
+    null;
 }
 
 
@@ -2240,21 +3282,32 @@ if (muteCallBtn) {
     "click",
     () => {
 
-      if (!localStream) return;
+      if (!localStream) {
+        return;
+      }
 
       const tracks =
         localStream.getAudioTracks();
 
-      if (!tracks.length) return;
+      if (!tracks.length) {
+        return;
+      }
 
-      isMuted = !isMuted;
+      isMuted =
+        !isMuted;
 
-      tracks.forEach(track => {
-        track.enabled = !isMuted;
-      });
+      tracks.forEach(
+        track => {
+
+          track.enabled =
+            !isMuted;
+        }
+      );
 
       muteCallBtn.textContent =
-        isMuted ? "🔇" : "🎤";
+        isMuted
+          ? "🔇"
+          : "🎤";
     }
   );
 }
@@ -2270,21 +3323,32 @@ if (cameraCallBtn) {
     "click",
     () => {
 
-      if (!localStream) return;
+      if (!localStream) {
+        return;
+      }
 
       const tracks =
         localStream.getVideoTracks();
 
-      if (!tracks.length) return;
+      if (!tracks.length) {
+        return;
+      }
 
-      isCameraOff = !isCameraOff;
+      isCameraOff =
+        !isCameraOff;
 
-      tracks.forEach(track => {
-        track.enabled = !isCameraOff;
-      });
+      tracks.forEach(
+        track => {
+
+          track.enabled =
+            !isCameraOff;
+        }
+      );
 
       cameraCallBtn.textContent =
-        isCameraOff ? "▣" : "▣";
+        isCameraOff
+          ? "▣"
+          : "▣";
     }
   );
 }
@@ -2302,7 +3366,8 @@ if (switchCameraBtn) {
 
       if (
         !localStream ||
-        currentCallType !== "video"
+        currentCallType !==
+          "video"
       ) {
         return;
       }
@@ -2310,7 +3375,9 @@ if (switchCameraBtn) {
       const videoTracks =
         localStream.getVideoTracks();
 
-      if (!videoTracks.length) return;
+      if (!videoTracks.length) {
+        return;
+      }
 
       const oldTrack =
         videoTracks[0];
@@ -2318,7 +3385,8 @@ if (switchCameraBtn) {
       try {
 
         const devices =
-          await navigator.mediaDevices
+          await navigator
+            .mediaDevices
             .enumerateDevices();
 
         const cameras =
@@ -2328,7 +3396,9 @@ if (switchCameraBtn) {
               "videoinput"
           );
 
-        if (cameras.length < 2) {
+        if (
+          cameras.length < 2
+        ) {
 
           showToast(
             "No other camera"
@@ -2360,9 +3430,11 @@ if (switchCameraBtn) {
           ];
 
         const newStream =
-          await navigator.mediaDevices
+          await navigator
+            .mediaDevices
             .getUserMedia({
               audio: false,
+
               video: {
                 deviceId: {
                   exact:
@@ -2386,6 +3458,7 @@ if (switchCameraBtn) {
             );
 
         if (sender) {
+
           await sender.replaceTrack(
             newTrack
           );
@@ -2429,12 +3502,17 @@ if (endCallBtn) {
   endCallBtn.addEventListener(
     "click",
     async () => {
-      await endCall(true);
+
+      await endCall(
+        true
+      );
     }
   );
 }
 
-async function endCall(sendEnd) {
+async function endCall(
+  sendEnd
+) {
 
   if (
     sendEnd &&
@@ -2447,7 +3525,8 @@ async function endCall(sendEnd) {
       await sendSignal(
         "end",
         {
-          reason: "hangup"
+          reason:
+            "hangup"
         }
       );
 
@@ -2460,7 +3539,9 @@ async function endCall(sendEnd) {
     }
   }
 
-  await cleanupCall(false);
+  await cleanupCall(
+    false
+  );
 }
 
 
@@ -2468,19 +3549,30 @@ async function endCall(sendEnd) {
    CLEANUP
 ============================================================ */
 
-async function cleanupCall(clearRemote) {
+async function cleanupCall(
+  clearRemote
+) {
 
   stopSignalPolling();
+
   stopCallDuration();
+
   stopRingtone();
+
+  /*
+   * Clear queued ICE candidates.
+   */
+  pendingIceCandidates = [];
 
   if (localStream) {
 
     localStream
       .getTracks()
-      .forEach(track => {
-        track.stop();
-      });
+      .forEach(
+        track => {
+          track.stop();
+        }
+      );
 
     localStream = null;
   }
@@ -2489,9 +3581,11 @@ async function cleanupCall(clearRemote) {
 
     remoteStream
       .getTracks()
-      .forEach(track => {
-        track.stop();
-      });
+      .forEach(
+        track => {
+          track.stop();
+        }
+      );
 
     remoteStream = null;
   }
@@ -2506,57 +3600,86 @@ async function cleanupCall(clearRemote) {
   }
 
   if (localVideo) {
-    localVideo.srcObject = null;
+
+    localVideo.srcObject =
+      null;
   }
 
-  if (clearRemote !== false) {
+  if (
+    clearRemote !== false
+  ) {
 
     if (remoteVideo) {
-      remoteVideo.srcObject = null;
+
+      remoteVideo.srcObject =
+        null;
     }
 
     if (remoteAudio) {
-      remoteAudio.srcObject = null;
+
+      remoteAudio.srcObject =
+        null;
     }
   }
 
   if (callScreen) {
-    callScreen.classList.add("hidden");
+
+    callScreen.classList.add(
+      "hidden"
+    );
   }
 
-  currentCallId = null;
-  currentCallType = null;
-  currentCallUser = null;
-  currentCallDirection = null;
+  currentCallId =
+    null;
 
-  isMuted = false;
-  isCameraOff = false;
+  currentCallType =
+    null;
+
+  currentCallUser =
+    null;
+
+  currentCallDirection =
+    null;
+
+  isMuted =
+    false;
+
+  isCameraOff =
+    false;
 
   if (muteCallBtn) {
-    muteCallBtn.textContent = "🎤";
+
+    muteCallBtn.textContent =
+      "🎤";
   }
 
   if (cameraCallBtn) {
-    cameraCallBtn.textContent = "▣";
+
+    cameraCallBtn.textContent =
+      "▣";
   }
 
   if (callDuration) {
-    callDuration.textContent = "00:00";
+
+    callDuration.textContent =
+      "00:00";
   }
 
   if (voiceCallStatus) {
+
     voiceCallStatus.textContent =
       "Calling...";
   }
 
-  if (selectedUser && chatStatus) {
+  if (
+    selectedUser &&
+    chatStatus
+  ) {
+
     chatStatus.textContent =
       "Available";
   }
 
-  /* Do NOT recreate buttons.
-     Just make sure the existing ones remain visible.
-  */
   fixCallButtons();
 }
 
@@ -2567,15 +3690,20 @@ async function cleanupCall(clearRemote) {
 
 function playRingtone() {
 
-  if (!ringtone) return;
+  if (!ringtone) {
+    return;
+  }
 
   try {
 
     if (ringtone.src) {
 
-      ringtone.currentTime = 0;
+      ringtone.currentTime =
+        0;
 
-      ringtone.play().catch(() => {});
+      ringtone
+        .play()
+        .catch(() => {});
 
       return;
     }
@@ -2584,49 +3712,70 @@ function playRingtone() {
       window.AudioContext ||
       window.webkitAudioContext;
 
-    if (!AudioContext) return;
+    if (!AudioContext) {
+      return;
+    }
 
     const audioContext =
       new AudioContext();
 
     const oscillator =
-      audioContext.createOscillator();
+      audioContext
+        .createOscillator();
 
     const gain =
-      audioContext.createGain();
+      audioContext
+        .createGain();
 
-    oscillator.type = "sine";
+    oscillator.type =
+      "sine";
 
-    oscillator.frequency.value = 700;
+    oscillator.frequency.value =
+      700;
 
-    gain.gain.value = 0.035;
+    gain.gain.value =
+      0.035;
 
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
+    oscillator.connect(
+      gain
+    );
+
+    gain.connect(
+      audioContext.destination
+    );
 
     oscillator.start();
 
-    setTimeout(() => {
+    setTimeout(
+      () => {
 
-      try {
-        oscillator.stop();
-        audioContext.close();
-      } catch {}
+        try {
 
-    }, 700);
+          oscillator.stop();
+
+          audioContext.close();
+
+        } catch {}
+
+      },
+      700
+    );
 
   } catch {}
 }
 
 function stopRingtone() {
 
-  if (!ringtone) return;
+  if (!ringtone) {
+    return;
+  }
 
   try {
 
     ringtone.pause();
 
-    ringtone.currentTime = 0;
+    ringtone.currentTime =
+      0;
 
   } catch {}
 }
@@ -2646,14 +3795,14 @@ if (
     () => {
 
       fixCallButtons();
-      startApp();
 
+      startApp();
     }
   );
 
 } else {
 
   fixCallButtons();
-  startApp();
 
+  startApp();
 }
