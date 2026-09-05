@@ -35,9 +35,6 @@ const loginError =
 const registerError =
   document.getElementById("registerError");
 
-const usersList =
-  document.getElementById("usersList");
-
 const emptyChat =
   document.getElementById("emptyChat");
 
@@ -71,7 +68,9 @@ const groupMessageInput =
   document.getElementById("groupMessageInput");
 
 const reloadGroupMessages =
-  document.getElementById("reloadGroupMessages");
+  document.getElementById(
+    "reloadGroupMessages"
+  );
 
 
 /* ============================================================
@@ -79,7 +78,7 @@ const reloadGroupMessages =
 ============================================================ */
 
 const messagesBox =
-  document.getElementById("messages");
+  document.getElementById("messagesBox");
 
 const messageForm =
   document.getElementById("messageForm");
@@ -105,9 +104,6 @@ const chatStatus =
 const logoutBtn =
   document.getElementById("logoutBtn");
 
-const refreshUsers =
-  document.getElementById("refreshUsers");
-
 const reloadMessages =
   document.getElementById("reloadMessages");
 
@@ -130,49 +126,24 @@ const myAvatarBtn =
 const profilePanel =
   document.getElementById("profilePanel");
 
-const profilePanelBackdrop =
-  document.getElementById(
-    "profilePanelBackdrop"
-  );
-
-const closeProfilePanel =
-  document.getElementById(
-    "closeProfilePanel"
-  );
-
-const profilePhotoBtn =
-  document.getElementById(
-    "profilePhotoBtn"
-  );
-
-const profilePhotoLarge =
-  document.getElementById(
-    "profilePhotoLarge"
-  );
-
-const profilePanelName =
-  document.getElementById(
-    "profilePanelName"
-  );
-
-const profilePanelEmail =
-  document.getElementById(
-    "profilePanelEmail"
-  );
-
 const profilePhotoInput =
   document.getElementById(
     "profilePhotoInput"
   );
 
-const changeProfilePhoto =
-  document.getElementById(
-    "changeProfilePhoto"
-  );
-
 const removeProfilePhoto =
   document.getElementById(
     "removeProfilePhoto"
+  );
+
+const profileUsername =
+  document.getElementById(
+    "profileUsername"
+  );
+
+const profileAvatar =
+  document.getElementById(
+    "profileAvatar"
   );
 
 
@@ -247,7 +218,9 @@ async function api(
       }
     );
 
+
   let data = {};
+
 
   try {
 
@@ -264,9 +237,11 @@ async function api(
 
     throw new Error(
       data.error ||
+      data.message ||
       "Something went wrong"
     );
   }
+
 
   return data;
 }
@@ -289,23 +264,41 @@ function showToast(text) {
     return;
   }
 
+
   toast.textContent =
     text;
+
+
+  toast.classList.remove(
+    "hidden"
+  );
+
 
   toast.classList.add(
     "show"
   );
 
-  setTimeout(
-    () => {
 
-      toast.classList.remove(
-        "show"
-      );
-
-    },
-    2500
+  clearTimeout(
+    showToast.timer
   );
+
+
+  showToast.timer =
+    setTimeout(
+      () => {
+
+        toast.classList.remove(
+          "show"
+        );
+
+        toast.classList.add(
+          "hidden"
+        );
+
+      },
+      2500
+    );
 }
 
 
@@ -316,10 +309,12 @@ function escapeHTML(value) {
       "div"
     );
 
+
   div.textContent =
     String(
       value ?? ""
     );
+
 
   return div.innerHTML;
 }
@@ -426,10 +421,23 @@ function setAvatar(
   }
 
 
-  element.textContent =
+  element.innerHTML =
     "";
 
+
   element.style.backgroundImage =
+    "";
+
+
+  element.style.backgroundSize =
+    "";
+
+
+  element.style.backgroundPosition =
+    "";
+
+
+  element.style.backgroundRepeat =
     "";
 
 
@@ -472,10 +480,23 @@ function setAvatarData(
   }
 
 
-  element.textContent =
+  element.innerHTML =
     "";
 
+
   element.style.backgroundImage =
+    "";
+
+
+  element.style.backgroundSize =
+    "";
+
+
+  element.style.backgroundPosition =
+    "";
+
+
+  element.style.backgroundRepeat =
     "";
 
 
@@ -653,6 +674,10 @@ if (showRegister) {
 
         loginError.textContent =
           "";
+
+        loginError.classList.add(
+          "hidden"
+        );
       }
 
 
@@ -660,6 +685,10 @@ if (showRegister) {
 
         registerError.textContent =
           "";
+
+        registerError.classList.add(
+          "hidden"
+        );
       }
     }
   );
@@ -685,6 +714,10 @@ if (showLogin) {
 
         loginError.textContent =
           "";
+
+        loginError.classList.add(
+          "hidden"
+        );
       }
 
 
@@ -692,6 +725,10 @@ if (showLogin) {
 
         registerError.textContent =
           "";
+
+        registerError.classList.add(
+          "hidden"
+        );
       }
     }
   );
@@ -711,37 +748,77 @@ if (registerForm) {
       event.preventDefault();
 
 
+      const usernameInput =
+        document.getElementById(
+          "registerUsername"
+        );
+
+      const passwordInput =
+        document.getElementById(
+          "registerPassword"
+        );
+
+      const confirmInput =
+        document.getElementById(
+          "registerPasswordConfirm"
+        );
+
+
+      const username =
+        usernameInput?.value.trim() ||
+        "";
+
+      const password =
+        passwordInput?.value ||
+        "";
+
+      const confirmPassword =
+        confirmInput?.value ||
+        "";
+
+
       if (registerError) {
 
         registerError.textContent =
           "";
+
+        registerError.classList.add(
+          "hidden"
+        );
       }
 
 
-      const username =
-        document
-          .getElementById(
-            "registerUsername"
-          )
-          ?.value
-          .trim();
+      if (!username) {
+
+        showRegisterError(
+          "Please enter a username"
+        );
+
+        return;
+      }
 
 
-      const email =
-        document
-          .getElementById(
-            "registerEmail"
-          )
-          ?.value
-          .trim();
+      if (!password) {
+
+        showRegisterError(
+          "Please enter a password"
+        );
+
+        return;
+      }
 
 
-      const password =
-        document
-          .getElementById(
-            "registerPassword"
-          )
-          ?.value;
+      if (
+        password !==
+        confirmPassword
+      ) {
+
+        showRegisterError(
+          "Passwords do not match"
+        );
+
+        return;
+      }
 
 
       try {
@@ -754,7 +831,6 @@ if (registerForm) {
             body:
               JSON.stringify({
                 username,
-                email,
                 password
               })
           }
@@ -774,33 +850,54 @@ if (registerForm) {
         );
 
 
-        loginForm.classList.remove(
+        loginForm?.classList.remove(
           "hidden"
         );
 
 
-        const loginEmail =
+        const loginUsername =
           document.getElementById(
-            "loginEmail"
+            "loginUsername"
           );
 
 
-        if (loginEmail) {
+        if (loginUsername) {
 
-          loginEmail.value =
-            email || "";
+          loginUsername.value =
+            username;
         }
 
 
       } catch (error) {
 
-        if (registerError) {
-
-          registerError.textContent =
-            error.message;
-        }
+        showRegisterError(
+          error.message
+        );
       }
     }
+  );
+}
+
+
+/* ============================================================
+   REGISTER ERROR
+============================================================ */
+
+function showRegisterError(
+  message
+) {
+
+  if (!registerError) {
+    return;
+  }
+
+
+  registerError.textContent =
+    message;
+
+
+  registerError.classList.remove(
+    "hidden"
   );
 }
 
@@ -818,28 +915,55 @@ if (loginForm) {
       event.preventDefault();
 
 
+      const usernameInput =
+        document.getElementById(
+          "loginUsername"
+        );
+
+      const passwordInput =
+        document.getElementById(
+          "loginPassword"
+        );
+
+
+      const username =
+        usernameInput?.value.trim() ||
+        "";
+
+      const password =
+        passwordInput?.value ||
+        "";
+
+
       if (loginError) {
 
         loginError.textContent =
           "";
+
+        loginError.classList.add(
+          "hidden"
+        );
       }
 
 
-      const email =
-        document
-          .getElementById(
-            "loginEmail"
-          )
-          ?.value
-          .trim();
+      if (!username) {
+
+        showLoginError(
+          "Please enter your username"
+        );
+
+        return;
+      }
 
 
-      const password =
-        document
-          .getElementById(
-            "loginPassword"
-          )
-          ?.value;
+      if (!password) {
+
+        showLoginError(
+          "Please enter your password"
+        );
+
+        return;
+      }
 
 
       try {
@@ -852,7 +976,7 @@ if (loginForm) {
 
               body:
                 JSON.stringify({
-                  email,
+                  username,
                   password
                 })
             }
@@ -873,7 +997,8 @@ if (loginForm) {
 
 
         currentUser =
-          data.user;
+          data.user ||
+          null;
 
 
         loginForm.reset();
@@ -884,13 +1009,34 @@ if (loginForm) {
 
       } catch (error) {
 
-        if (loginError) {
-
-          loginError.textContent =
-            error.message;
-        }
+        showLoginError(
+          error.message
+        );
       }
     }
+  );
+}
+
+
+/* ============================================================
+   LOGIN ERROR
+============================================================ */
+
+function showLoginError(
+  message
+) {
+
+  if (!loginError) {
+    return;
+  }
+
+
+  loginError.textContent =
+    message;
+
+
+  loginError.classList.remove(
+    "hidden"
   );
 }
 
@@ -922,7 +1068,16 @@ async function startApp() {
 
 
     currentUser =
-      data.user;
+      data.user ||
+      null;
+
+
+    if (!currentUser) {
+
+      throw new Error(
+        "User not found"
+      );
+    }
 
 
     await openChatApp();
@@ -932,8 +1087,10 @@ async function startApp() {
 
     removeToken();
 
+
     currentUser =
       null;
+
 
     showAuth();
   }
@@ -949,6 +1106,10 @@ function showAuth() {
   stopGroupMessageRefresh();
 
   stopPrivateMessageRefresh();
+
+
+  selectedUser =
+    null;
 
 
   if (authScreen) {
@@ -974,6 +1135,14 @@ function showAuth() {
 
 async function openChatApp() {
 
+  if (!currentUser) {
+
+    showAuth();
+
+    return;
+  }
+
+
   if (authScreen) {
 
     authScreen.classList.add(
@@ -990,73 +1159,33 @@ async function openChatApp() {
   }
 
 
-  if (currentUser) {
+  /*
+   * MY PROFILE
+   */
 
-    if (myUsername) {
+  if (myUsername) {
 
-      myUsername.textContent =
-        currentUser.username ||
-        "User";
-    }
-
-
-    setAvatar(
-      myAvatar,
-      currentUser
-    );
+    myUsername.textContent =
+      currentUser.username ||
+      "User";
   }
+
+
+  setAvatar(
+    myAvatar,
+    currentUser
+  );
 
 
   updateProfilePanel();
 
 
   /*
-   * IMPORTANT:
-   *
-   * Sidebar User List မသုံးတော့ဘူး။
-   *
-   * Group Chat ထဲက Profile ကိုနှိပ်မှ
-   * Private Chat သွားမယ်။
+   * Login ဝင်တာနဲ့
+   * Public Group Chat ကို တန်းဖွင့်မယ်။
    */
-
-
-  hideSidebarUserList();
-
 
   await openGroupChat();
-}
-
-
-/* ============================================================
-   HIDE SIDEBAR USER LIST
-============================================================ */
-
-function hideSidebarUserList() {
-
-  if (!usersList) {
-    return;
-  }
-
-
-  /*
-   * User list container ကို
-   * လုံးဝမပြတော့ဘူး။
-   */
-
-  usersList.innerHTML =
-    "";
-
-
-  usersList.style.display =
-    "none";
-
-
-  usersList.style.visibility =
-    "hidden";
-
-
-  usersList.style.pointerEvents =
-    "none";
 }
 
 
@@ -1099,12 +1228,13 @@ async function openGroupChat() {
     groupAvatar.style.backgroundImage =
       "";
 
-
     groupAvatar.style.backgroundSize =
       "";
 
-
     groupAvatar.style.backgroundPosition =
+      "";
+
+    groupAvatar.style.backgroundRepeat =
       "";
   }
 
@@ -1121,10 +1251,7 @@ async function openGroupChat() {
   setTimeout(
     () => {
 
-      if (groupMessageInput) {
-
-        groupMessageInput.focus();
-      }
+      groupMessageInput?.focus();
 
     },
     100
@@ -1156,24 +1283,46 @@ async function loadGroupMessages() {
       );
 
 
-    renderGroupMessages(
+    const messages =
       Array.isArray(
         data.messages
       )
         ? data.messages
-        : []
+        : Array.isArray(data)
+          ? data
+          : [];
+
+
+    renderGroupMessages(
+      messages
     );
 
 
   } catch (error) {
 
-    groupMessages.innerHTML = `
-      <div class="loading">
-        ${escapeHTML(
-          error.message
-        )}
-      </div>
-    `;
+    groupMessages.innerHTML = "";
+
+
+    const errorBox =
+      document.createElement(
+        "div"
+      );
+
+
+    errorBox.className =
+      "loading";
+
+
+    errorBox.textContent =
+      error.message;
+
+
+    groupMessages.appendChild(
+      errorBox
+    );
+
+
+    ensureGroupComposer();
   }
 }
 
@@ -1232,7 +1381,8 @@ function renderGroupMessages(
     message => {
 
       /*
-       * Worker response:
+       * Backend က ဒီ format တစ်ခုခုကို
+       * return လုပ်နိုင်တယ်။
        *
        * sender_id
        * sender_username
@@ -1240,7 +1390,11 @@ function renderGroupMessages(
        *
        * OR
        *
-       * sender: {...}
+       * sender: {
+       *   id,
+       *   username,
+       *   profile_photo
+       * }
        */
 
       const sender =
@@ -1288,7 +1442,7 @@ function renderGroupMessages(
 
 
       /*
-       * MESSAGE ROW
+       * ROW
        */
 
       const row =
@@ -1298,7 +1452,7 @@ function renderGroupMessages(
 
 
       row.className =
-        "message-row" +
+        "group-message" +
         (
           mine
             ? " mine"
@@ -1307,30 +1461,38 @@ function renderGroupMessages(
 
 
       /*
-       * OTHER USER PROFILE
-       *
-       * Profile ပုံကိုနှိပ်ရင်
-       * Private Chat သွားမယ်။
+       * OTHER USER AVATAR
        */
 
       if (!mine) {
 
-        const profileButton =
+        const senderBox =
+          document.createElement(
+            "div"
+          );
+
+
+        senderBox.className =
+          "message-sender";
+
+
+        const avatarButton =
           document.createElement(
             "button"
           );
 
 
-        profileButton.type =
+        avatarButton.type =
           "button";
 
 
-        profileButton.className =
-          "avatar-button group-message-avatar";
-
-
-        profileButton.title =
-          `Chat with ${senderUsername}`;
+        avatarButton.style.cssText = `
+          border:0;
+          padding:0;
+          margin:0;
+          background:transparent;
+          cursor:pointer;
+        `;
 
 
         const avatar =
@@ -1350,12 +1512,12 @@ function renderGroupMessages(
         );
 
 
-        profileButton.appendChild(
+        avatarButton.appendChild(
           avatar
         );
 
 
-        profileButton.addEventListener(
+        avatarButton.addEventListener(
           "click",
           event => {
 
@@ -1364,31 +1526,78 @@ function renderGroupMessages(
             event.stopPropagation();
 
 
-            if (
-              Number.isFinite(
-                senderId
-              ) &&
-              senderId > 0
-            ) {
-
-              openPrivateChatFromGroup(
-                senderId,
-                senderUsername,
-                senderPhoto
-              );
-
-            } else {
-
-              showToast(
-                "User information unavailable"
-              );
-            }
+            openPrivateChatFromGroup(
+              senderId,
+              senderUsername,
+              senderPhoto
+            );
           }
         );
 
 
+        /*
+         * USERNAME
+         */
+
+        const nameButton =
+          document.createElement(
+            "button"
+          );
+
+
+        nameButton.type =
+          "button";
+
+
+        nameButton.className =
+          "message-sender-name";
+
+
+        nameButton.style.cssText = `
+          border:0;
+          padding:0;
+          margin:0;
+          background:transparent;
+          color:#8793a2;
+          cursor:pointer;
+          font:inherit;
+        `;
+
+
+        nameButton.textContent =
+          senderUsername;
+
+
+        nameButton.addEventListener(
+          "click",
+          event => {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+
+            openPrivateChatFromGroup(
+              senderId,
+              senderUsername,
+              senderPhoto
+            );
+          }
+        );
+
+
+        senderBox.appendChild(
+          avatarButton
+        );
+
+
+        senderBox.appendChild(
+          nameButton
+        );
+
+
         row.appendChild(
-          profileButton
+          senderBox
         );
       }
 
@@ -1404,81 +1613,8 @@ function renderGroupMessages(
 
 
       content.className =
-        "group-message-content";
+        "message-content";
 
-
-      /*
-       * USERNAME
-       *
-       * Username ကိုနှိပ်ရင်လည်း
-       * Private Chat သွားမယ်။
-       */
-
-      if (!mine) {
-
-        const name =
-          document.createElement(
-            "button"
-          );
-
-
-        name.type =
-          "button";
-
-
-        name.className =
-          "group-message-user";
-
-
-        name.textContent =
-          senderUsername;
-
-
-        name.title =
-          `Chat with ${senderUsername}`;
-
-
-        name.addEventListener(
-          "click",
-          event => {
-
-            event.preventDefault();
-
-            event.stopPropagation();
-
-
-            if (
-              Number.isFinite(
-                senderId
-              ) &&
-              senderId > 0
-            ) {
-
-              openPrivateChatFromGroup(
-                senderId,
-                senderUsername,
-                senderPhoto
-              );
-
-            } else {
-
-              showToast(
-                "User information unavailable"
-              );
-            }
-          }
-        );
-
-
-        content.appendChild(
-          name
-        );
-      }
-
-
-      /*
-       * MESSAGE BUBBLE
-       */
 
       const bubble =
         document.createElement(
@@ -1487,23 +1623,17 @@ function renderGroupMessages(
 
 
       bubble.className =
-        "message";
+        "message-bubble";
 
 
-      const text =
-        document.createElement(
-          "div"
-        );
-
-
-      text.textContent =
+      bubble.textContent =
         message.message ||
         "";
 
 
       const time =
         document.createElement(
-          "span"
+          "div"
         );
 
 
@@ -1517,8 +1647,8 @@ function renderGroupMessages(
         );
 
 
-      bubble.appendChild(
-        text
+      content.appendChild(
+        bubble
       );
 
 
@@ -1526,15 +1656,10 @@ function renderGroupMessages(
         time.textContent
       ) {
 
-        bubble.appendChild(
+        content.appendChild(
           time
         );
       }
-
-
-      content.appendChild(
-        bubble
-      );
 
 
       row.appendChild(
@@ -1548,10 +1673,6 @@ function renderGroupMessages(
     }
   );
 
-
-  /*
-   * Scroll bottom
-   */
 
   groupMessages.scrollTop =
     groupMessages.scrollHeight;
@@ -1590,9 +1711,7 @@ if (groupMessageForm) {
 
 
       const message =
-        groupMessageInput
-          .value
-          .trim();
+        groupMessageInput.value.trim();
 
 
       if (!message) {
@@ -1698,6 +1817,7 @@ function stopGroupMessageRefresh() {
       groupMessageTimer
     );
 
+
     groupMessageTimer =
       null;
   }
@@ -1715,6 +1835,7 @@ if (reloadGroupMessages) {
     async event => {
 
       event.preventDefault();
+
 
       await loadGroupMessages();
     }
@@ -1738,10 +1859,6 @@ async function openPrivateChatFromGroup(
     );
 
 
-  /*
-   * Invalid ID
-   */
-
   if (
     !Number.isFinite(id) ||
     id <= 0
@@ -1756,7 +1873,7 @@ async function openPrivateChatFromGroup(
 
 
   /*
-   * ကိုယ့် Profile ကိုနှိပ်ရင်
+   * ကိုယ့် Profile ကို
    * Private Chat မဖွင့်။
    */
 
@@ -1776,7 +1893,7 @@ async function openPrivateChatFromGroup(
   }
 
 
-  const user = {
+  selectedUser = {
 
     id,
 
@@ -1790,19 +1907,15 @@ async function openPrivateChatFromGroup(
   };
 
 
-  selectedUser =
-    user;
-
-
   /*
-   * Group timer ပိတ်
+   * Group refresh ပိတ်
    */
 
   stopGroupMessageRefresh();
 
 
   /*
-   * Private UI
+   * Private Chat ပြ
    */
 
   showPrivateView();
@@ -1815,25 +1928,25 @@ async function openPrivateChatFromGroup(
   if (chatUsername) {
 
     chatUsername.textContent =
-      user.username;
+      selectedUser.username;
   }
 
 
   setAvatar(
     chatAvatar,
-    user
+    selectedUser
   );
 
 
   if (chatStatus) {
 
     chatStatus.textContent =
-      "Available";
+      "Private Chat";
   }
 
 
   /*
-   * Private messages load
+   * Messages
    */
 
   await loadMessages();
@@ -1854,7 +1967,7 @@ async function openPrivateChatFromGroup(
 
 
 /* ============================================================
-   PRIVATE CHAT LOAD
+   LOAD PRIVATE MESSAGES
 ============================================================ */
 
 async function loadMessages() {
@@ -1879,24 +1992,44 @@ async function loadMessages() {
       );
 
 
-    renderMessages(
+    const messages =
       Array.isArray(
         data.messages
       )
         ? data.messages
-        : []
+        : Array.isArray(data)
+          ? data
+          : [];
+
+
+    renderMessages(
+      messages
     );
 
 
   } catch (error) {
 
-    messagesBox.innerHTML = `
-      <div class="loading">
-        ${escapeHTML(
-          error.message
-        )}
-      </div>
-    `;
+    messagesBox.innerHTML =
+      "";
+
+
+    const errorBox =
+      document.createElement(
+        "div"
+      );
+
+
+    errorBox.className =
+      "loading";
+
+
+    errorBox.textContent =
+      error.message;
+
+
+    messagesBox.appendChild(
+      errorBox
+    );
   }
 }
 
@@ -1952,13 +2085,18 @@ function renderMessages(
   messages.forEach(
     message => {
 
-      const mine =
+      const senderId =
         Number(
           message.sender_id
-        ) ===
-        Number(
-          currentUser.id
         );
+
+
+      const mine =
+        currentUser &&
+        senderId ===
+          Number(
+            currentUser.id
+          );
 
 
       const row =
@@ -1968,12 +2106,22 @@ function renderMessages(
 
 
       row.className =
-        "message-row" +
+        "private-message" +
         (
           mine
             ? " mine"
             : ""
         );
+
+
+      const content =
+        document.createElement(
+          "div"
+        );
+
+
+      content.className =
+        "message-content";
 
 
       const bubble =
@@ -1983,23 +2131,17 @@ function renderMessages(
 
 
       bubble.className =
-        "message";
+        "message-bubble";
 
 
-      const text =
-        document.createElement(
-          "div"
-        );
-
-
-      text.textContent =
+      bubble.textContent =
         message.message ||
         "";
 
 
       const time =
         document.createElement(
-          "span"
+          "div"
         );
 
 
@@ -2013,8 +2155,8 @@ function renderMessages(
         );
 
 
-      bubble.appendChild(
-        text
+      content.appendChild(
+        bubble
       );
 
 
@@ -2022,14 +2164,14 @@ function renderMessages(
         time.textContent
       ) {
 
-        bubble.appendChild(
+        content.appendChild(
           time
         );
       }
 
 
       row.appendChild(
-        bubble
+        content
       );
 
 
@@ -2061,7 +2203,7 @@ if (messageForm) {
       if (!selectedUser) {
 
         showToast(
-          "Select a user from Group Chat"
+          "Open a user from Public Group Chat"
         );
 
         return;
@@ -2074,9 +2216,7 @@ if (messageForm) {
 
 
       const message =
-        messageInput
-          .value
-          .trim();
+        messageInput.value.trim();
 
 
       if (!message) {
@@ -2183,6 +2323,7 @@ function stopPrivateMessageRefresh() {
       privateMessageTimer
     );
 
+
     privateMessageTimer =
       null;
   }
@@ -2190,38 +2331,7 @@ function stopPrivateMessageRefresh() {
 
 
 /* ============================================================
-   REFRESH USERS
-============================================================ */
-
-/*
- * Sidebar User List မသုံးတော့တဲ့အတွက်
- * refreshUsers ကို User list refresh မလုပ်စေတော့ဘူး။
- *
- * HTML ထဲမှာ button ရှိနေသေးရင်လည်း
- * မလိုအပ်တဲ့ User API request မဖြစ်အောင်
- * listener ကို ဒီလိုပိတ်ထားတယ်။
- */
-
-if (refreshUsers) {
-
-  refreshUsers.addEventListener(
-    "click",
-    async event => {
-
-      event.preventDefault();
-
-      hideSidebarUserList();
-
-      showToast(
-        "Users are available in Public Group Chat"
-      );
-    }
-  );
-}
-
-
-/* ============================================================
-   RELOAD PRIVATE MESSAGES
+   RELOAD PRIVATE CHAT
 ============================================================ */
 
 if (reloadMessages) {
@@ -2231,6 +2341,7 @@ if (reloadMessages) {
     async event => {
 
       event.preventDefault();
+
 
       await loadMessages();
     }
@@ -2283,25 +2394,14 @@ if (logoutBtn) {
 
 
       showAuth();
-
-
-      showToast(
-        "Logged out"
-      );
     }
   );
 }
 
 
 /* ============================================================
-   MOBILE BACK / RETURN TO GROUP
+   RETURN TO GROUP CHAT
 ============================================================ */
-
-const chatArea =
-  document.querySelector(
-    ".chat-area"
-  );
-
 
 function returnToGroupChat() {
 
@@ -2334,6 +2434,10 @@ function returnToGroupChat() {
   );
 }
 
+
+/* ============================================================
+   MOBILE PRIVATE HEADER → GROUP
+============================================================ */
 
 if (chatScreen) {
 
@@ -2381,33 +2485,31 @@ function updateProfilePanel() {
   }
 
 
-  if (profilePanelName) {
+  if (myUsername) {
 
-    profilePanelName.textContent =
+    myUsername.textContent =
       currentUser.username ||
       "User";
   }
 
 
-  if (profilePanelEmail) {
+  if (profileUsername) {
 
-    profilePanelEmail.textContent =
-      currentUser.email ||
-      "";
+    profileUsername.textContent =
+      currentUser.username ||
+      "User";
   }
 
 
-  setAvatarData(
-    profilePhotoLarge,
-    currentUser.username,
-    currentUser.profile_photo
+  setAvatar(
+    myAvatar,
+    currentUser
   );
 
 
-  setAvatarData(
-    myAvatar,
-    currentUser.username,
-    currentUser.profile_photo
+  setAvatar(
+    profileAvatar,
+    currentUser
   );
 }
 
@@ -2450,53 +2552,59 @@ if (myAvatarBtn) {
 
   myAvatarBtn.addEventListener(
     "click",
-    openProfile
-  );
-}
+    event => {
+
+      event.preventDefault();
+
+      event.stopPropagation();
 
 
-if (closeProfilePanel) {
-
-  closeProfilePanel.addEventListener(
-    "click",
-    closeProfile
-  );
-}
-
-
-if (profilePanelBackdrop) {
-
-  profilePanelBackdrop.addEventListener(
-    "click",
-    closeProfile
-  );
-}
-
-
-if (profilePhotoBtn) {
-
-  profilePhotoBtn.addEventListener(
-    "click",
-    () => {
-
-      profilePhotoInput?.click();
-
+      openProfile();
     }
   );
 }
 
 
-if (changeProfilePhoto) {
+/* ============================================================
+   CLOSE PROFILE WHEN CLICK OUTSIDE
+============================================================ */
 
-  changeProfilePhoto.addEventListener(
-    "click",
-    () => {
+document.addEventListener(
+  "click",
+  event => {
 
-      profilePhotoInput?.click();
+    if (
+      !profilePanel ||
+      profilePanel.classList.contains(
+        "hidden"
+      )
+    ) {
 
+      return;
     }
-  );
-}
+
+
+    const insidePanel =
+      event.target.closest(
+        "#profilePanel"
+      );
+
+
+    const avatarButton =
+      event.target.closest(
+        "#myAvatarBtn"
+      );
+
+
+    if (
+      !insidePanel &&
+      !avatarButton
+    ) {
+
+      closeProfile();
+    }
+  }
+);
 
 
 /* ============================================================
@@ -2510,8 +2618,7 @@ if (profilePhotoInput) {
     async () => {
 
       const file =
-        profilePhotoInput
-          .files?.[0];
+        profilePhotoInput.files?.[0];
 
 
       if (!file) {
@@ -2561,31 +2668,35 @@ if (profilePhotoInput) {
           );
 
 
-        currentUser =
-          data.user || {
+        if (
+          data &&
+          data.user
+        ) {
+
+          currentUser =
+            data.user;
+
+        } else {
+
+          currentUser = {
+
             ...currentUser,
 
             profile_photo:
               imageData
           };
+        }
 
 
         updateProfilePanel();
 
 
-        showToast(
-          "Photo updated"
-        );
-
-
-        /*
-         * Group Chat ကိုပြန် load လုပ်မယ်။
-         *
-         * ကိုယ့် profile photo ပြောင်းပြီး
-         * Group message တွေမှာ အသစ်ပြချင်လို့။
-         */
-
         await loadGroupMessages();
+
+
+        showToast(
+          "Profile photo updated"
+        );
 
 
       } catch (error) {
@@ -2613,7 +2724,10 @@ if (removeProfilePhoto) {
 
   removeProfilePhoto.addEventListener(
     "click",
-    async () => {
+    async event => {
+
+      event.preventDefault();
+
 
       try {
 
@@ -2625,8 +2739,13 @@ if (removeProfilePhoto) {
         );
 
 
-        currentUser.profile_photo =
-          null;
+        currentUser = {
+
+          ...currentUser,
+
+          profile_photo:
+            null
+        };
 
 
         updateProfilePanel();
@@ -2636,7 +2755,7 @@ if (removeProfilePhoto) {
 
 
         showToast(
-          "Photo removed"
+          "Profile photo removed"
         );
 
 
@@ -2652,7 +2771,7 @@ if (removeProfilePhoto) {
 
 
 /* ============================================================
-   IMAGE PROCESSING
+   IMAGE TO DATA URL
 ============================================================ */
 
 function imageToDataURL(
