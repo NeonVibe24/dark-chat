@@ -30,15 +30,22 @@ function text(data, status = 200) {
 ========================================================= */
 
 async function hashPassword(password) {
-  const data = new TextEncoder().encode(password);
 
-  const hash = await crypto.subtle.digest(
-    "SHA-256",
-    data
-  );
+  const data =
+    new TextEncoder().encode(password);
 
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, "0"))
+  const hash =
+    await crypto.subtle.digest(
+      "SHA-256",
+      data
+    );
+
+  return Array.from(
+    new Uint8Array(hash)
+  )
+    .map(
+      b => b.toString(16).padStart(2, "0")
+    )
     .join("");
 }
 
@@ -48,27 +55,16 @@ async function hashPassword(password) {
 ========================================================= */
 
 function randomToken() {
-  const bytes = new Uint8Array(32);
+
+  const bytes =
+    new Uint8Array(32);
 
   crypto.getRandomValues(bytes);
 
   return Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-
-/* =========================================================
-   RANDOM CALL ID
-========================================================= */
-
-function randomCallId() {
-  const bytes = new Uint8Array(16);
-
-  crypto.getRandomValues(bytes);
-
-  return Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, "0"))
+    .map(
+      b => b.toString(16).padStart(2, "0")
+    )
     .join("");
 }
 
@@ -81,6 +77,10 @@ async function initDatabase(db) {
 
   await db.batch([
 
+    /* =====================================================
+       USERS
+    ===================================================== */
+
     db.prepare(`
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,6 +89,10 @@ async function initDatabase(db) {
         password TEXT NOT NULL
       )
     `),
+
+    /* =====================================================
+       SESSIONS
+    ===================================================== */
 
     db.prepare(`
       CREATE TABLE IF NOT EXISTS sessions (
@@ -99,6 +103,10 @@ async function initDatabase(db) {
           REFERENCES users(id)
       )
     `),
+
+    /* =====================================================
+       PRIVATE CONVERSATIONS
+    ===================================================== */
 
     db.prepare(`
       CREATE TABLE IF NOT EXISTS conversations (
@@ -112,6 +120,10 @@ async function initDatabase(db) {
           REFERENCES users(id)
       )
     `),
+
+    /* =====================================================
+       PRIVATE MESSAGES
+    ===================================================== */
 
     db.prepare(`
       CREATE TABLE IF NOT EXISTS messages (
@@ -129,18 +141,55 @@ async function initDatabase(db) {
       )
     `),
 
+    /* =====================================================
+       GROUPS
+    ===================================================== */
+
     db.prepare(`
-      CREATE TABLE IF NOT EXISTS call_signals (
+      CREATE TABLE IF NOT EXISTS groups (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        call_id TEXT NOT NULL,
-        sender_id INTEGER NOT NULL,
-        receiver_id INTEGER NOT NULL,
-        signal_type TEXT NOT NULL,
-        signal_data TEXT,
+        name TEXT NOT NULL,
+        creator_id INTEGER NOT NULL,
         created_at INTEGER NOT NULL,
+        FOREIGN KEY (creator_id)
+          REFERENCES users(id)
+      )
+    `),
+
+    /* =====================================================
+       GROUP MEMBERS
+    ===================================================== */
+
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS group_members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        joined_at INTEGER NOT NULL,
+        UNIQUE(group_id, user_id),
+        FOREIGN KEY (group_id)
+          REFERENCES groups(id)
+          ON DELETE CASCADE,
+        FOREIGN KEY (user_id)
+          REFERENCES users(id)
+      )
+    `),
+
+    /* =====================================================
+       GROUP MESSAGES
+    ===================================================== */
+
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS group_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id INTEGER NOT NULL,
+        sender_id INTEGER NOT NULL,
+        message TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (group_id)
+          REFERENCES groups(id)
+          ON DELETE CASCADE,
         FOREIGN KEY (sender_id)
-          REFERENCES users(id),
-        FOREIGN KEY (receiver_id)
           REFERENCES users(id)
       )
     `)
@@ -159,7 +208,8 @@ async function initDatabase(db) {
 
   const hasProfilePhoto =
     (columns.results || []).some(
-      column => column.name === "profile_photo"
+      column =>
+        column.name === "profile_photo"
     );
 
 
@@ -174,6 +224,29 @@ async function initDatabase(db) {
 
   }
 
+
+  /* =======================================================
+     OLD CALL SYSTEM
+     Remove old call table because calls are no longer used.
+  ======================================================= */
+
+  try {
+
+    await db
+      .prepare(`
+        DROP TABLE IF EXISTS call_signals
+      `)
+      .run();
+
+  } catch (error) {
+
+    console.log(
+      "Old call_signals cleanup skipped:",
+      error?.message
+    );
+
+  }
+
 }
 
 
@@ -181,14 +254,19 @@ async function initDatabase(db) {
    AUTH USER
 ========================================================= */
 
-async function getUserFromRequest(request, env) {
+async function getUserFromRequest(
+  request,
+  env
+) {
 
   if (!env.DB) {
     return null;
   }
 
   const auth =
-    request.headers.get("Authorization");
+    request.headers.get(
+      "Authorization"
+    );
 
   if (
     !auth ||
@@ -226,7 +304,7 @@ async function getUserFromRequest(request, env) {
 
 
 /* =========================================================
-   CONVERSATION
+   PRIVATE CONVERSATION
 ========================================================= */
 
 async function getConversation(
@@ -235,15 +313,17 @@ async function getConversation(
   userB
 ) {
 
-  const a = Math.min(
-    Number(userA),
-    Number(userB)
-  );
+  const a =
+    Math.min(
+      Number(userA),
+      Number(userB)
+    );
 
-  const b = Math.max(
-    Number(userA),
-    Number(userB)
-  );
+  const b =
+    Math.max(
+      Number(userA),
+      Number(userB)
+    );
 
   return await db
     .prepare(`
@@ -267,15 +347,17 @@ async function createConversation(
   userB
 ) {
 
-  const a = Math.min(
-    Number(userA),
-    Number(userB)
-  );
+  const a =
+    Math.min(
+      Number(userA),
+      Number(userB)
+    );
 
-  const b = Math.max(
-    Number(userA),
-    Number(userB)
-  );
+  const b =
+    Math.max(
+      Number(userA),
+      Number(userB)
+    );
 
   await db
     .prepare(`
@@ -298,6 +380,66 @@ async function createConversation(
 
 
 /* =========================================================
+   GROUP HELPERS
+========================================================= */
+
+async function isGroupMember(
+  db,
+  groupId,
+  userId
+) {
+
+  const member =
+    await db
+      .prepare(`
+        SELECT id
+        FROM group_members
+        WHERE group_id = ?
+        AND user_id = ?
+        LIMIT 1
+      `)
+      .bind(
+        groupId,
+        userId
+      )
+      .first();
+
+  return !!member;
+}
+
+
+async function getGroup(
+  db,
+  groupId
+) {
+
+  return await db
+    .prepare(`
+      SELECT
+        g.id,
+        g.name,
+        g.creator_id,
+        g.created_at,
+
+        u.username AS creator_username,
+        u.email AS creator_email,
+        u.profile_photo AS creator_profile_photo
+
+      FROM groups g
+
+      INNER JOIN users u
+        ON u.id = g.creator_id
+
+      WHERE g.id = ?
+
+      LIMIT 1
+    `)
+    .bind(groupId)
+    .first();
+}
+
+
+/* =========================================================
    WORKER
 ========================================================= */
 
@@ -313,7 +455,9 @@ export default {
        CORS
     ===================================================== */
 
-    if (request.method === "OPTIONS") {
+    if (
+      request.method === "OPTIONS"
+    ) {
 
       return new Response(null, {
         status: 204,
@@ -340,12 +484,15 @@ export default {
             success: false,
             database: false,
             service: "dark-chat",
-            error: "D1 binding DB not found"
+            error:
+              "D1 binding DB not found"
           }, 500);
 
         }
 
-        await initDatabase(env.DB);
+        await initDatabase(
+          env.DB
+        );
 
         return json({
           success: true,
@@ -369,26 +516,35 @@ export default {
 
           return json({
             success: false,
-            error: "Database is not connected"
+            error:
+              "Database is not connected"
           }, 500);
 
         }
 
-        await initDatabase(env.DB);
+        await initDatabase(
+          env.DB
+        );
 
         const body =
           await request.json();
 
         const username =
-          String(body.username || "").trim();
+          String(
+            body.username || ""
+          ).trim();
 
         const email =
-          String(body.email || "")
+          String(
+            body.email || ""
+          )
             .trim()
             .toLowerCase();
 
         const password =
-          String(body.password || "");
+          String(
+            body.password || ""
+          );
 
 
         if (
@@ -406,7 +562,9 @@ export default {
         }
 
 
-        if (password.length < 6) {
+        if (
+          password.length < 6
+        ) {
 
           return json({
             success: false,
@@ -433,14 +591,17 @@ export default {
 
           return json({
             success: false,
-            error: "Email already exists"
+            error:
+              "Email already exists"
           }, 409);
 
         }
 
 
         const passwordHash =
-          await hashPassword(password);
+          await hashPassword(
+            password
+          );
 
 
         const result =
@@ -465,7 +626,8 @@ export default {
 
         return json({
           success: true,
-          user_id: result.meta.last_row_id
+          user_id:
+            result.meta.last_row_id
         });
 
       }
@@ -484,26 +646,36 @@ export default {
 
           return json({
             success: false,
-            error: "Database is not connected"
+            error:
+              "Database is not connected"
           }, 500);
 
         }
 
-        await initDatabase(env.DB);
+        await initDatabase(
+          env.DB
+        );
 
         const body =
           await request.json();
 
         const email =
-          String(body.email || "")
+          String(
+            body.email || ""
+          )
             .trim()
             .toLowerCase();
 
         const password =
-          String(body.password || "");
+          String(
+            body.password || ""
+          );
 
 
-        if (!email || !password) {
+        if (
+          !email ||
+          !password
+        ) {
 
           return json({
             success: false,
@@ -543,10 +715,15 @@ export default {
 
 
         const passwordHash =
-          await hashPassword(password);
+          await hashPassword(
+            password
+          );
 
 
-        if (user.password !== passwordHash) {
+        if (
+          user.password !==
+          passwordHash
+        ) {
 
           return json({
             success: false,
@@ -585,7 +762,8 @@ export default {
             username: user.username,
             email: user.email,
             profile_photo:
-              user.profile_photo || null
+              user.profile_photo ||
+              null
           }
         });
 
@@ -602,7 +780,9 @@ export default {
       ) {
 
         const auth =
-          request.headers.get("Authorization");
+          request.headers.get(
+            "Authorization"
+          );
 
         if (
           auth &&
@@ -654,7 +834,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -688,7 +869,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -703,33 +885,41 @@ export default {
 
         if (
           profilePhoto !== null &&
-          typeof profilePhoto !== "string"
+          typeof profilePhoto !==
+            "string"
         ) {
 
           return json({
             success: false,
-            error: "Invalid profile photo"
+            error:
+              "Invalid profile photo"
           }, 400);
 
         }
 
 
         if (
-          typeof profilePhoto === "string" &&
-          profilePhoto.length > 1400000
+          typeof profilePhoto ===
+            "string" &&
+          profilePhoto.length >
+            1400000
         ) {
 
           return json({
             success: false,
-            error: "Profile photo is too large"
+            error:
+              "Profile photo is too large"
           }, 413);
 
         }
 
 
         if (
-          typeof profilePhoto === "string" &&
-          !profilePhoto.startsWith("data:image/")
+          typeof profilePhoto ===
+            "string" &&
+          !profilePhoto.startsWith(
+            "data:image/"
+          )
         ) {
 
           return json({
@@ -783,7 +973,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -827,7 +1018,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -843,7 +1035,8 @@ export default {
                 profile_photo
               FROM users
               WHERE id != ?
-              ORDER BY username COLLATE NOCASE ASC
+              ORDER BY
+                username COLLATE NOCASE ASC
             `)
             .bind(user.id)
             .all();
@@ -863,7 +1056,9 @@ export default {
       =================================================== */
 
       if (
-        url.pathname.startsWith("/api/users/") &&
+        url.pathname.startsWith(
+          "/api/users/"
+        ) &&
         request.method === "GET"
       ) {
 
@@ -878,7 +1073,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -886,7 +1082,9 @@ export default {
 
         const id =
           Number(
-            url.pathname.split("/").pop()
+            url.pathname
+              .split("/")
+              .pop()
           );
 
 
@@ -894,7 +1092,8 @@ export default {
 
           return json({
             success: false,
-            error: "Invalid user ID"
+            error:
+              "Invalid user ID"
           }, 400);
 
         }
@@ -920,7 +1119,8 @@ export default {
 
           return json({
             success: false,
-            error: "User not found"
+            error:
+              "User not found"
           }, 404);
 
         }
@@ -935,11 +1135,12 @@ export default {
 
 
       /* ===================================================
-         CREATE CONVERSATION
+         CREATE PRIVATE CONVERSATION
       =================================================== */
 
       if (
-        url.pathname === "/api/conversations" &&
+        url.pathname ===
+          "/api/conversations" &&
         request.method === "POST"
       ) {
 
@@ -954,7 +1155,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -964,7 +1166,9 @@ export default {
           await request.json();
 
         const receiverId =
-          Number(body.user_id);
+          Number(
+            body.user_id
+          );
 
 
         if (
@@ -974,7 +1178,8 @@ export default {
 
           return json({
             success: false,
-            error: "Invalid user ID"
+            error:
+              "Invalid user ID"
           }, 400);
 
         }
@@ -996,7 +1201,8 @@ export default {
 
           return json({
             success: false,
-            error: "User not found"
+            error:
+              "User not found"
           }, 404);
 
         }
@@ -1019,11 +1225,12 @@ export default {
 
 
       /* ===================================================
-         GET CONVERSATIONS
+         GET PRIVATE CONVERSATIONS
       =================================================== */
 
       if (
-        url.pathname === "/api/conversations" &&
+        url.pathname ===
+          "/api/conversations" &&
         request.method === "GET"
       ) {
 
@@ -1038,7 +1245,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -1074,11 +1282,12 @@ export default {
 
 
       /* ===================================================
-         SEND MESSAGE
+         SEND PRIVATE MESSAGE
       =================================================== */
 
       if (
-        url.pathname === "/api/messages" &&
+        url.pathname ===
+          "/api/messages" &&
         request.method === "POST"
       ) {
 
@@ -1093,7 +1302,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -1103,10 +1313,14 @@ export default {
           await request.json();
 
         const receiverId =
-          Number(body.receiver_id);
+          Number(
+            body.receiver_id
+          );
 
         const message =
-          String(body.message || "").trim();
+          String(
+            body.message || ""
+          ).trim();
 
 
         if (
@@ -1123,7 +1337,9 @@ export default {
         }
 
 
-        if (receiverId === user.id) {
+        if (
+          receiverId === user.id
+        ) {
 
           return json({
             success: false,
@@ -1150,7 +1366,8 @@ export default {
 
           return json({
             success: false,
-            error: "Receiver not found"
+            error:
+              "Receiver not found"
           }, 404);
 
         }
@@ -1175,39 +1392,43 @@ export default {
         }
 
 
-        await env.DB
-          .prepare(`
-            INSERT INTO messages
-            (
-              conversation_id,
-              sender_id,
-              receiver_id,
+        const result =
+          await env.DB
+            .prepare(`
+              INSERT INTO messages
+              (
+                conversation_id,
+                sender_id,
+                receiver_id,
+                message
+              )
+              VALUES (?, ?, ?, ?)
+            `)
+            .bind(
+              conversation.id,
+              user.id,
+              receiverId,
               message
             )
-            VALUES (?, ?, ?, ?)
-          `)
-          .bind(
-            conversation.id,
-            user.id,
-            receiverId,
-            message
-          )
-          .run();
+            .run();
 
 
         return json({
-          success: true
+          success: true,
+          message_id:
+            result.meta.last_row_id
         });
 
       }
 
 
       /* ===================================================
-         GET MESSAGES
+         GET PRIVATE MESSAGES
       =================================================== */
 
       if (
-        url.pathname === "/api/messages" &&
+        url.pathname ===
+          "/api/messages" &&
         request.method === "GET"
       ) {
 
@@ -1222,7 +1443,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -1230,7 +1452,9 @@ export default {
 
         const otherUserId =
           Number(
-            url.searchParams.get("user_id")
+            url.searchParams.get(
+              "user_id"
+            )
           );
 
 
@@ -1276,7 +1500,9 @@ export default {
               WHERE conversation_id = ?
               ORDER BY id ASC
             `)
-            .bind(conversation.id)
+            .bind(
+              conversation.id
+            )
             .all();
 
 
@@ -1290,11 +1516,13 @@ export default {
 
 
       /* ===================================================
-         DELETE MESSAGE
+         DELETE PRIVATE MESSAGE
       =================================================== */
 
       if (
-        url.pathname.startsWith("/api/messages/") &&
+        url.pathname.startsWith(
+          "/api/messages/"
+        ) &&
         request.method === "DELETE"
       ) {
 
@@ -1309,7 +1537,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -1317,7 +1546,9 @@ export default {
 
         const id =
           Number(
-            url.pathname.split("/").pop()
+            url.pathname
+              .split("/")
+              .pop()
           );
 
 
@@ -1356,11 +1587,12 @@ export default {
 
 
       /* ===================================================
-         SEND CALL SIGNAL
+         CREATE GROUP
       =================================================== */
 
       if (
-        url.pathname === "/api/calls/signal" &&
+        url.pathname ===
+          "/api/groups" &&
         request.method === "POST"
       ) {
 
@@ -1375,7 +1607,8 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
@@ -1384,118 +1617,30 @@ export default {
         const body =
           await request.json();
 
-        const receiverId =
-          Number(body.receiver_id);
-
-        const signalType =
+        const name =
           String(
-            body.signal_type || ""
-          ).trim();
-
-        let signalData =
-          body.signal_data;
-
-        let callId =
-          String(
-            body.call_id || ""
+            body.name || ""
           ).trim();
 
 
-        if (!callId) {
-          callId = randomCallId();
-        }
-
-
-        const allowedTypes = [
-          "offer",
-          "answer",
-          "ice-candidate",
-          "reject",
-          "end",
-          "busy"
-        ];
-
-
-        if (!receiverId) {
+        if (!name) {
 
           return json({
             success: false,
             error:
-              "receiver_id is required"
+              "Group name is required"
           }, 400);
 
         }
 
 
-        if (receiverId === user.id) {
+        if (name.length > 100) {
 
           return json({
             success: false,
             error:
-              "Invalid receiver"
+              "Group name is too long"
           }, 400);
-
-        }
-
-
-        if (
-          !allowedTypes.includes(signalType)
-        ) {
-
-          return json({
-            success: false,
-            error:
-              "Invalid signal type"
-          }, 400);
-
-        }
-
-
-        const receiver =
-          await env.DB
-            .prepare(`
-              SELECT id
-              FROM users
-              WHERE id = ?
-              LIMIT 1
-            `)
-            .bind(receiverId)
-            .first();
-
-
-        if (!receiver) {
-
-          return json({
-            success: false,
-            error:
-              "Receiver not found"
-          }, 404);
-
-        }
-
-
-        if (
-          signalData !== null &&
-          signalData !== undefined &&
-          typeof signalData !== "string"
-        ) {
-
-          signalData =
-            JSON.stringify(signalData);
-
-        }
-
-
-        if (
-          typeof signalData === "string" &&
-          signalData.length > 500000
-        ) {
-
-          return json({
-            success: false,
-            error:
-              "Signal data is too large"
-          }, 413);
 
         }
 
@@ -1507,44 +1652,66 @@ export default {
         const result =
           await env.DB
             .prepare(`
-              INSERT INTO call_signals
+              INSERT INTO groups
               (
-                call_id,
-                sender_id,
-                receiver_id,
-                signal_type,
-                signal_data,
+                name,
+                creator_id,
                 created_at
               )
-              VALUES (?, ?, ?, ?, ?, ?)
+              VALUES (?, ?, ?)
             `)
             .bind(
-              callId,
+              name,
               user.id,
-              receiverId,
-              signalType,
-              signalData || null,
               createdAt
             )
             .run();
 
 
+        const groupId =
+          result.meta.last_row_id;
+
+
+        await env.DB
+          .prepare(`
+            INSERT INTO group_members
+            (
+              group_id,
+              user_id,
+              joined_at
+            )
+            VALUES (?, ?, ?)
+          `)
+          .bind(
+            groupId,
+            user.id,
+            createdAt
+          )
+          .run();
+
+
+        const group =
+          await getGroup(
+            env.DB,
+            groupId
+          );
+
+
         return json({
           success: true,
-          id: result.meta.last_row_id,
-          call_id: callId,
-          created_at: createdAt
+          group
         });
 
       }
 
 
       /* ===================================================
-         GET CALL SIGNALS
+         GET GROUP LIST
       =================================================== */
 
       if (
-        url.pathname === "/api/calls/signals" &&
+        url.pathname ===
+          "/api/groups" &&
         request.method === "GET"
       ) {
 
@@ -1559,98 +1726,345 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
 
 
-        const callId =
-          String(
-            url.searchParams.get("call_id") || ""
-          ).trim();
-
-
-        if (!callId) {
-
-          return json({
-            success: false,
-            error:
-              "call_id is required"
-          }, 400);
-
-        }
-
-
-        const signals =
+        const groups =
           await env.DB
             .prepare(`
               SELECT
-                cs.id,
-                cs.call_id,
-                cs.sender_id,
-                cs.receiver_id,
-                cs.signal_type,
-                cs.signal_data,
-                cs.created_at,
+                g.id,
+                g.name,
+                g.creator_id,
+                g.created_at,
 
-                u.username AS sender_username,
-                u.email AS sender_email,
-                u.profile_photo AS sender_profile_photo
+                u.username AS creator_username,
+                u.profile_photo AS creator_profile_photo,
 
-              FROM call_signals cs
+                (
+                  SELECT COUNT(*)
+                  FROM group_members gm2
+                  WHERE gm2.group_id = g.id
+                ) AS member_count
+
+              FROM groups g
+
+              INNER JOIN group_members gm
+                ON gm.group_id = g.id
 
               INNER JOIN users u
-                ON u.id = cs.sender_id
+                ON u.id = g.creator_id
 
-              WHERE
-                cs.call_id = ?
-                AND
-                cs.receiver_id = ?
+              WHERE gm.user_id = ?
 
-              ORDER BY cs.id ASC
+              ORDER BY g.id DESC
             `)
-            .bind(
-              callId,
-              user.id
-            )
+            .bind(user.id)
             .all();
-
-
-        const result =
-          (signals.results || []).map(signal => ({
-            id: signal.id,
-            call_id: signal.call_id,
-            sender_id: signal.sender_id,
-            receiver_id: signal.receiver_id,
-            signal_type: signal.signal_type,
-            signal_data: signal.signal_data,
-            created_at: signal.created_at,
-
-            sender: {
-              id: signal.sender_id,
-              username: signal.sender_username,
-              email: signal.sender_email,
-              profile_photo:
-                signal.sender_profile_photo || null
-            }
-          }));
 
 
         return json({
           success: true,
-          signals: result
+          groups:
+            groups.results || []
         });
 
       }
 
 
       /* ===================================================
-         DELETE CALL SIGNALS
+         GROUP DETAILS
+         /api/groups/:id
       =================================================== */
 
       if (
-        url.pathname === "/api/calls/signals" &&
+        /^\/api\/groups\/\d+$/.test(
+          url.pathname
+        ) &&
+        request.method === "GET"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
+
+        if (!user) {
+
+          return json({
+            success: false,
+            error:
+              "Unauthorized"
+          }, 401);
+
+        }
+
+
+        const groupId =
+          Number(
+            url.pathname.split("/").pop()
+          );
+
+
+        const group =
+          await getGroup(
+            env.DB,
+            groupId
+          );
+
+
+        if (!group) {
+
+          return json({
+            success: false,
+            error:
+              "Group not found"
+          }, 404);
+
+        }
+
+
+        const member =
+          await isGroupMember(
+            env.DB,
+            groupId,
+            user.id
+          );
+
+
+        if (!member) {
+
+          return json({
+            success: false,
+            error:
+              "You are not a member of this group"
+          }, 403);
+
+        }
+
+
+        const members =
+          await env.DB
+            .prepare(`
+              SELECT
+                gm.id,
+                gm.group_id,
+                gm.user_id,
+                gm.joined_at,
+
+                u.username,
+                u.email,
+                u.profile_photo
+
+              FROM group_members gm
+
+              INNER JOIN users u
+                ON u.id = gm.user_id
+
+              WHERE gm.group_id = ?
+
+              ORDER BY
+                CASE
+                  WHEN gm.user_id = ? THEN 0
+                  ELSE 1
+                END,
+                u.username COLLATE NOCASE ASC
+            `)
+            .bind(
+              groupId,
+              group.creator_id
+            )
+            .all();
+
+
+        return json({
+          success: true,
+          group,
+          members:
+            members.results || []
+        });
+
+      }
+
+
+      /* ===================================================
+         ADD GROUP MEMBER
+         POST /api/groups/:id/members
+      =================================================== */
+
+      if (
+        /^\/api\/groups\/\d+\/members$/.test(
+          url.pathname
+        ) &&
+        request.method === "POST"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
+
+        if (!user) {
+
+          return json({
+            success: false,
+            error:
+              "Unauthorized"
+          }, 401);
+
+        }
+
+
+        const groupId =
+          Number(
+            url.pathname
+              .split("/")
+              .filter(Boolean)[2]
+          );
+
+
+        const group =
+          await getGroup(
+            env.DB,
+            groupId
+          );
+
+
+        if (!group) {
+
+          return json({
+            success: false,
+            error:
+              "Group not found"
+          }, 404);
+
+        }
+
+
+        if (
+          group.creator_id !== user.id
+        ) {
+
+          return json({
+            success: false,
+            error:
+              "Only group creator can add members"
+          }, 403);
+
+        }
+
+
+        const body =
+          await request.json();
+
+        const memberUserId =
+          Number(
+            body.user_id
+          );
+
+
+        if (!memberUserId) {
+
+          return json({
+            success: false,
+            error:
+              "user_id is required"
+          }, 400);
+
+        }
+
+
+        const target =
+          await env.DB
+            .prepare(`
+              SELECT
+                id,
+                username,
+                email,
+                profile_photo
+              FROM users
+              WHERE id = ?
+              LIMIT 1
+            `)
+            .bind(
+              memberUserId
+            )
+            .first();
+
+
+        if (!target) {
+
+          return json({
+            success: false,
+            error:
+              "User not found"
+          }, 404);
+
+        }
+
+
+        const alreadyMember =
+          await isGroupMember(
+            env.DB,
+            groupId,
+            memberUserId
+          );
+
+
+        if (alreadyMember) {
+
+          return json({
+            success: false,
+            error:
+              "User is already a member"
+          }, 409);
+
+        }
+
+
+        await env.DB
+          .prepare(`
+            INSERT INTO group_members
+            (
+              group_id,
+              user_id,
+              joined_at
+            )
+            VALUES (?, ?, ?)
+          `)
+          .bind(
+            groupId,
+            memberUserId,
+            Date.now()
+          )
+          .run();
+
+
+        return json({
+          success: true,
+          member: target
+        });
+
+      }
+
+
+      /* ===================================================
+         REMOVE GROUP MEMBER
+         DELETE /api/groups/:id/members/:userId
+      =================================================== */
+
+      if (
+        /^\/api\/groups\/\d+\/members\/\d+$/.test(
+          url.pathname
+        ) &&
         request.method === "DELETE"
       ) {
 
@@ -1665,63 +2079,104 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
 
 
-        const callId =
-          String(
-            url.searchParams.get("call_id") || ""
-          ).trim();
+        const parts =
+          url.pathname
+            .split("/")
+            .filter(Boolean);
 
 
-        if (!callId) {
+        const groupId =
+          Number(parts[2]);
+
+        const memberUserId =
+          Number(parts[4]);
+
+
+        const group =
+          await getGroup(
+            env.DB,
+            groupId
+          );
+
+
+        if (!group) {
 
           return json({
             success: false,
             error:
-              "call_id is required"
+              "Group not found"
+          }, 404);
+
+        }
+
+
+        if (
+          group.creator_id !== user.id
+        ) {
+
+          return json({
+            success: false,
+            error:
+              "Only group creator can remove members"
+          }, 403);
+
+        }
+
+
+        if (
+          memberUserId ===
+          group.creator_id
+        ) {
+
+          return json({
+            success: false,
+            error:
+              "Group creator cannot be removed"
           }, 400);
 
         }
 
 
-        await env.DB
-          .prepare(`
-            DELETE FROM call_signals
-            WHERE
-              call_id = ?
-              AND
-              (
-                sender_id = ?
-                OR
-                receiver_id = ?
-              )
-          `)
-          .bind(
-            callId,
-            user.id,
-            user.id
-          )
-          .run();
+        const result =
+          await env.DB
+            .prepare(`
+              DELETE FROM group_members
+              WHERE group_id = ?
+              AND user_id = ?
+            `)
+            .bind(
+              groupId,
+              memberUserId
+            )
+            .run();
 
 
         return json({
-          success: true
+          success: true,
+          removed:
+            result.meta.changes > 0
         });
 
       }
 
 
       /* ===================================================
-         INCOMING CALLS
+         LEAVE GROUP
+         DELETE /api/groups/:id/leave
       =================================================== */
 
       if (
-        url.pathname === "/api/calls/incoming" &&
-        request.method === "GET"
+        /^\/api\/groups\/\d+\/leave$/.test(
+          url.pathname
+        ) &&
+        request.method === "DELETE"
       ) {
 
         const user =
@@ -1735,114 +2190,180 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
 
 
-        const sinceParam =
-          url.searchParams.get("since");
+        const groupId =
+          Number(
+            url.pathname
+              .split("/")
+              .filter(Boolean)[2]
+          );
 
-        const since =
-          sinceParam !== null
-            ? Number(sinceParam) || 0
-            : Date.now() - 30000;
+
+        const group =
+          await getGroup(
+            env.DB,
+            groupId
+          );
 
 
-        const calls =
-          await env.DB
-            .prepare(`
-              SELECT
-                cs.id,
-                cs.call_id,
-                cs.sender_id,
-                cs.receiver_id,
-                cs.signal_type,
-                cs.signal_data,
-                cs.created_at,
+        if (!group) {
 
-                u.username AS sender_username,
-                u.email AS sender_email,
-                u.profile_photo AS sender_profile_photo
+          return json({
+            success: false,
+            error:
+              "Group not found"
+          }, 404);
 
-              FROM call_signals cs
+        }
 
-              INNER JOIN users u
-                ON u.id = cs.sender_id
 
-              WHERE
-                cs.receiver_id = ?
-                AND cs.signal_type = 'offer'
-                AND cs.created_at >= ?
+        if (
+          group.creator_id === user.id
+        ) {
 
-              ORDER BY cs.id DESC
-              LIMIT 20
-            `)
-            .bind(
-              user.id,
-              since
-            )
-            .all();
+          return json({
+            success: false,
+            error:
+              "Group creator cannot leave the group"
+          }, 400);
+
+        }
 
 
         const result =
-          (calls.results || []).map(call => {
-
-            let offerData = null;
-
-            try {
-
-              offerData =
-                call.signal_data
-                  ? JSON.parse(call.signal_data)
-                  : null;
-
-            } catch {
-
-              offerData =
-                call.signal_data;
-
-            }
-
-
-            return {
-              id: call.id,
-              call_id: call.call_id,
-              sender_id: call.sender_id,
-              receiver_id: call.receiver_id,
-              signal_type: call.signal_type,
-              signal_data: call.signal_data,
-              created_at: call.created_at,
-
-              sender: {
-                id: call.sender_id,
-                username: call.sender_username,
-                email: call.sender_email,
-                profile_photo:
-                  call.sender_profile_photo || null
-              },
-
-              offer: offerData
-            };
-
-          });
+          await env.DB
+            .prepare(`
+              DELETE FROM group_members
+              WHERE group_id = ?
+              AND user_id = ?
+            `)
+            .bind(
+              groupId,
+              user.id
+            )
+            .run();
 
 
         return json({
           success: true,
-          calls: result
+          left:
+            result.meta.changes > 0
         });
 
       }
 
 
       /* ===================================================
-         CLEAN OLD CALL SIGNALS
+         DELETE GROUP
+         DELETE /api/groups/:id
       =================================================== */
 
       if (
-        url.pathname === "/api/calls/cleanup" &&
+        /^\/api\/groups\/\d+$/.test(
+          url.pathname
+        ) &&
+        request.method === "DELETE"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
+
+        if (!user) {
+
+          return json({
+            success: false,
+            error:
+              "Unauthorized"
+          }, 401);
+
+        }
+
+
+        const groupId =
+          Number(
+            url.pathname
+              .split("/")
+              .pop()
+          );
+
+
+        const group =
+          await getGroup(
+            env.DB,
+            groupId
+          );
+
+
+        if (!group) {
+
+          return json({
+            success: false,
+            error:
+              "Group not found"
+          }, 404);
+
+        }
+
+
+        if (
+          group.creator_id !== user.id
+        ) {
+
+          return json({
+            success: false,
+            error:
+              "Only group creator can delete the group"
+          }, 403);
+
+        }
+
+
+        await env.DB.batch([
+
+          env.DB.prepare(`
+            DELETE FROM group_messages
+            WHERE group_id = ?
+          `).bind(groupId),
+
+          env.DB.prepare(`
+            DELETE FROM group_members
+            WHERE group_id = ?
+          `).bind(groupId),
+
+          env.DB.prepare(`
+            DELETE FROM groups
+            WHERE id = ?
+          `).bind(groupId)
+
+        ]);
+
+
+        return json({
+          success: true
+        });
+
+      }
+
+
+      /* ===================================================
+         SEND GROUP MESSAGE
+         POST /api/groups/:id/messages
+      =================================================== */
+
+      if (
+        /^\/api\/groups\/\d+\/messages$/.test(
+          url.pathname
+        ) &&
         request.method === "POST"
       ) {
 
@@ -1857,32 +2378,398 @@ export default {
 
           return json({
             success: false,
-            error: "Unauthorized"
+            error:
+              "Unauthorized"
           }, 401);
 
         }
 
 
-        const oldTime =
-          Date.now() - (60 * 60 * 1000);
+        const groupId =
+          Number(
+            url.pathname
+              .split("/")
+              .filter(Boolean)[2]
+          );
+
+
+        const member =
+          await isGroupMember(
+            env.DB,
+            groupId,
+            user.id
+          );
+
+
+        if (!member) {
+
+          return json({
+            success: false,
+            error:
+              "You are not a member of this group"
+          }, 403);
+
+        }
+
+
+        const group =
+          await getGroup(
+            env.DB,
+            groupId
+          );
+
+
+        if (!group) {
+
+          return json({
+            success: false,
+            error:
+              "Group not found"
+          }, 404);
+
+        }
+
+
+        const body =
+          await request.json();
+
+        const message =
+          String(
+            body.message || ""
+          ).trim();
+
+
+        if (!message) {
+
+          return json({
+            success: false,
+            error:
+              "Message is required"
+          }, 400);
+
+        }
+
+
+        if (
+          message.length > 10000
+        ) {
+
+          return json({
+            success: false,
+            error:
+              "Message is too long"
+          }, 400);
+
+        }
+
+
+        const createdAt =
+          Date.now();
+
+
+        const result =
+          await env.DB
+            .prepare(`
+              INSERT INTO group_messages
+              (
+                group_id,
+                sender_id,
+                message,
+                created_at
+              )
+              VALUES (?, ?, ?, ?)
+            `)
+            .bind(
+              groupId,
+              user.id,
+              message,
+              createdAt
+            )
+            .run();
+
+
+        return json({
+          success: true,
+          message: {
+            id:
+              result.meta.last_row_id,
+            group_id:
+              groupId,
+            sender_id:
+              user.id,
+            message,
+            created_at:
+              createdAt,
+
+            sender: {
+              id:
+                user.id,
+              username:
+                user.username,
+              email:
+                user.email,
+              profile_photo:
+                user.profile_photo ||
+                null
+            }
+          }
+        });
+
+      }
+
+
+      /* ===================================================
+         GET GROUP MESSAGES
+         GET /api/groups/:id/messages
+      =================================================== */
+
+      if (
+        /^\/api\/groups\/\d+\/messages$/.test(
+          url.pathname
+        ) &&
+        request.method === "GET"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
+
+        if (!user) {
+
+          return json({
+            success: false,
+            error:
+              "Unauthorized"
+          }, 401);
+
+        }
+
+
+        const groupId =
+          Number(
+            url.pathname
+              .split("/")
+              .filter(Boolean)[2]
+          );
+
+
+        const member =
+          await isGroupMember(
+            env.DB,
+            groupId,
+            user.id
+          );
+
+
+        if (!member) {
+
+          return json({
+            success: false,
+            error:
+              "You are not a member of this group"
+          }, 403);
+
+        }
+
+
+        const messages =
+          await env.DB
+            .prepare(`
+              SELECT
+                gm.id,
+                gm.group_id,
+                gm.sender_id,
+                gm.message,
+                gm.created_at,
+
+                u.username AS sender_username,
+                u.email AS sender_email,
+                u.profile_photo AS sender_profile_photo
+
+              FROM group_messages gm
+
+              INNER JOIN users u
+                ON u.id = gm.sender_id
+
+              WHERE gm.group_id = ?
+
+              ORDER BY gm.id ASC
+            `)
+            .bind(groupId)
+            .all();
+
+
+        const result =
+          (messages.results || [])
+            .map(message => ({
+              id:
+                message.id,
+              group_id:
+                message.group_id,
+              sender_id:
+                message.sender_id,
+              message:
+                message.message,
+              created_at:
+                message.created_at,
+
+              sender: {
+                id:
+                  message.sender_id,
+                username:
+                  message.sender_username,
+                email:
+                  message.sender_email,
+                profile_photo:
+                  message.sender_profile_photo ||
+                  null
+              }
+            }));
+
+
+        return json({
+          success: true,
+          messages: result
+        });
+
+      }
+
+
+      /* ===================================================
+         DELETE GROUP MESSAGE
+         DELETE /api/groups/:id/messages/:messageId
+      =================================================== */
+
+      if (
+        /^\/api\/groups\/\d+\/messages\/\d+$/.test(
+          url.pathname
+        ) &&
+        request.method === "DELETE"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env
+          );
+
+
+        if (!user) {
+
+          return json({
+            success: false,
+            error:
+              "Unauthorized"
+          }, 401);
+
+        }
+
+
+        const parts =
+          url.pathname
+            .split("/")
+            .filter(Boolean);
+
+
+        const groupId =
+          Number(parts[2]);
+
+        const messageId =
+          Number(parts[4]);
+
+
+        const member =
+          await isGroupMember(
+            env.DB,
+            groupId,
+            user.id
+          );
+
+
+        if (!member) {
+
+          return json({
+            success: false,
+            error:
+              "You are not a member of this group"
+          }, 403);
+
+        }
+
+
+        const group =
+          await getGroup(
+            env.DB,
+            groupId
+          );
+
+
+        if (!group) {
+
+          return json({
+            success: false,
+            error:
+              "Group not found"
+          }, 404);
+
+        }
+
+
+        const message =
+          await env.DB
+            .prepare(`
+              SELECT
+                id,
+                sender_id
+              FROM group_messages
+              WHERE id = ?
+              AND group_id = ?
+              LIMIT 1
+            `)
+            .bind(
+              messageId,
+              groupId
+            )
+            .first();
+
+
+        if (!message) {
+
+          return json({
+            success: false,
+            error:
+              "Message not found"
+          }, 404);
+
+        }
+
+
+        if (
+          message.sender_id !== user.id &&
+          group.creator_id !== user.id
+        ) {
+
+          return json({
+            success: false,
+            error:
+              "You cannot delete this message"
+          }, 403);
+
+        }
 
 
         await env.DB
           .prepare(`
-            DELETE FROM call_signals
-            WHERE
-              created_at < ?
-              AND
-              (
-                sender_id = ?
-                OR
-                receiver_id = ?
-              )
+            DELETE FROM group_messages
+            WHERE id = ?
+            AND group_id = ?
           `)
           .bind(
-            oldTime,
-            user.id,
-            user.id
+            messageId,
+            groupId
           )
           .run();
 
@@ -1919,7 +2806,9 @@ export default {
 
       if (env.ASSETS) {
 
-        return env.ASSETS.fetch(request);
+        return env.ASSETS.fetch(
+          request
+        );
 
       }
 
