@@ -57,7 +57,9 @@
       </div>
 
 
-      <!-- LOGIN -->
+      <!-- =================================================
+           LOGIN
+      ================================================== -->
 
       <form id="loginForm">
 
@@ -129,7 +131,10 @@
       </form>
 
 
-      <!-- REGISTER -->
+
+      <!-- =================================================
+           REGISTER
+      ================================================== -->
 
       <form
         id="registerForm"
@@ -236,9 +241,13 @@
   >
 
 
-    <!-- SIDEBAR -->
+    <!-- =================================================
+         SIDEBAR
+    ================================================== -->
 
     <aside class="sidebar">
+
+      <!-- MY PROFILE -->
 
       <div class="sidebar-header">
 
@@ -279,6 +288,7 @@
         <button
           id="logoutBtn"
           class="icon-btn"
+          type="button"
           title="Logout"
         >
           ⎋
@@ -287,15 +297,21 @@
       </div>
 
 
+
+      <!-- =================================================
+           USERS
+      ================================================== -->
+
       <div class="sidebar-title">
 
         <span>
-          Messages
+          People
         </span>
 
         <button
           id="refreshUsers"
           class="small-btn"
+          type="button"
           title="Refresh"
         >
           ↻
@@ -319,39 +335,118 @@
 
 
 
-    <!-- CHAT -->
+    <!-- =================================================
+         MAIN CHAT AREA
+    ================================================== -->
 
     <main class="chat-area">
 
 
+      <!-- =================================================
+           DEFAULT GROUP CHAT
+      ================================================== -->
+
       <div
-        id="emptyChat"
-        class="empty-chat"
+        id="groupChat"
+        class="active-chat"
       >
 
-        <div class="empty-icon">
-          ◇
-        </div>
 
-        <h2>
-          Select a conversation
-        </h2>
+        <!-- GROUP CHAT HEADER -->
 
-        <p>
-          Choose someone from the list to start chatting.
-        </p>
+        <header class="chat-header">
+
+          <div class="chat-user">
+
+            <div
+              id="groupAvatar"
+              class="avatar"
+            >
+              G
+            </div>
+
+
+            <div>
+
+              <strong id="groupChatName">
+                Group Chat
+              </strong>
+
+              <span id="groupChatStatus">
+                Everyone
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="chat-actions">
+
+            <button
+              id="reloadGroupMessages"
+              class="icon-btn"
+              type="button"
+              title="Refresh messages"
+            >
+              ↻
+            </button>
+
+          </div>
+
+        </header>
+
+
+
+        <!-- GROUP MESSAGES -->
+
+        <div
+          id="groupMessages"
+          class="messages"
+        ></div>
+
+
+
+        <!-- GROUP MESSAGE FORM -->
+
+        <form
+          id="groupMessageForm"
+          class="message-form"
+        >
+
+          <input
+            id="groupMessageInput"
+            type="text"
+            placeholder="Write a message to everyone..."
+            maxlength="5000"
+            autocomplete="off"
+          >
+
+
+          <button
+            class="send-btn"
+            type="submit"
+          >
+            ➤
+          </button>
+
+        </form>
 
       </div>
 
 
 
+      <!-- =================================================
+           PRIVATE CHAT
+      ================================================== -->
+
       <div
-        id="activeChat"
+        id="privateChat"
         class="active-chat hidden"
       >
 
 
-        <!-- CHAT HEADER -->
+        <!-- PRIVATE CHAT HEADER -->
 
         <header class="chat-header">
 
@@ -383,26 +478,6 @@
           <div class="chat-actions">
 
             <button
-              id="voiceCallBtn"
-              class="call-btn"
-              type="button"
-              title="Voice call"
-            >
-              ☎
-            </button>
-
-
-            <button
-              id="videoCallBtn"
-              class="call-btn"
-              type="button"
-              title="Video call"
-            >
-              ▣
-            </button>
-
-
-            <button
               id="reloadMessages"
               class="icon-btn"
               type="button"
@@ -417,7 +492,7 @@
 
 
 
-        <!-- MESSAGES -->
+        <!-- PRIVATE MESSAGES -->
 
         <div
           id="messages"
@@ -426,7 +501,7 @@
 
 
 
-        <!-- MESSAGE FORM -->
+        <!-- PRIVATE MESSAGE FORM -->
 
         <form
           id="messageForm"
@@ -453,6 +528,31 @@
 
       </div>
 
+
+
+      <!-- =================================================
+           EMPTY CHAT
+      ================================================== -->
+
+      <div
+        id="emptyChat"
+        class="empty-chat hidden"
+      >
+
+        <div class="empty-icon">
+          ◇
+        </div>
+
+        <h2>
+          Group Chat
+        </h2>
+
+        <p>
+          Everyone can chat here.
+        </p>
+
+      </div>
+
     </main>
 
   </section>
@@ -462,7 +562,7 @@
 
 
 <!-- =======================================================
-     PROFILE PANEL
+     MY PROFILE PANEL
 ======================================================== -->
 
 <div
@@ -482,6 +582,7 @@
       id="closeProfilePanel"
       class="profile-close"
       type="button"
+      title="Close"
     >
       ×
     </button>
@@ -491,6 +592,7 @@
       id="profilePhotoBtn"
       class="profile-photo-large-btn"
       type="button"
+      title="Profile photo"
     >
 
       <div
@@ -549,314 +651,8 @@
 
 
 <!-- =======================================================
-     VIDEO LINK PANEL
+     TOAST
 ======================================================== -->
-
-<div
-  id="videoLinkPanel"
-  class="call-overlay hidden"
->
-
-  <div class="incoming-call-card">
-
-    <div class="call-avatar">
-      ▣
-    </div>
-
-    <h3>
-      Video Call
-    </h3>
-
-    <div class="incoming-call-type">
-      Create a Videolink2me room
-    </div>
-
-
-    <div style="width:100%;margin-top:18px;">
-
-      <input
-        id="videoRoomLinkInput"
-        type="url"
-        placeholder="Paste Videolink2me room link"
-        autocomplete="off"
-        style="
-          width:100%;
-          box-sizing:border-box;
-          padding:13px 14px;
-          border-radius:12px;
-          border:1px solid rgba(255,255,255,.12);
-          background:rgba(255,255,255,.06);
-          color:inherit;
-          outline:none;
-        "
-      >
-
-    </div>
-
-
-    <div
-      class="incoming-call-actions"
-      style="margin-top:18px;"
-    >
-
-      <button
-        id="cancelVideoLinkBtn"
-        class="call-reject-btn"
-        type="button"
-      >
-        ×
-      </button>
-
-
-      <button
-        id="sendVideoLinkBtn"
-        class="call-accept-btn"
-        type="button"
-      >
-        ✓
-      </button>
-
-    </div>
-
-
-    <button
-      id="openVideolinkStartBtn"
-      type="button"
-      class="switch-btn"
-      style="margin-top:16px;"
-    >
-      Open Videolink2me
-    </button>
-
-  </div>
-
-</div>
-
-
-
-<!-- =======================================================
-     INCOMING CALL
-======================================================== -->
-
-<div
-  id="incomingCall"
-  class="call-overlay hidden"
->
-
-  <div class="incoming-call-card">
-
-    <div
-      id="incomingCallAvatar"
-      class="call-avatar"
-    >
-      U
-    </div>
-
-
-    <h3 id="incomingCallName">
-      User
-    </h3>
-
-
-    <div
-      id="incomingCallType"
-      class="incoming-call-type"
-    >
-      Incoming call
-    </div>
-
-
-    <div class="incoming-call-actions">
-
-      <button
-        id="rejectCallBtn"
-        class="call-reject-btn"
-        type="button"
-      >
-        ✕
-      </button>
-
-
-      <button
-        id="acceptCallBtn"
-        class="call-accept-btn"
-        type="button"
-      >
-        ✓
-      </button>
-
-    </div>
-
-  </div>
-
-</div>
-
-
-
-<!-- =======================================================
-     ACTIVE CALL
-======================================================== -->
-
-<div
-  id="callScreen"
-  class="call-screen hidden"
->
-
-  <div
-    id="videolinkContainer"
-    style="
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      background:#000;
-      display:none;
-    "
-  >
-
-    <iframe
-      id="videolinkFrame"
-      title="Videolink2me"
-      allow="
-        camera;
-        microphone;
-        display-capture;
-        fullscreen;
-        autoplay;
-        clipboard-read;
-        clipboard-write
-      "
-      style="
-        width:100%;
-        height:100%;
-        border:0;
-        display:block;
-        background:#000;
-      "
-    ></iframe>
-
-  </div>
-
-
-  <video
-    id="remoteVideo"
-    class="remote-video"
-    autoplay
-    playsinline
-  ></video>
-
-
-  <div
-    id="voiceCallView"
-    class="voice-call-view hidden"
-  >
-
-    <div
-      id="voiceCallAvatar"
-      class="voice-call-avatar"
-    >
-      U
-    </div>
-
-    <h3 id="voiceCallName">
-      User
-    </h3>
-
-    <span id="voiceCallStatus">
-      Calling...
-    </span>
-
-  </div>
-
-
-  <video
-    id="localVideo"
-    class="local-video"
-    autoplay
-    muted
-    playsinline
-  ></video>
-
-
-  <div class="call-topbar">
-
-    <span id="callUserName">
-      User
-    </span>
-
-    <span id="callDuration">
-      00:00
-    </span>
-
-  </div>
-
-
-  <div class="call-controls">
-
-    <button
-      id="muteCallBtn"
-      class="call-control-btn"
-      type="button"
-      title="Mute"
-    >
-      🎤
-    </button>
-
-
-    <button
-      id="cameraCallBtn"
-      class="call-control-btn"
-      type="button"
-      title="Camera"
-    >
-      ▣
-    </button>
-
-
-    <button
-      id="switchCameraBtn"
-      class="call-control-btn"
-      type="button"
-      title="Switch camera"
-    >
-      ↻
-    </button>
-
-
-    <button
-      id="endCallBtn"
-      class="call-end-btn"
-      type="button"
-      title="End call"
-    >
-      ☎
-    </button>
-
-  </div>
-
-
-  <audio
-    id="remoteAudio"
-    autoplay
-  ></audio>
-
-</div>
-
-
-
-<!-- =======================================================
-     HIDDEN AUDIO
-======================================================== -->
-
-<audio
-  id="ringtone"
-  loop
-  preload="auto"
-></audio>
-
-
-
-<!-- TOAST -->
 
 <div
   id="toast"
@@ -864,6 +660,10 @@
 ></div>
 
 
+
+<!-- =======================================================
+     APP JAVASCRIPT
+======================================================== -->
 
 <script src="/app.js"></script>
 
