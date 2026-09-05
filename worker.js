@@ -1,17 +1,22 @@
 /* ============================================================
    DARK CHAT - CLOUDFLARE WORKER
    ============================================================
-   Features:
+
+   FEATURES
+   ------------------------------------------------------------
    - Register / Login / Logout
+   - Username + Password authentication
+   - Existing Email login support
    - Session authentication
-   - User list
    - Profile photo upload / delete
    - Private 1-to-1 text messages
-   - One shared Group Chat
-   - Click another user's avatar/name in Group Chat -> Private Chat
+   - One shared Public Group Chat
+   - Click another user's avatar/name in Group Chat
+     -> Private Chat
    - NO user-created groups
    - NO group name/avatar creation
-   - NO voice/video call system
+   - NO voice/video calls
+   - Compatible with the new index.html + app.js
    ============================================================ */
 
 const CORS_HEADERS = {
@@ -20,6 +25,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Max-Age": "86400"
 };
+
 
 /* ============================================================
    RESPONSE HELPERS
@@ -35,7 +41,11 @@ function json(data, status = 200) {
   });
 }
 
-function text(data, status = 200, contentType = "text/plain; charset=utf-8") {
+function text(
+  data,
+  status = 200,
+  contentType = "text/plain; charset=utf-8"
+) {
   return new Response(data, {
     status,
     headers: {
@@ -45,6 +55,7 @@ function text(data, status = 200, contentType = "text/plain; charset=utf-8") {
   });
 }
 
+
 /* ============================================================
    PASSWORD HASH
 ============================================================ */
@@ -52,12 +63,16 @@ function text(data, status = 200, contentType = "text/plain; charset=utf-8") {
 async function hashPassword(password) {
   const data = new TextEncoder().encode(password);
 
-  const hash = await crypto.subtle.digest("SHA-256", data);
+  const hash = await crypto.subtle.digest(
+    "SHA-256",
+    data
+  );
 
   return [...new Uint8Array(hash)]
     .map(b => b.toString(16).padStart(2, "0"))
     .join("");
 }
+
 
 /* ============================================================
    RANDOM TOKEN
@@ -65,6 +80,7 @@ async function hashPassword(password) {
 
 function randomToken() {
   const bytes = new Uint8Array(32);
+
   crypto.getRandomValues(bytes);
 
   return [...bytes]
@@ -72,12 +88,16 @@ function randomToken() {
     .join("");
 }
 
+
 /* ============================================================
    DATABASE INITIALIZATION
 ============================================================ */
 
 async function initDatabase(db) {
-  /* USERS */
+
+  /* ----------------------------------------------------------
+     USERS
+  ---------------------------------------------------------- */
 
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS users (
@@ -88,13 +108,18 @@ async function initDatabase(db) {
     )
   `).run();
 
-  /* PROFILE PHOTO MIGRATION */
+
+  /* ----------------------------------------------------------
+     PROFILE PHOTO MIGRATION
+  ---------------------------------------------------------- */
 
   const userColumns = await db
     .prepare(`PRAGMA table_info(users)`)
     .all();
 
-  const hasProfilePhoto = (userColumns.results || []).some(
+  const columns = userColumns.results || [];
+
+  const hasProfilePhoto = columns.some(
     column => column.name === "profile_photo"
   );
 
@@ -105,79 +130,133 @@ async function initDatabase(db) {
     `).run();
   }
 
-  /* SESSIONS */
+
+  /* ----------------------------------------------------------
+     SESSIONS
+  ---------------------------------------------------------- */
 
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
       token TEXT NOT NULL UNIQUE,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+
+      FOREIGN KEY(user_id)
+      REFERENCES users(id)
+      ON DELETE CASCADE
     )
   `).run();
 
-  /* PRIVATE CONVERSATIONS */
+
+  /* ----------------------------------------------------------
+     PRIVATE CONVERSATIONS
+  ---------------------------------------------------------- */
 
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS conversations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+
       user1_id INTEGER NOT NULL,
       user2_id INTEGER NOT NULL,
+
       UNIQUE(user1_id, user2_id),
-      FOREIGN KEY(user1_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY(user2_id) REFERENCES users(id) ON DELETE CASCADE
+
+      FOREIGN KEY(user1_id)
+      REFERENCES users(id)
+      ON DELETE CASCADE,
+
+      FOREIGN KEY(user2_id)
+      REFERENCES users(id)
+      ON DELETE CASCADE
     )
   `).run();
 
-  /* PRIVATE MESSAGES */
+
+  /* ----------------------------------------------------------
+     PRIVATE MESSAGES
+  ---------------------------------------------------------- */
 
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+
       conversation_id INTEGER NOT NULL,
+
       sender_id INTEGER NOT NULL,
       receiver_id INTEGER NOT NULL,
+
       message TEXT NOT NULL,
-      FOREIGN KEY(conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
-      FOREIGN KEY(sender_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY(receiver_id) REFERENCES users(id) ON DELETE CASCADE
+
+      FOREIGN KEY(conversation_id)
+      REFERENCES conversations(id)
+      ON DELETE CASCADE,
+
+      FOREIGN KEY(sender_id)
+      REFERENCES users(id)
+      ON DELETE CASCADE,
+
+      FOREIGN KEY(receiver_id)
+      REFERENCES users(id)
+      ON DELETE CASCADE
     )
   `).run();
 
-  /*
-    ============================================================
-    GLOBAL GROUP CHAT
 
-    This is intentionally a SINGLE shared chat.
-
-    Users cannot:
-    - create groups
-    - rename groups
-    - create group avatars
-    - join/leave groups
-    - manage group members
-
-    Everyone uses this one Group Chat.
-    ============================================================
-  */
+  /* ----------------------------------------------------------
+     PUBLIC GROUP CHAT
+  ---------------------------------------------------------- */
 
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS global_group_messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+
       sender_id INTEGER NOT NULL,
+
       message TEXT NOT NULL,
+
       created_at INTEGER NOT NULL,
-      FOREIGN KEY(sender_id) REFERENCES users(id) ON DELETE CASCADE
+
+      FOREIGN KEY(sender_id)
+      REFERENCES users(id)
+      ON DELETE CASCADE
     )
   `).run();
 }
+
+
+/* ============================================================
+   USER FORMATTER
+============================================================ */
+
+function formatUser(row) {
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: Number(row.id),
+
+    username: row.username || "",
+
+    email: row.email || "",
+
+    profile_photo:
+      row.profile_photo ||
+      null
+  };
+}
+
 
 /* ============================================================
    AUTHENTICATION
 ============================================================ */
 
 async function getUserFromRequest(request, db) {
-  const auth = request.headers.get("Authorization");
+
+  const auth = request.headers.get(
+    "Authorization"
+  );
 
   if (!auth) {
     return null;
@@ -187,815 +266,1583 @@ async function getUserFromRequest(request, db) {
     return null;
   }
 
-  const token = auth.slice(7).trim();
+  const token = auth
+    .slice(7)
+    .trim();
 
   if (!token) {
     return null;
   }
 
-  const result = await db
-    .prepare(`
-      SELECT
-        users.id,
-        users.username,
-        users.email,
-        users.profile_photo
-      FROM sessions
-      INNER JOIN users
-        ON users.id = sessions.user_id
-      WHERE sessions.token = ?
-      LIMIT 1
-    `)
+  const result = await db.prepare(`
+    SELECT
+      users.id,
+      users.username,
+      users.email,
+      users.profile_photo
+
+    FROM sessions
+
+    INNER JOIN users
+      ON users.id = sessions.user_id
+
+    WHERE sessions.token = ?
+
+    LIMIT 1
+  `)
     .bind(token)
     .first();
 
-  return result || null;
+  return formatUser(result);
 }
+
 
 /* ============================================================
    PRIVATE CONVERSATION HELPERS
 ============================================================ */
 
-async function getConversation(db, userA, userB) {
-  const first = Math.min(Number(userA), Number(userB));
-  const second = Math.max(Number(userA), Number(userB));
+async function getConversation(
+  db,
+  userA,
+  userB
+) {
 
-  return await db
-    .prepare(`
-      SELECT *
-      FROM conversations
-      WHERE user1_id = ?
-        AND user2_id = ?
-      LIMIT 1
-    `)
+  const first = Math.min(
+    Number(userA),
+    Number(userB)
+  );
+
+  const second = Math.max(
+    Number(userA),
+    Number(userB)
+  );
+
+  return await db.prepare(`
+    SELECT *
+    FROM conversations
+
+    WHERE user1_id = ?
+      AND user2_id = ?
+
+    LIMIT 1
+  `)
     .bind(first, second)
     .first();
 }
 
-async function createConversation(db, userA, userB) {
-  const first = Math.min(Number(userA), Number(userB));
-  const second = Math.max(Number(userA), Number(userB));
 
-  await db
-    .prepare(`
-      INSERT OR IGNORE INTO conversations
-      (user1_id, user2_id)
-      VALUES (?, ?)
-    `)
+async function createConversation(
+  db,
+  userA,
+  userB
+) {
+
+  const first = Math.min(
+    Number(userA),
+    Number(userB)
+  );
+
+  const second = Math.max(
+    Number(userA),
+    Number(userB)
+  );
+
+  await db.prepare(`
+    INSERT OR IGNORE INTO conversations
+    (
+      user1_id,
+      user2_id
+    )
+    VALUES (?, ?)
+  `)
     .bind(first, second)
     .run();
 
-  return await getConversation(db, first, second);
+  return await getConversation(
+    db,
+    first,
+    second
+  );
 }
+
 
 /* ============================================================
    GROUP MESSAGE FORMATTER
 ============================================================ */
 
 function formatGroupMessage(row) {
-  const createdAt = Number(row.created_at);
 
-  const isoDate = Number.isFinite(createdAt)
-    ? new Date(createdAt).toISOString()
-    : row.created_at;
+  if (!row) {
+    return null;
+  }
+
+  const createdAt = Number(
+    row.created_at
+  );
+
+  const isoDate =
+    Number.isFinite(createdAt)
+      ? new Date(createdAt).toISOString()
+      : row.created_at;
 
   return {
-    id: row.id,
 
-    sender_id: row.sender_id,
+    id: Number(row.id),
 
-    message: row.message,
+    sender_id: Number(
+      row.sender_id
+    ),
 
-    created_at: isoDate,
+    message:
+      row.message || "",
 
-    sender_username: row.sender_username || "",
+    created_at:
+      isoDate,
 
-    sender_profile_photo: row.sender_profile_photo || null,
+    sender_username:
+      row.sender_username || "",
+
+    sender_profile_photo:
+      row.sender_profile_photo ||
+      null,
 
     sender: {
-      id: row.sender_id,
-      username: row.sender_username || "",
-      email: row.sender_email || "",
-      profile_photo: row.sender_profile_photo || null
+
+      id: Number(
+        row.sender_id
+      ),
+
+      username:
+        row.sender_username || "",
+
+      email:
+        row.sender_email || "",
+
+      profile_photo:
+        row.sender_profile_photo ||
+        null
     }
   };
 }
+
 
 /* ============================================================
    MAIN WORKER
 ============================================================ */
 
 export default {
+
   async fetch(request, env) {
+
     try {
-      /* --------------------------------------------------------
+
+      /* ======================================================
          CORS PREFLIGHT
-      -------------------------------------------------------- */
+      ====================================================== */
 
       if (request.method === "OPTIONS") {
+
         return new Response(null, {
           status: 204,
           headers: CORS_HEADERS
         });
+
       }
 
+
+      /* ======================================================
+         DATABASE CHECK
+      ====================================================== */
+
       if (!env.DB) {
+
         return json({
           success: false,
           error: "Database binding is missing."
         }, 500);
+
       }
 
-      const url = new URL(request.url);
-      const path = url.pathname;
-      const method = request.method;
 
-      /* --------------------------------------------------------
-         DATABASE
-      -------------------------------------------------------- */
+      const url =
+        new URL(request.url);
 
-      await initDatabase(env.DB);
+      const path =
+        url.pathname;
 
-      /* ========================================================
+      const method =
+        request.method;
+
+
+      /* ======================================================
+         DATABASE INIT
+      ====================================================== */
+
+      await initDatabase(
+        env.DB
+      );
+
+
+      /* ======================================================
          HEALTH
-      ======================================================== */
+      ====================================================== */
 
-      if (path === "/api/health" && method === "GET") {
+      if (
+        path === "/api/health" &&
+        method === "GET"
+      ) {
+
         return json({
+
           success: true,
+
           status: "ok",
+
           app: "Dark Chat"
+
         });
+
       }
 
-      /* ========================================================
-         REGISTER
-      ======================================================== */
 
-      if (path === "/api/register" && method === "POST") {
+      /* ======================================================
+         REGISTER
+      ====================================================== */
+
+      if (
+        path === "/api/register" &&
+        method === "POST"
+      ) {
+
         let body;
 
         try {
-          body = await request.json();
+
+          body =
+            await request.json();
+
         } catch {
+
           return json({
             success: false,
             error: "Invalid JSON."
           }, 400);
+
         }
 
-        const username = String(body.username || "").trim();
-        const email = String(body.email || "").trim().toLowerCase();
-        const password = String(body.password || "");
 
-        if (!username || !email || !password) {
+        const username =
+          String(
+            body.username || ""
+          ).trim();
+
+        const password =
+          String(
+            body.password || ""
+          );
+
+
+        /*
+          Email is OPTIONAL now.
+
+          The frontend only needs:
+
+          username
+          password
+
+          Existing database still requires
+          email NOT NULL UNIQUE.
+
+          Therefore an internal unique
+          placeholder email is generated
+          when email is not supplied.
+        */
+
+        let email =
+          String(
+            body.email || ""
+          )
+            .trim()
+            .toLowerCase();
+
+
+        /* ----------------------------------------------------
+           VALIDATION
+        ---------------------------------------------------- */
+
+        if (
+          !username ||
+          !password
+        ) {
+
           return json({
             success: false,
-            error: "Username, email and password are required."
+            error:
+              "Username and password are required."
           }, 400);
+
         }
+
 
         if (username.length < 2) {
+
           return json({
             success: false,
-            error: "Username is too short."
+            error:
+              "Username is too short."
           }, 400);
+
         }
+
+
+        if (username.length > 50) {
+
+          return json({
+            success: false,
+            error:
+              "Username is too long."
+          }, 400);
+
+        }
+
 
         if (password.length < 4) {
+
           return json({
             success: false,
-            error: "Password is too short."
+            error:
+              "Password is too short."
           }, 400);
+
         }
 
-        const existing = await env.DB
-          .prepare(`
+
+        if (password.length > 500) {
+
+          return json({
+            success: false,
+            error:
+              "Password is too long."
+          }, 400);
+
+        }
+
+
+        /* ----------------------------------------------------
+           USERNAME DUPLICATE CHECK
+        ---------------------------------------------------- */
+
+        const existingUsername =
+          await env.DB.prepare(`
             SELECT id
             FROM users
-            WHERE email = ?
+
+            WHERE username = ?
+
             LIMIT 1
           `)
-          .bind(email)
-          .first();
+            .bind(username)
+            .first();
 
-        if (existing) {
+
+        if (existingUsername) {
+
           return json({
             success: false,
-            error: "Email already exists."
+            error:
+              "Username already exists."
           }, 409);
+
         }
 
-        const passwordHash = await hashPassword(password);
+
+        /* ----------------------------------------------------
+           EMAIL
+        ---------------------------------------------------- */
+
+        if (email) {
+
+          const existingEmail =
+            await env.DB.prepare(`
+              SELECT id
+              FROM users
+
+              WHERE email = ?
+
+              LIMIT 1
+            `)
+              .bind(email)
+              .first();
+
+
+          if (existingEmail) {
+
+            return json({
+              success: false,
+              error:
+                "Email already exists."
+            }, 409);
+
+          }
+
+        } else {
+
+          /*
+            Generate unique internal email.
+
+            Example:
+            username + random token
+          */
+
+          email =
+            `user_${Date.now()}_${randomToken().slice(0, 12)}@local.darkchat`;
+
+        }
+
+
+        /* ----------------------------------------------------
+           PASSWORD
+        ---------------------------------------------------- */
+
+        const passwordHash =
+          await hashPassword(
+            password
+          );
+
+
+        /* ----------------------------------------------------
+           INSERT USER
+        ---------------------------------------------------- */
 
         try {
-          const result = await env.DB
-            .prepare(`
+
+          const result =
+            await env.DB.prepare(`
               INSERT INTO users
-              (username, email, password)
+              (
+                username,
+                email,
+                password
+              )
+
               VALUES (?, ?, ?)
             `)
-            .bind(username, email, passwordHash)
+              .bind(
+                username,
+                email,
+                passwordHash
+              )
+              .run();
+
+
+          const userId =
+            result.meta.last_row_id;
+
+
+          /* --------------------------------------------------
+             AUTO LOGIN SESSION
+          -------------------------------------------------- */
+
+          const token =
+            randomToken();
+
+
+          await env.DB.prepare(`
+            INSERT INTO sessions
+            (
+              user_id,
+              token
+            )
+
+            VALUES (?, ?)
+          `)
+            .bind(
+              userId,
+              token
+            )
             .run();
 
-          const userId = result.meta.last_row_id;
 
-          const token = randomToken();
+          /* --------------------------------------------------
+             GET USER
+          -------------------------------------------------- */
 
-          await env.DB
-            .prepare(`
-              INSERT INTO sessions
-              (user_id, token)
-              VALUES (?, ?)
-            `)
-            .bind(userId, token)
-            .run();
-
-          const user = await env.DB
-            .prepare(`
+          const user =
+            await env.DB.prepare(`
               SELECT
                 id,
                 username,
                 email,
                 profile_photo
+
               FROM users
+
               WHERE id = ?
+
               LIMIT 1
             `)
-            .bind(userId)
-            .first();
+              .bind(userId)
+              .first();
+
 
           return json({
+
             success: true,
+
             token,
-            user
+
+            user:
+              formatUser(user)
+
           }, 201);
 
+
         } catch (error) {
+
+          console.error(
+            "REGISTER ERROR:",
+            error
+          );
+
           return json({
+
             success: false,
-            error: "Registration failed.",
-            detail: error.message
+
+            error:
+              "Registration failed.",
+
+            detail:
+              error.message
+
           }, 500);
+
         }
+
       }
 
-      /* ========================================================
-         LOGIN
-      ======================================================== */
 
-      if (path === "/api/login" && method === "POST") {
+      /* ======================================================
+         LOGIN
+      ====================================================== */
+
+      if (
+        path === "/api/login" &&
+        method === "POST"
+      ) {
+
         let body;
 
         try {
-          body = await request.json();
+
+          body =
+            await request.json();
+
         } catch {
+
           return json({
             success: false,
             error: "Invalid JSON."
           }, 400);
+
         }
 
-        const email = String(body.email || "").trim().toLowerCase();
-        const password = String(body.password || "");
 
-        if (!email || !password) {
+        /*
+          Supports both:
+
+          {
+            username,
+            password
+          }
+
+          and
+
+          {
+            email,
+            password
+          }
+        */
+
+        const username =
+          String(
+            body.username || ""
+          ).trim();
+
+        const email =
+          String(
+            body.email || ""
+          )
+            .trim()
+            .toLowerCase();
+
+        const password =
+          String(
+            body.password || ""
+          );
+
+
+        if (
+          (!username && !email) ||
+          !password
+        ) {
+
           return json({
             success: false,
-            error: "Email and password are required."
+            error:
+              "Username/email and password are required."
           }, 400);
+
         }
 
-        const passwordHash = await hashPassword(password);
 
-        const user = await env.DB
-          .prepare(`
-            SELECT
-              id,
-              username,
-              email,
-              profile_photo
-            FROM users
-            WHERE email = ?
-              AND password = ?
-            LIMIT 1
-          `)
-          .bind(email, passwordHash)
-          .first();
+        const passwordHash =
+          await hashPassword(
+            password
+          );
+
+
+        let user;
+
+
+        /* ----------------------------------------------------
+           EMAIL LOGIN
+        ---------------------------------------------------- */
+
+        if (email) {
+
+          user =
+            await env.DB.prepare(`
+              SELECT
+                id,
+                username,
+                email,
+                profile_photo
+
+              FROM users
+
+              WHERE email = ?
+                AND password = ?
+
+              LIMIT 1
+            `)
+              .bind(
+                email,
+                passwordHash
+              )
+              .first();
+
+        }
+
+
+        /* ----------------------------------------------------
+           USERNAME LOGIN
+        ---------------------------------------------------- */
+
+        if (!user && username) {
+
+          user =
+            await env.DB.prepare(`
+              SELECT
+                id,
+                username,
+                email,
+                profile_photo
+
+              FROM users
+
+              WHERE username = ?
+                AND password = ?
+
+              LIMIT 1
+            `)
+              .bind(
+                username,
+                passwordHash
+              )
+              .first();
+
+        }
+
 
         if (!user) {
+
           return json({
             success: false,
-            error: "Invalid email or password."
+            error:
+              "Invalid username/email or password."
           }, 401);
+
         }
 
-        const token = randomToken();
 
-        await env.DB
-          .prepare(`
-            INSERT INTO sessions
-            (user_id, token)
-            VALUES (?, ?)
-          `)
-          .bind(user.id, token)
+        /* ----------------------------------------------------
+           SESSION
+        ---------------------------------------------------- */
+
+        const token =
+          randomToken();
+
+
+        await env.DB.prepare(`
+          INSERT INTO sessions
+          (
+            user_id,
+            token
+          )
+
+          VALUES (?, ?)
+        `)
+          .bind(
+            user.id,
+            token
+          )
           .run();
 
+
         return json({
+
           success: true,
+
           token,
-          user
+
+          user:
+            formatUser(user)
+
         });
+
       }
 
-      /* ========================================================
+
+      /* ======================================================
          LOGOUT
-      ======================================================== */
+      ====================================================== */
 
-      if (path === "/api/logout" && method === "POST") {
-        const auth = request.headers.get("Authorization");
+      if (
+        path === "/api/logout" &&
+        method === "POST"
+      ) {
 
-        if (auth && auth.startsWith("Bearer ")) {
-          const token = auth.slice(7).trim();
+        const auth =
+          request.headers.get(
+            "Authorization"
+          );
+
+
+        if (
+          auth &&
+          auth.startsWith("Bearer ")
+        ) {
+
+          const token =
+            auth
+              .slice(7)
+              .trim();
+
 
           if (token) {
-            await env.DB
-              .prepare(`
-                DELETE FROM sessions
-                WHERE token = ?
-              `)
+
+            await env.DB.prepare(`
+              DELETE FROM sessions
+
+              WHERE token = ?
+            `)
               .bind(token)
               .run();
+
           }
+
         }
+
 
         return json({
           success: true
         });
+
       }
 
-      /* ========================================================
-         CURRENT USER
-      ======================================================== */
 
-      if (path === "/api/me" && method === "GET") {
-        const user = await getUserFromRequest(request, env.DB);
+      /* ======================================================
+         CURRENT USER
+      ====================================================== */
+
+      if (
+        path === "/api/me" &&
+        method === "GET"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
+
 
         return json({
+
           success: true,
+
           user
+
         });
+
       }
 
-      /* ========================================================
-         PROFILE PHOTO - UPLOAD
-      ======================================================== */
 
-      if (path === "/api/profile/photo" && method === "POST") {
-        const user = await getUserFromRequest(request, env.DB);
+      /* ======================================================
+         PROFILE PHOTO - UPLOAD
+      ====================================================== */
+
+      if (
+        path === "/api/profile/photo" &&
+        method === "POST"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
+
 
         let body;
 
         try {
-          body = await request.json();
+
+          body =
+            await request.json();
+
         } catch {
+
           return json({
             success: false,
             error: "Invalid JSON."
           }, 400);
+
         }
 
-        const photo = String(body.photo || "").trim();
+
+        /*
+          Support BOTH frontend names:
+
+          profile_photo
+          photo
+        */
+
+        const photo =
+          String(
+            body.profile_photo ||
+            body.photo ||
+            ""
+          ).trim();
+
 
         if (!photo) {
+
           return json({
             success: false,
             error: "Photo is required."
           }, 400);
+
         }
+
 
         /*
-          Prevent extremely large profile photo values.
+          Maximum stored string size.
         */
 
-        if (photo.length > 5_000_000) {
+        if (
+          photo.length >
+          5_000_000
+        ) {
+
           return json({
             success: false,
-            error: "Photo is too large."
+            error:
+              "Photo is too large."
           }, 400);
+
         }
 
-        await env.DB
-          .prepare(`
-            UPDATE users
-            SET profile_photo = ?
-            WHERE id = ?
-          `)
-          .bind(photo, user.id)
+
+        await env.DB.prepare(`
+          UPDATE users
+
+          SET profile_photo = ?
+
+          WHERE id = ?
+        `)
+          .bind(
+            photo,
+            user.id
+          )
           .run();
 
-        const updatedUser = await env.DB
-          .prepare(`
+
+        const updatedUser =
+          await env.DB.prepare(`
             SELECT
               id,
               username,
               email,
               profile_photo
+
             FROM users
+
             WHERE id = ?
+
             LIMIT 1
           `)
-          .bind(user.id)
-          .first();
+            .bind(user.id)
+            .first();
+
 
         return json({
+
           success: true,
-          user: updatedUser
+
+          user:
+            formatUser(updatedUser)
+
         });
+
       }
 
-      /* ========================================================
+
+      /* ======================================================
          PROFILE PHOTO - DELETE
-      ======================================================== */
+      ====================================================== */
 
-      if (path === "/api/profile/photo" && method === "DELETE") {
-        const user = await getUserFromRequest(request, env.DB);
+      if (
+        path === "/api/profile/photo" &&
+        method === "DELETE"
+      ) {
+
+        const user =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
 
-        await env.DB
-          .prepare(`
-            UPDATE users
-            SET profile_photo = NULL
-            WHERE id = ?
-          `)
+
+        await env.DB.prepare(`
+          UPDATE users
+
+          SET profile_photo = NULL
+
+          WHERE id = ?
+        `)
           .bind(user.id)
           .run();
 
-        const updatedUser = await env.DB
-          .prepare(`
+
+        const updatedUser =
+          await env.DB.prepare(`
             SELECT
               id,
               username,
               email,
               profile_photo
+
             FROM users
+
             WHERE id = ?
+
             LIMIT 1
           `)
-          .bind(user.id)
-          .first();
+            .bind(user.id)
+            .first();
+
 
         return json({
+
           success: true,
-          user: updatedUser
+
+          user:
+            formatUser(updatedUser)
+
         });
+
       }
 
-      /* ========================================================
+
+      /* ======================================================
          USERS
-      ======================================================== */
+         
+         Kept for API compatibility.
+         
+         Frontend does NOT display a sidebar user list.
+      ====================================================== */
 
-      if (path === "/api/users" && method === "GET") {
-        const currentUser = await getUserFromRequest(
-          request,
-          env.DB
-        );
+      if (
+        path === "/api/users" &&
+        method === "GET"
+      ) {
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
 
         if (!currentUser) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
 
-        const result = await env.DB
-          .prepare(`
+
+        const result =
+          await env.DB.prepare(`
             SELECT
               id,
               username,
               email,
               profile_photo
+
             FROM users
+
             WHERE id != ?
-            ORDER BY username COLLATE NOCASE ASC
+
+            ORDER BY
+              username COLLATE NOCASE ASC
           `)
-          .bind(currentUser.id)
-          .all();
+            .bind(
+              currentUser.id
+            )
+            .all();
+
 
         return json({
+
           success: true,
-          users: result.results || []
+
+          users:
+            (result.results || [])
+              .map(formatUser)
+
         });
+
       }
 
-      /* ========================================================
+
+      /* ======================================================
          USER BY ID
-      ======================================================== */
+      ====================================================== */
 
-      const userMatch = path.match(/^\/api\/users\/(\d+)$/);
-
-      if (userMatch && method === "GET") {
-        const currentUser = await getUserFromRequest(
-          request,
-          env.DB
+      const userMatch =
+        path.match(
+          /^\/api\/users\/(\d+)$/
         );
 
+
+      if (
+        userMatch &&
+        method === "GET"
+      ) {
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
+
         if (!currentUser) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
 
-        const userId = Number(userMatch[1]);
 
-        const user = await env.DB
-          .prepare(`
+        const userId =
+          Number(
+            userMatch[1]
+          );
+
+
+        const user =
+          await env.DB.prepare(`
             SELECT
               id,
               username,
               email,
               profile_photo
+
             FROM users
+
             WHERE id = ?
+
             LIMIT 1
           `)
-          .bind(userId)
-          .first();
+            .bind(userId)
+            .first();
+
 
         if (!user) {
+
           return json({
             success: false,
             error: "User not found."
           }, 404);
+
         }
 
+
         return json({
+
           success: true,
-          user
+
+          user:
+            formatUser(user)
+
         });
+
       }
 
-      /* ========================================================
-         CREATE PRIVATE CONVERSATION
-      ======================================================== */
 
-      if (path === "/api/conversations" && method === "POST") {
-        const currentUser = await getUserFromRequest(
-          request,
-          env.DB
-        );
+      /* ======================================================
+         CREATE PRIVATE CONVERSATION
+      ====================================================== */
+
+      if (
+        path === "/api/conversations" &&
+        method === "POST"
+      ) {
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
 
         if (!currentUser) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
+
 
         let body;
 
         try {
-          body = await request.json();
+
+          body =
+            await request.json();
+
         } catch {
+
           return json({
             success: false,
             error: "Invalid JSON."
           }, 400);
+
         }
 
-        const otherUserId = Number(body.user_id);
 
-        if (!Number.isInteger(otherUserId) || otherUserId <= 0) {
+        const otherUserId =
+          Number(
+            body.user_id
+          );
+
+
+        if (
+          !Number.isInteger(
+            otherUserId
+          ) ||
+          otherUserId <= 0
+        ) {
+
           return json({
             success: false,
-            error: "Invalid user_id."
+            error:
+              "Invalid user_id."
           }, 400);
+
         }
 
-        if (otherUserId === currentUser.id) {
+
+        if (
+          otherUserId ===
+          currentUser.id
+        ) {
+
           return json({
             success: false,
-            error: "You cannot create a chat with yourself."
+            error:
+              "You cannot create a chat with yourself."
           }, 400);
+
         }
 
-        const otherUser = await env.DB
-          .prepare(`
+
+        const otherUser =
+          await env.DB.prepare(`
             SELECT id
+
             FROM users
+
             WHERE id = ?
+
             LIMIT 1
           `)
-          .bind(otherUserId)
-          .first();
+            .bind(otherUserId)
+            .first();
+
 
         if (!otherUser) {
+
           return json({
             success: false,
-            error: "User not found."
+            error:
+              "User not found."
           }, 404);
+
         }
 
-        const conversation = await createConversation(
-          env.DB,
-          currentUser.id,
-          otherUserId
-        );
+
+        const conversation =
+          await createConversation(
+            env.DB,
+            currentUser.id,
+            otherUserId
+          );
+
 
         return json({
+
           success: true,
+
           conversation
+
         });
+
       }
 
-      /* ========================================================
-         CONVERSATIONS LIST
-      ======================================================== */
 
-      if (path === "/api/conversations" && method === "GET") {
-        const currentUser = await getUserFromRequest(
-          request,
-          env.DB
-        );
+      /* ======================================================
+         CONVERSATIONS LIST
+      ====================================================== */
+
+      if (
+        path === "/api/conversations" &&
+        method === "GET"
+      ) {
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
 
         if (!currentUser) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
 
-        const result = await env.DB
-          .prepare(`
+
+        const result =
+          await env.DB.prepare(`
             SELECT
+
               c.id,
+
               c.user1_id,
+
               c.user2_id,
 
+
               CASE
-                WHEN c.user1_id = ? THEN u2.id
+
+                WHEN c.user1_id = ?
+
+                THEN u2.id
+
                 ELSE u1.id
+
               END AS other_user_id,
 
+
               CASE
-                WHEN c.user1_id = ? THEN u2.username
+
+                WHEN c.user1_id = ?
+
+                THEN u2.username
+
                 ELSE u1.username
+
               END AS other_username,
 
+
               CASE
-                WHEN c.user1_id = ? THEN u2.email
+
+                WHEN c.user1_id = ?
+
+                THEN u2.email
+
                 ELSE u1.email
+
               END AS other_email,
 
+
               CASE
-                WHEN c.user1_id = ? THEN u2.profile_photo
+
+                WHEN c.user1_id = ?
+
+                THEN u2.profile_photo
+
                 ELSE u1.profile_photo
+
               END AS other_profile_photo
 
+
             FROM conversations c
+
 
             INNER JOIN users u1
               ON u1.id = c.user1_id
 
+
             INNER JOIN users u2
               ON u2.id = c.user2_id
 
-            WHERE c.user1_id = ?
-               OR c.user2_id = ?
 
-            ORDER BY c.id DESC
+            WHERE
+              c.user1_id = ?
+
+              OR
+
+              c.user2_id = ?
+
+
+            ORDER BY
+              c.id DESC
+
           `)
-          .bind(
-            currentUser.id,
-            currentUser.id,
-            currentUser.id,
-            currentUser.id,
-            currentUser.id,
-            currentUser.id
-          )
-          .all();
+            .bind(
+              currentUser.id,
+              currentUser.id,
+              currentUser.id,
+              currentUser.id,
+              currentUser.id,
+              currentUser.id
+            )
+            .all();
+
 
         return json({
+
           success: true,
-          conversations: result.results || []
+
+          conversations:
+            result.results || []
+
         });
+
       }
 
-      /* ========================================================
-         PRIVATE SEND MESSAGE
-      ======================================================== */
 
-      if (path === "/api/messages" && method === "POST") {
-        const currentUser = await getUserFromRequest(
-          request,
-          env.DB
-        );
+      /* ======================================================
+         PRIVATE SEND MESSAGE
+      ====================================================== */
+
+      if (
+        path === "/api/messages" &&
+        method === "POST"
+      ) {
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
 
         if (!currentUser) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
+
 
         let body;
 
         try {
-          body = await request.json();
+
+          body =
+            await request.json();
+
         } catch {
+
           return json({
             success: false,
             error: "Invalid JSON."
           }, 400);
+
         }
 
-        const receiverId = Number(body.receiver_id);
-        const message = String(body.message || "").trim();
+
+        const receiverId =
+          Number(
+            body.receiver_id
+          );
+
+
+        const message =
+          String(
+            body.message || ""
+          ).trim();
+
 
         if (
-          !Number.isInteger(receiverId) ||
+          !Number.isInteger(
+            receiverId
+          ) ||
           receiverId <= 0
         ) {
+
           return json({
             success: false,
-            error: "Invalid receiver_id."
+            error:
+              "Invalid receiver_id."
           }, 400);
+
         }
+
 
         if (!message) {
+
           return json({
             success: false,
-            error: "Message cannot be empty."
+            error:
+              "Message cannot be empty."
           }, 400);
+
         }
 
-        if (message.length > 10000) {
+
+        if (
+          message.length >
+          10000
+        ) {
+
           return json({
             success: false,
-            error: "Message is too long."
+            error:
+              "Message is too long."
           }, 400);
+
         }
 
-        if (receiverId === currentUser.id) {
+
+        if (
+          receiverId ===
+          currentUser.id
+        ) {
+
           return json({
             success: false,
-            error: "You cannot send a private message to yourself."
+            error:
+              "You cannot send a private message to yourself."
           }, 400);
+
         }
 
-        const receiver = await env.DB
-          .prepare(`
+
+        const receiver =
+          await env.DB.prepare(`
             SELECT id
+
             FROM users
+
             WHERE id = ?
+
             LIMIT 1
           `)
-          .bind(receiverId)
-          .first();
+            .bind(receiverId)
+            .first();
+
 
         if (!receiver) {
+
           return json({
             success: false,
-            error: "Receiver not found."
+            error:
+              "Receiver not found."
           }, 404);
+
         }
 
-        const conversation = await createConversation(
-          env.DB,
-          currentUser.id,
-          receiverId
-        );
+
+        const conversation =
+          await createConversation(
+            env.DB,
+            currentUser.id,
+            receiverId
+          );
+
 
         if (!conversation) {
+
           return json({
             success: false,
-            error: "Could not create conversation."
+            error:
+              "Could not create conversation."
           }, 500);
+
         }
 
-        const result = await env.DB
-          .prepare(`
+
+        const result =
+          await env.DB.prepare(`
             INSERT INTO messages
             (
               conversation_id,
@@ -1003,474 +1850,798 @@ export default {
               receiver_id,
               message
             )
+
             VALUES (?, ?, ?, ?)
           `)
-          .bind(
-            conversation.id,
-            currentUser.id,
-            receiverId,
-            message
-          )
-          .run();
+            .bind(
+              conversation.id,
+              currentUser.id,
+              receiverId,
+              message
+            )
+            .run();
 
-        const messageId = result.meta.last_row_id;
 
-        const savedMessage = await env.DB
-          .prepare(`
+        const messageId =
+          result.meta.last_row_id;
+
+
+        const savedMessage =
+          await env.DB.prepare(`
             SELECT
+
               m.id,
+
               m.conversation_id,
+
               m.sender_id,
+
               m.receiver_id,
+
               m.message,
 
-              u.username AS sender_username,
-              u.email AS sender_email,
-              u.profile_photo AS sender_profile_photo
+
+              u.username
+                AS sender_username,
+
+
+              u.email
+                AS sender_email,
+
+
+              u.profile_photo
+                AS sender_profile_photo
+
 
             FROM messages m
+
 
             INNER JOIN users u
               ON u.id = m.sender_id
 
+
             WHERE m.id = ?
 
+
             LIMIT 1
+
           `)
-          .bind(messageId)
-          .first();
+            .bind(messageId)
+            .first();
+
 
         return json({
+
           success: true,
-          message: savedMessage
+
+          message:
+            savedMessage
+
         }, 201);
+
       }
 
-      /* ========================================================
-         PRIVATE GET MESSAGES
-      ======================================================== */
 
-      if (path === "/api/messages" && method === "GET") {
-        const currentUser = await getUserFromRequest(
-          request,
-          env.DB
-        );
+      /* ======================================================
+         PRIVATE GET MESSAGES
+      ====================================================== */
+
+      if (
+        path === "/api/messages" &&
+        method === "GET"
+      ) {
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
 
         if (!currentUser) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
 
-        const targetId = Number(
-          url.searchParams.get("user_id")
-        );
 
-        if (!Number.isInteger(targetId) || targetId <= 0) {
+        const targetId =
+          Number(
+            url.searchParams.get(
+              "user_id"
+            )
+          );
+
+
+        if (
+          !Number.isInteger(
+            targetId
+          ) ||
+          targetId <= 0
+        ) {
+
           return json({
             success: false,
-            error: "Invalid user_id."
+            error:
+              "Invalid user_id."
           }, 400);
+
         }
 
-        const conversation = await getConversation(
-          env.DB,
-          currentUser.id,
-          targetId
-        );
 
-        if (!conversation) {
+        if (
+          targetId ===
+          currentUser.id
+        ) {
+
           return json({
             success: true,
             messages: []
           });
+
         }
 
-        const result = await env.DB
-          .prepare(`
+
+        const conversation =
+          await getConversation(
+            env.DB,
+            currentUser.id,
+            targetId
+          );
+
+
+        if (!conversation) {
+
+          return json({
+
+            success: true,
+
+            messages: []
+
+          });
+
+        }
+
+
+        const result =
+          await env.DB.prepare(`
             SELECT
+
               m.id,
+
               m.conversation_id,
+
               m.sender_id,
+
               m.receiver_id,
+
               m.message,
 
-              u.username AS sender_username,
-              u.email AS sender_email,
-              u.profile_photo AS sender_profile_photo
+
+              u.username
+                AS sender_username,
+
+
+              u.email
+                AS sender_email,
+
+
+              u.profile_photo
+                AS sender_profile_photo
+
 
             FROM messages m
+
 
             INNER JOIN users u
               ON u.id = m.sender_id
 
-            WHERE m.conversation_id = ?
 
-            ORDER BY m.id ASC
+            WHERE
+              m.conversation_id = ?
+
+
+            ORDER BY
+              m.id ASC
+
 
             LIMIT 500
+
           `)
-          .bind(conversation.id)
-          .all();
+            .bind(
+              conversation.id
+            )
+            .all();
+
 
         return json({
+
           success: true,
-          messages: result.results || []
+
+          messages:
+            result.results || []
+
         });
+
       }
 
-      /* ========================================================
+
+      /* ======================================================
          DELETE PRIVATE MESSAGE
-      ======================================================== */
+      ====================================================== */
 
       const privateDeleteMatch =
-        path.match(/^\/api\/messages\/(\d+)$/);
-
-      if (privateDeleteMatch && method === "DELETE") {
-        const currentUser = await getUserFromRequest(
-          request,
-          env.DB
+        path.match(
+          /^\/api\/messages\/(\d+)$/
         );
 
+
+      if (
+        privateDeleteMatch &&
+        method === "DELETE"
+      ) {
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
+
         if (!currentUser) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
 
-        const messageId = Number(privateDeleteMatch[1]);
 
-        const message = await env.DB
-          .prepare(`
+        const messageId =
+          Number(
+            privateDeleteMatch[1]
+          );
+
+
+        const message =
+          await env.DB.prepare(`
             SELECT
+
               id,
+
               sender_id,
+
               receiver_id
+
+
             FROM messages
+
+
             WHERE id = ?
+
+
             LIMIT 1
+
           `)
-          .bind(messageId)
-          .first();
+            .bind(messageId)
+            .first();
+
 
         if (!message) {
+
           return json({
             success: false,
-            error: "Message not found."
+            error:
+              "Message not found."
           }, 404);
+
         }
+
 
         if (
-          message.sender_id !== currentUser.id &&
-          message.receiver_id !== currentUser.id
+          Number(message.sender_id) !==
+            Number(currentUser.id) &&
+
+          Number(message.receiver_id) !==
+            Number(currentUser.id)
         ) {
+
           return json({
             success: false,
-            error: "You cannot delete this message."
+            error:
+              "You cannot delete this message."
           }, 403);
+
         }
 
-        await env.DB
-          .prepare(`
-            DELETE FROM messages
-            WHERE id = ?
-          `)
+
+        await env.DB.prepare(`
+          DELETE FROM messages
+
+          WHERE id = ?
+        `)
           .bind(messageId)
           .run();
+
 
         return json({
           success: true
         });
+
       }
 
-      /* ========================================================
-         GLOBAL GROUP CHAT INFO
-      ======================================================== */
 
-      if (path === "/api/group" && method === "GET") {
-        const currentUser = await getUserFromRequest(
-          request,
-          env.DB
-        );
+      /* ======================================================
+         PUBLIC GROUP CHAT INFO
+      ====================================================== */
+
+      if (
+        path === "/api/group" &&
+        method === "GET"
+      ) {
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
 
         if (!currentUser) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
 
+
         return json({
+
           success: true,
 
           group: {
+
             id: "global",
-            name: "Group Chat",
-            status: "Everyone"
+
+            name:
+              "Public Group Chat",
+
+            status:
+              "Everyone"
+
           }
+
         });
+
       }
 
-      /* ========================================================
-         GLOBAL GROUP CHAT - GET MESSAGES
-      ======================================================== */
+
+      /* ======================================================
+         PUBLIC GROUP CHAT
+         GET MESSAGES
+      ====================================================== */
 
       if (
         path === "/api/group/messages" &&
         method === "GET"
       ) {
-        const currentUser = await getUserFromRequest(
-          request,
-          env.DB
-        );
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
 
         if (!currentUser) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
 
-        const result = await env.DB
-          .prepare(`
+
+        const result =
+          await env.DB.prepare(`
             SELECT
+
               gm.id,
+
               gm.sender_id,
+
               gm.message,
+
               gm.created_at,
 
-              u.username AS sender_username,
-              u.email AS sender_email,
-              u.profile_photo AS sender_profile_photo
+
+              u.username
+                AS sender_username,
+
+
+              u.email
+                AS sender_email,
+
+
+              u.profile_photo
+                AS sender_profile_photo
+
 
             FROM global_group_messages gm
+
 
             INNER JOIN users u
               ON u.id = gm.sender_id
 
-            ORDER BY gm.id ASC
+
+            ORDER BY
+              gm.id ASC
+
 
             LIMIT 200
-          `)
-          .all();
 
-        const messages = (result.results || [])
-          .map(formatGroupMessage);
+          `)
+            .all();
+
+
+        const messages =
+          (result.results || [])
+            .map(formatGroupMessage);
+
 
         return json({
+
           success: true,
+
           messages
+
         });
+
       }
 
-      /* ========================================================
-         GLOBAL GROUP CHAT - SEND MESSAGE
-      ======================================================== */
+
+      /* ======================================================
+         PUBLIC GROUP CHAT
+         SEND MESSAGE
+      ====================================================== */
 
       if (
         path === "/api/group/messages" &&
         method === "POST"
       ) {
-        const currentUser = await getUserFromRequest(
-          request,
-          env.DB
-        );
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
 
         if (!currentUser) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
+
 
         let body;
 
         try {
-          body = await request.json();
+
+          body =
+            await request.json();
+
         } catch {
+
           return json({
             success: false,
             error: "Invalid JSON."
           }, 400);
+
         }
 
-        const message = String(body.message || "").trim();
+
+        const message =
+          String(
+            body.message || ""
+          ).trim();
+
 
         if (!message) {
+
           return json({
             success: false,
-            error: "Message cannot be empty."
+            error:
+              "Message cannot be empty."
           }, 400);
+
         }
 
-        if (message.length > 10000) {
+
+        if (
+          message.length >
+          10000
+        ) {
+
           return json({
             success: false,
-            error: "Message is too long."
+            error:
+              "Message is too long."
           }, 400);
+
         }
 
-        const createdAt = Date.now();
 
-        const result = await env.DB
-          .prepare(`
+        const createdAt =
+          Date.now();
+
+
+        const result =
+          await env.DB.prepare(`
             INSERT INTO global_group_messages
             (
               sender_id,
               message,
               created_at
             )
+
             VALUES (?, ?, ?)
+
           `)
-          .bind(
-            currentUser.id,
-            message,
-            createdAt
-          )
-          .run();
+            .bind(
+              currentUser.id,
+              message,
+              createdAt
+            )
+            .run();
 
-        const messageId = result.meta.last_row_id;
 
-        const savedMessage = await env.DB
-          .prepare(`
+        const messageId =
+          result.meta.last_row_id;
+
+
+        const savedMessage =
+          await env.DB.prepare(`
             SELECT
+
               gm.id,
+
               gm.sender_id,
+
               gm.message,
+
               gm.created_at,
 
-              u.username AS sender_username,
-              u.email AS sender_email,
-              u.profile_photo AS sender_profile_photo
+
+              u.username
+                AS sender_username,
+
+
+              u.email
+                AS sender_email,
+
+
+              u.profile_photo
+                AS sender_profile_photo
+
 
             FROM global_group_messages gm
+
 
             INNER JOIN users u
               ON u.id = gm.sender_id
 
+
             WHERE gm.id = ?
 
+
             LIMIT 1
+
           `)
-          .bind(messageId)
-          .first();
+            .bind(messageId)
+            .first();
+
 
         return json({
+
           success: true,
-          message: formatGroupMessage(savedMessage)
+
+          message:
+            formatGroupMessage(
+              savedMessage
+            )
+
         }, 201);
+
       }
 
-      /* ========================================================
-         DELETE GLOBAL GROUP MESSAGE
-      ======================================================== */
+
+      /* ======================================================
+         DELETE GROUP MESSAGE
+      ====================================================== */
 
       const groupDeleteMatch =
-        path.match(/^\/api\/group\/messages\/(\d+)$/);
-
-      if (groupDeleteMatch && method === "DELETE") {
-        const currentUser = await getUserFromRequest(
-          request,
-          env.DB
+        path.match(
+          /^\/api\/group\/messages\/(\d+)$/
         );
 
+
+      if (
+        groupDeleteMatch &&
+        method === "DELETE"
+      ) {
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
+
         if (!currentUser) {
+
           return json({
             success: false,
             error: "Unauthorized."
           }, 401);
+
         }
 
-        const messageId = Number(groupDeleteMatch[1]);
 
-        const message = await env.DB
-          .prepare(`
+        const messageId =
+          Number(
+            groupDeleteMatch[1]
+          );
+
+
+        const message =
+          await env.DB.prepare(`
             SELECT
+
               id,
+
               sender_id
+
+
             FROM global_group_messages
+
+
             WHERE id = ?
+
+
             LIMIT 1
+
           `)
-          .bind(messageId)
-          .first();
+            .bind(messageId)
+            .first();
+
 
         if (!message) {
+
           return json({
             success: false,
-            error: "Message not found."
+            error:
+              "Message not found."
           }, 404);
+
         }
 
-        /*
-          Only the message owner can delete it.
-        */
 
-        if (Number(message.sender_id) !== Number(currentUser.id)) {
+        if (
+          Number(message.sender_id) !==
+          Number(currentUser.id)
+        ) {
+
           return json({
             success: false,
-            error: "You can only delete your own message."
+            error:
+              "You can only delete your own message."
           }, 403);
+
         }
 
-        await env.DB
-          .prepare(`
-            DELETE FROM global_group_messages
-            WHERE id = ?
-          `)
+
+        await env.DB.prepare(`
+          DELETE FROM global_group_messages
+
+          WHERE id = ?
+        `)
           .bind(messageId)
           .run();
+
 
         return json({
           success: true
         });
+
       }
 
-      /* ========================================================
-         OLD GROUP API DISABLED
-      ======================================================== */
 
-      if (path.startsWith("/api/groups")) {
+      /* ======================================================
+         OLD USER-CREATED GROUP API
+      ====================================================== */
+
+      if (
+        path.startsWith(
+          "/api/groups"
+        )
+      ) {
+
         return json({
+
           success: false,
-          error: "User-created groups are disabled. Use Group Chat."
+
+          error:
+            "User-created groups are disabled. Use Public Group Chat."
+
         }, 404);
+
       }
 
-      /* ========================================================
+
+      /* ======================================================
          CALL API DISABLED
-      ======================================================== */
+      ====================================================== */
 
       if (
         path.startsWith("/api/call") ||
         path.startsWith("/api/calls")
       ) {
+
         return json({
+
           success: false,
-          error: "Voice and video calls are disabled."
+
+          error:
+            "Voice and video calls are disabled."
+
         }, 404);
+
       }
 
-      /* ========================================================
+
+      /* ======================================================
          UNKNOWN API
-      ======================================================== */
+      ====================================================== */
 
-      if (path.startsWith("/api/")) {
+      if (
+        path.startsWith("/api/")
+      ) {
+
         return json({
+
           success: false,
-          error: "API endpoint not found."
+
+          error:
+            "API endpoint not found."
+
         }, 404);
+
       }
 
-      /* ========================================================
-         FRONTEND
-      ======================================================== */
+
+      /* ======================================================
+         FRONTEND ASSETS
+      ====================================================== */
 
       if (env.ASSETS) {
-        return env.ASSETS.fetch(request);
+
+        return env.ASSETS.fetch(
+          request
+        );
+
       }
+
 
       return text(
         "Dark Chat Worker is running.",
@@ -1478,14 +2649,29 @@ export default {
         "text/plain; charset=utf-8"
       );
 
+
     } catch (error) {
-      console.error("WORKER ERROR:", error);
+
+      console.error(
+        "WORKER ERROR:",
+        error
+      );
+
 
       return json({
+
         success: false,
-        error: "Internal server error.",
-        detail: error.message
+
+        error:
+          "Internal server error.",
+
+        detail:
+          error.message
+
       }, 500);
+
     }
+
   }
+
 };
