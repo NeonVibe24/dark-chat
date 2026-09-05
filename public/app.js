@@ -186,8 +186,7 @@ function headers() {
     getToken();
 
   const result = {
-    "Content-Type":
-      "application/json"
+    "Content-Type": "application/json"
   };
 
   if (token) {
@@ -200,36 +199,58 @@ function headers() {
 }
 
 
+/* ============================================================
+   API
+============================================================ */
+
 async function api(
   path,
   options = {}
 ) {
 
-  const response =
-    await fetch(
-      API + path,
-      {
-        ...options,
-
-        headers: {
-          ...headers(),
-          ...(options.headers || {})
-        }
-      }
-    );
-
-
-  let data = {};
-
+  let response;
 
   try {
 
-    data =
-      await response.json();
+    response =
+      await fetch(
+        API + path,
+        {
+          ...options,
 
-  } catch {
+          headers: {
+            ...headers(),
+            ...(options.headers || {})
+          }
+        }
+      );
 
-    data = {};
+  } catch (error) {
+
+    throw new Error(
+      "Network error. Please check your connection."
+    );
+  }
+
+
+  const text =
+    await response.text();
+
+  let data = {};
+
+  if (text) {
+
+    try {
+
+      data =
+        JSON.parse(text);
+
+    } catch {
+
+      data = {
+        raw: text
+      };
+    }
   }
 
 
@@ -238,7 +259,12 @@ async function api(
     throw new Error(
       data.error ||
       data.message ||
-      "Something went wrong"
+      data.detail ||
+      (
+        data.raw
+          ? data.raw.slice(0, 200)
+          : `Request failed (${response.status})`
+      )
     );
   }
 
@@ -246,6 +272,10 @@ async function api(
   return data;
 }
 
+
+/* ============================================================
+   AVATAR LETTER
+============================================================ */
 
 function avatarLetter(name) {
 
@@ -258,31 +288,30 @@ function avatarLetter(name) {
 }
 
 
+/* ============================================================
+   TOAST
+============================================================ */
+
 function showToast(text) {
 
   if (!toast) {
     return;
   }
 
-
   toast.textContent =
     text;
-
 
   toast.classList.remove(
     "hidden"
   );
 
-
   toast.classList.add(
     "show"
   );
 
-
   clearTimeout(
     showToast.timer
   );
-
 
   showToast.timer =
     setTimeout(
@@ -302,6 +331,10 @@ function showToast(text) {
 }
 
 
+/* ============================================================
+   HTML ESCAPE
+============================================================ */
+
 function escapeHTML(value) {
 
   const div =
@@ -309,12 +342,10 @@ function escapeHTML(value) {
       "div"
     );
 
-
   div.textContent =
     String(
       value ?? ""
     );
-
 
   return div.innerHTML;
 }
@@ -349,7 +380,6 @@ function formatTime(value) {
     let number =
       Number(value);
 
-
     if (
       number > 0 &&
       number < 100000000000
@@ -358,7 +388,6 @@ function formatTime(value) {
       number *= 1000;
     }
 
-
     date =
       new Date(number);
 
@@ -366,7 +395,6 @@ function formatTime(value) {
 
     let text =
       String(value);
-
 
     if (
       !text.endsWith("Z") &&
@@ -380,7 +408,6 @@ function formatTime(value) {
           "T"
         ) + "Z";
     }
-
 
     date =
       new Date(text);
@@ -408,7 +435,7 @@ function formatTime(value) {
 
 
 /* ============================================================
-   AVATAR
+   AVATAR RENDER
 ============================================================ */
 
 function setAvatar(
@@ -421,51 +448,141 @@ function setAvatar(
   }
 
 
-  element.innerHTML =
-    "";
+  const username =
+    user?.username ||
+    "User";
+
+  const photo =
+    user?.profile_photo ||
+    null;
 
 
-  element.style.backgroundImage =
-    "";
-
-
-  element.style.backgroundSize =
-    "";
-
-
-  element.style.backgroundPosition =
-    "";
-
-
-  element.style.backgroundRepeat =
-    "";
-
+  /*
+   * IMG element
+   */
 
   if (
-    user &&
-    user.profile_photo
+    element.tagName ===
+    "IMG"
   ) {
 
-    element.style.backgroundImage =
-      `url("${user.profile_photo}")`;
+    if (photo) {
 
-    element.style.backgroundSize =
-      "cover";
+      element.src =
+        photo;
 
-    element.style.backgroundPosition =
-      "center";
+      element.classList.remove(
+        "hidden"
+      );
 
-    element.style.backgroundRepeat =
-      "no-repeat";
+      element.style.display =
+        "";
+
+    } else {
+
+      element.removeAttribute(
+        "src"
+      );
+
+      element.classList.add(
+        "hidden"
+      );
+
+      element.style.display =
+        "none";
+    }
 
     return;
   }
 
 
-  element.textContent =
-    avatarLetter(
-      user?.username
+  /*
+   * Element containing
+   * fallback/image children
+   */
+
+  const image =
+    element.querySelector(
+     ("img")
     );
+
+  const fallback =
+    element.querySelector(
+      "[data-avatar-fallback], .avatar-fallback"
+    );
+
+
+  if (
+    image
+  ) {
+
+    if (photo) {
+
+      image.src =
+        photo;
+
+      image.classList.remove(
+        "hidden"
+      );
+
+      image.style.display =
+        "";
+
+    } else {
+
+      image.removeAttribute(
+        "src"
+      );
+
+      image.classList.add(
+        "hidden"
+      );
+
+      image.style.display =
+        "none";
+    }
+  }
+
+
+  if (
+    fallback
+  ) {
+
+    fallback.textContent =
+      avatarLetter(username);
+
+    if (photo) {
+
+      fallback.classList.add(
+        "hidden"
+      );
+
+      fallback.style.display =
+        "none";
+
+    } else {
+
+      fallback.classList.remove(
+        "hidden"
+      );
+
+      fallback.style.display =
+        "";
+    }
+
+  } else if (!image) {
+
+    element.textContent =
+      avatarLetter(username);
+
+    element.style.backgroundImage =
+      "";
+
+  } else {
+
+    element.style.backgroundImage =
+      "";
+  }
 }
 
 
@@ -480,46 +597,121 @@ function setAvatarData(
   }
 
 
-  element.innerHTML =
-    "";
+  const image =
+    element.querySelector(
+      "img"
+    );
+
+  const fallback =
+    element.querySelector(
+      "[data-avatar-fallback], .avatar-fallback"
+    );
 
 
-  element.style.backgroundImage =
-    "";
+  if (image) {
+
+    if (photo) {
+
+      image.src =
+        photo;
+
+      image.classList.remove(
+        "hidden"
+      );
+
+      image.style.display =
+        "";
+
+    } else {
+
+      image.removeAttribute(
+        "src"
+      );
+
+      image.classList.add(
+        "hidden"
+      );
+
+      image.style.display =
+        "none";
+    }
+  }
 
 
-  element.style.backgroundSize =
-    "";
+  if (fallback) {
 
+    fallback.textContent =
+      avatarLetter(username);
 
-  element.style.backgroundPosition =
-    "";
+    if (photo) {
 
+      fallback.classList.add(
+        "hidden"
+      );
 
-  element.style.backgroundRepeat =
-    "";
+      fallback.style.display =
+        "none";
 
+    } else {
 
-  if (photo) {
+      fallback.classList.remove(
+        "hidden"
+      );
 
-    element.style.backgroundImage =
-      `url("${photo}")`;
+      fallback.style.display =
+        "";
+    }
 
-    element.style.backgroundSize =
-      "cover";
-
-    element.style.backgroundPosition =
-      "center";
-
-    element.style.backgroundRepeat =
-      "no-repeat";
-
-  } else {
+  } else if (!image) {
 
     element.textContent =
-      avatarLetter(
-        username
-      );
+      avatarLetter(username);
+  }
+
+
+  /*
+   * Dynamic simple avatar div
+   */
+
+  if (
+    !image &&
+    !fallback
+  ) {
+
+    if (photo) {
+
+      element.textContent =
+        "";
+
+      element.style.backgroundImage =
+        `url("${photo}")`;
+
+      element.style.backgroundSize =
+        "cover";
+
+      element.style.backgroundPosition =
+        "center";
+
+      element.style.backgroundRepeat =
+        "no-repeat";
+
+    } else {
+
+      element.style.backgroundImage =
+        "";
+
+      element.style.backgroundSize =
+        "";
+
+      element.style.backgroundPosition =
+        "";
+
+      element.style.backgroundRepeat =
+        "";
+
+      element.textContent =
+        avatarLetter(username);
+    }
   }
 }
 
@@ -551,7 +743,6 @@ function showGroupView() {
     groupChat.classList.remove(
       "hidden"
     );
-
 
     groupChat.style.display =
       "flex";
@@ -589,7 +780,6 @@ function showPrivateView() {
       "hidden"
     );
 
-
     privateChat.style.display =
       "flex";
 
@@ -616,7 +806,6 @@ function ensureGroupComposer() {
   groupMessageForm.classList.remove(
     "hidden"
   );
-
 
   groupMessageForm.style.display =
     "flex";
@@ -655,84 +844,206 @@ function ensureGroupComposer() {
    AUTH SWITCH
 ============================================================ */
 
+function openRegisterForm(event) {
+
+  if (event) {
+
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+
+  if (loginForm) {
+
+    loginForm.classList.add(
+      "hidden"
+    );
+  }
+
+
+  if (registerForm) {
+
+    registerForm.classList.remove(
+      "hidden"
+    );
+
+    registerForm.style.display =
+      "";
+  }
+
+
+  if (loginError) {
+
+    loginError.textContent =
+      "";
+
+    loginError.classList.add(
+      "hidden"
+    );
+  }
+
+
+  if (registerError) {
+
+    registerError.textContent =
+      "";
+
+    registerError.classList.add(
+      "hidden"
+    );
+  }
+
+
+  setTimeout(
+    () => {
+
+      document
+        .getElementById(
+          "registerUsername"
+        )
+        ?.focus();
+
+    },
+    50
+  );
+}
+
+
+function openLoginForm(event) {
+
+  if (event) {
+
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+
+  if (registerForm) {
+
+    registerForm.classList.add(
+      "hidden"
+    );
+  }
+
+
+  if (loginForm) {
+
+    loginForm.classList.remove(
+      "hidden"
+    );
+
+    loginForm.style.display =
+      "";
+  }
+
+
+  if (loginError) {
+
+    loginError.textContent =
+      "";
+
+    loginError.classList.add(
+      "hidden"
+    );
+  }
+
+
+  if (registerError) {
+
+    registerError.textContent =
+      "";
+
+    registerError.classList.add(
+      "hidden"
+    );
+  }
+
+
+  setTimeout(
+    () => {
+
+      document
+        .getElementById(
+          "loginUsername"
+        )
+        ?.focus();
+
+    },
+    50
+  );
+}
+
+
+/*
+ * Direct event
+ */
+
 if (showRegister) {
+
+  showRegister.type =
+    "button";
 
   showRegister.addEventListener(
     "click",
-    () => {
-
-      loginForm?.classList.add(
-        "hidden"
-      );
-
-      registerForm?.classList.remove(
-        "hidden"
-      );
-
-
-      if (loginError) {
-
-        loginError.textContent =
-          "";
-
-        loginError.classList.add(
-          "hidden"
-        );
-      }
-
-
-      if (registerError) {
-
-        registerError.textContent =
-          "";
-
-        registerError.classList.add(
-          "hidden"
-        );
-      }
-    }
+    openRegisterForm
   );
 }
 
 
 if (showLogin) {
 
+  showLogin.type =
+    "button";
+
   showLogin.addEventListener(
     "click",
-    () => {
-
-      registerForm?.classList.add(
-        "hidden"
-      );
-
-      loginForm?.classList.remove(
-        "hidden"
-      );
-
-
-      if (loginError) {
-
-        loginError.textContent =
-          "";
-
-        loginError.classList.add(
-          "hidden"
-        );
-      }
-
-
-      if (registerError) {
-
-        registerError.textContent =
-          "";
-
-        registerError.classList.add(
-          "hidden"
-        );
-      }
-    }
+    openLoginForm
   );
 }
+
+
+/*
+ * Delegated event
+ *
+ * HTML ထဲမှာ button ကို
+ * dynamically ပြောင်းသွားရင်တောင်
+ * အလုပ်လုပ်စေမယ်။
+ */
+
+document.addEventListener(
+  "click",
+  event => {
+
+    const registerButton =
+      event.target.closest(
+        "#showRegister"
+      );
+
+    if (registerButton) {
+
+      openRegisterForm(
+        event
+      );
+
+      return;
+    }
+
+
+    const loginButton =
+      event.target.closest(
+        "#showLogin"
+      );
+
+    if (loginButton) {
+
+      openLoginForm(
+        event
+      );
+
+      return;
+    }
+  }
+);
 
 
 /* ============================================================
@@ -746,6 +1057,7 @@ if (registerForm) {
     async event => {
 
       event.preventDefault();
+      event.stopPropagation();
 
 
       const usernameInput =
@@ -798,10 +1110,30 @@ if (registerForm) {
       }
 
 
+      if (username.length < 3) {
+
+        showRegisterError(
+          "Username must be at least 3 characters"
+        );
+
+        return;
+      }
+
+
       if (!password) {
 
         showRegisterError(
           "Please enter a password"
+        );
+
+        return;
+      }
+
+
+      if (password.length < 4) {
+
+        showRegisterError(
+          "Password must be at least 4 characters"
         );
 
         return;
@@ -821,23 +1153,38 @@ if (registerForm) {
       }
 
 
-      try {
-
-        await api(
-          "/register",
-          {
-            method: "POST",
-
-            body:
-              JSON.stringify({
-                username,
-                password
-              })
-          }
+      const submitButton =
+        registerForm.querySelector(
+          'button[type="submit"]'
         );
 
 
+      if (submitButton) {
+
+        submitButton.disabled =
+          true;
+      }
+
+
+      try {
+
+        const data =
+          await api(
+            "/register",
+            {
+              method: "POST",
+
+              body:
+                JSON.stringify({
+                  username,
+                  password
+                })
+            }
+          );
+
+
         showToast(
+          data.message ||
           "Account created"
         );
 
@@ -865,6 +1212,8 @@ if (registerForm) {
 
           loginUsername.value =
             username;
+
+          loginUsername.focus();
         }
 
 
@@ -873,6 +1222,14 @@ if (registerForm) {
         showRegisterError(
           error.message
         );
+
+      } finally {
+
+        if (submitButton) {
+
+          submitButton.disabled =
+            false;
+        }
       }
     }
   );
@@ -888,13 +1245,17 @@ function showRegisterError(
 ) {
 
   if (!registerError) {
+
+    showToast(
+      message
+    );
+
     return;
   }
 
 
   registerError.textContent =
     message;
-
 
   registerError.classList.remove(
     "hidden"
@@ -913,6 +1274,7 @@ if (loginForm) {
     async event => {
 
       event.preventDefault();
+      event.stopPropagation();
 
 
       const usernameInput =
@@ -966,6 +1328,19 @@ if (loginForm) {
       }
 
 
+      const submitButton =
+        loginForm.querySelector(
+          'button[type="submit"]'
+        );
+
+
+      if (submitButton) {
+
+        submitButton.disabled =
+          true;
+      }
+
+
       try {
 
         const data =
@@ -1001,6 +1376,14 @@ if (loginForm) {
           null;
 
 
+        if (!currentUser) {
+
+          throw new Error(
+            "User information missing"
+          );
+        }
+
+
         loginForm.reset();
 
 
@@ -1009,9 +1392,22 @@ if (loginForm) {
 
       } catch (error) {
 
+        removeToken();
+
+        currentUser =
+          null;
+
         showLoginError(
           error.message
         );
+
+      } finally {
+
+        if (submitButton) {
+
+          submitButton.disabled =
+            false;
+        }
       }
     }
   );
@@ -1027,13 +1423,17 @@ function showLoginError(
 ) {
 
   if (!loginError) {
+
+    showToast(
+      message
+    );
+
     return;
   }
 
 
   loginError.textContent =
     message;
-
 
   loginError.classList.remove(
     "hidden"
@@ -1087,10 +1487,8 @@ async function startApp() {
 
     removeToken();
 
-
     currentUser =
       null;
-
 
     showAuth();
   }
@@ -1123,6 +1521,22 @@ function showAuth() {
   if (chatScreen) {
 
     chatScreen.classList.add(
+      "hidden"
+    );
+  }
+
+
+  if (registerForm) {
+
+    registerForm.classList.add(
+      "hidden"
+    );
+  }
+
+
+  if (loginForm) {
+
+    loginForm.classList.remove(
       "hidden"
     );
   }
@@ -1159,10 +1573,6 @@ async function openChatApp() {
   }
 
 
-  /*
-   * MY PROFILE
-   */
-
   if (myUsername) {
 
     myUsername.textContent =
@@ -1179,11 +1589,6 @@ async function openChatApp() {
 
   updateProfilePanel();
 
-
-  /*
-   * Login ဝင်တာနဲ့
-   * Public Group Chat ကို တန်းဖွင့်မယ်။
-   */
 
   await openGroupChat();
 }
@@ -1223,7 +1628,6 @@ async function openGroupChat() {
 
     groupAvatar.textContent =
       "G";
-
 
     groupAvatar.style.backgroundImage =
       "";
@@ -1300,7 +1704,8 @@ async function loadGroupMessages() {
 
   } catch (error) {
 
-    groupMessages.innerHTML = "";
+    groupMessages.innerHTML =
+      "";
 
 
     const errorBox =
@@ -1380,23 +1785,6 @@ function renderGroupMessages(
   messages.forEach(
     message => {
 
-      /*
-       * Backend က ဒီ format တစ်ခုခုကို
-       * return လုပ်နိုင်တယ်။
-       *
-       * sender_id
-       * sender_username
-       * sender_profile_photo
-       *
-       * OR
-       *
-       * sender: {
-       *   id,
-       *   username,
-       *   profile_photo
-       * }
-       */
-
       const sender =
         message.sender ||
         message.user ||
@@ -1441,10 +1829,6 @@ function renderGroupMessages(
           );
 
 
-      /*
-       * ROW
-       */
-
       const row =
         document.createElement(
           "div"
@@ -1461,7 +1845,7 @@ function renderGroupMessages(
 
 
       /*
-       * OTHER USER AVATAR
+       * OTHER USER
        */
 
       if (!mine) {
@@ -1517,12 +1901,10 @@ function renderGroupMessages(
         );
 
 
-        avatarButton.addEventListener(
-          "click",
+        const openPrivate =
           event => {
 
             event.preventDefault();
-
             event.stopPropagation();
 
 
@@ -1531,13 +1913,14 @@ function renderGroupMessages(
               senderUsername,
               senderPhoto
             );
-          }
+          };
+
+
+        avatarButton.addEventListener(
+          "click",
+          openPrivate
         );
 
-
-        /*
-         * USERNAME
-         */
 
         const nameButton =
           document.createElement(
@@ -1570,19 +1953,7 @@ function renderGroupMessages(
 
         nameButton.addEventListener(
           "click",
-          event => {
-
-            event.preventDefault();
-
-            event.stopPropagation();
-
-
-            openPrivateChatFromGroup(
-              senderId,
-              senderUsername,
-              senderPhoto
-            );
-          }
+          openPrivate
         );
 
 
@@ -1603,7 +1974,7 @@ function renderGroupMessages(
 
 
       /*
-       * MESSAGE CONTENT
+       * MESSAGE
        */
 
       const content =
@@ -1652,9 +2023,7 @@ function renderGroupMessages(
       );
 
 
-      if (
-        time.textContent
-      ) {
+      if (time.textContent) {
 
         content.appendChild(
           time
@@ -1751,15 +2120,12 @@ if (groupMessageForm) {
           error.message
         );
 
-
       } finally {
 
         groupMessageInput.disabled =
           false;
 
-
         groupMessageInput.focus();
-
 
         ensureGroupComposer();
       }
@@ -1769,7 +2135,7 @@ if (groupMessageForm) {
 
 
 /* ============================================================
-   GROUP MESSAGE REFRESH
+   GROUP REFRESH
 ============================================================ */
 
 function startGroupMessageRefresh() {
@@ -1817,7 +2183,6 @@ function stopGroupMessageRefresh() {
       groupMessageTimer
     );
 
-
     groupMessageTimer =
       null;
   }
@@ -1836,7 +2201,6 @@ if (reloadGroupMessages) {
 
       event.preventDefault();
 
-
       await loadGroupMessages();
     }
   );
@@ -1844,7 +2208,7 @@ if (reloadGroupMessages) {
 
 
 /* ============================================================
-   OPEN PRIVATE CHAT FROM GROUP
+   OPEN PRIVATE CHAT
 ============================================================ */
 
 async function openPrivateChatFromGroup(
@@ -1871,11 +2235,6 @@ async function openPrivateChatFromGroup(
     return;
   }
 
-
-  /*
-   * ကိုယ့် Profile ကို
-   * Private Chat မဖွင့်။
-   */
 
   if (
     currentUser &&
@@ -1907,23 +2266,11 @@ async function openPrivateChatFromGroup(
   };
 
 
-  /*
-   * Group refresh ပိတ်
-   */
-
   stopGroupMessageRefresh();
 
 
-  /*
-   * Private Chat ပြ
-   */
-
   showPrivateView();
 
-
-  /*
-   * Header
-   */
 
   if (chatUsername) {
 
@@ -1944,10 +2291,6 @@ async function openPrivateChatFromGroup(
       "Private Chat";
   }
 
-
-  /*
-   * Messages
-   */
 
   await loadMessages();
 
@@ -2077,7 +2420,6 @@ function renderMessages(
       empty
     );
 
-
     return;
   }
 
@@ -2160,9 +2502,7 @@ function renderMessages(
       );
 
 
-      if (
-        time.textContent
-      ) {
+      if (time.textContent) {
 
         content.appendChild(
           time
@@ -2259,12 +2599,10 @@ if (messageForm) {
           error.message
         );
 
-
       } finally {
 
         messageInput.disabled =
           false;
-
 
         messageInput.focus();
       }
@@ -2274,7 +2612,7 @@ if (messageForm) {
 
 
 /* ============================================================
-   PRIVATE MESSAGE REFRESH
+   PRIVATE REFRESH
 ============================================================ */
 
 function startPrivateMessageRefresh() {
@@ -2323,7 +2661,6 @@ function stopPrivateMessageRefresh() {
       privateMessageTimer
     );
 
-
     privateMessageTimer =
       null;
   }
@@ -2331,7 +2668,7 @@ function stopPrivateMessageRefresh() {
 
 
 /* ============================================================
-   RELOAD PRIVATE CHAT
+   RELOAD PRIVATE
 ============================================================ */
 
 if (reloadMessages) {
@@ -2341,7 +2678,6 @@ if (reloadMessages) {
     async event => {
 
       event.preventDefault();
-
 
       await loadMessages();
     }
@@ -2436,7 +2772,7 @@ function returnToGroupChat() {
 
 
 /* ============================================================
-   MOBILE PRIVATE HEADER → GROUP
+   MOBILE PRIVATE HEADER
 ============================================================ */
 
 if (chatScreen) {
@@ -2475,7 +2811,7 @@ if (chatScreen) {
 
 
 /* ============================================================
-   PROFILE PANEL
+   PROFILE
 ============================================================ */
 
 function updateProfilePanel() {
@@ -2555,9 +2891,7 @@ if (myAvatarBtn) {
     event => {
 
       event.preventDefault();
-
       event.stopPropagation();
-
 
       openProfile();
     }
@@ -2566,7 +2900,7 @@ if (myAvatarBtn) {
 
 
 /* ============================================================
-   CLOSE PROFILE WHEN CLICK OUTSIDE
+   CLOSE PROFILE OUTSIDE
 ============================================================ */
 
 document.addEventListener(
@@ -2705,7 +3039,6 @@ if (profilePhotoInput) {
           error.message
         );
 
-
       } finally {
 
         profilePhotoInput.value =
@@ -2805,7 +3138,6 @@ function imageToDataURL(
               let width =
                 img.width;
 
-
               let height =
                 img.height;
 
@@ -2833,7 +3165,6 @@ function imageToDataURL(
                       scale
                   );
 
-
                 height =
                   Math.round(
                     height *
@@ -2850,7 +3181,6 @@ function imageToDataURL(
 
               canvas.width =
                 width;
-
 
               canvas.height =
                 height;
