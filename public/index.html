@@ -7,15 +7,10 @@
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    content="width=device-width, initial-scale=1.0"
   >
 
-  <meta
-    name="theme-color"
-    content="#0b172a"
-  >
-
-  <title>Dark Chat</title>
+  <title>Private Chat</title>
 
   <link
     rel="stylesheet"
@@ -24,9 +19,9 @@
 
   <style>
 
-    /* =====================================================
-       BASE LAYOUT
-    ====================================================== */
+    * {
+      box-sizing: border-box;
+    }
 
     html,
     body {
@@ -38,813 +33,807 @@
     }
 
     body {
-      -webkit-tap-highlight-color: transparent;
+      background: #0b0f14;
+      color: #ffffff;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
     }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* =====================================================
+       APP
+    ===================================================== */
 
     #app {
       width: 100%;
       height: 100%;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      position: relative;
     }
 
+    /* =====================================================
+       AUTH
+    ===================================================== */
+
+    .auth-screen {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background:
+        radial-gradient(
+          circle at top,
+          #18212d 0%,
+          #0b0f14 55%,
+          #070a0e 100%
+        );
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      background: #111720;
+      border: 1px solid #222c38;
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    .auth-card h1 {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: 28px;
+    }
+
+    .auth-card p {
+      margin: 0 0 24px;
+      text-align: center;
+      color: #8e9aaa;
+      font-size: 14px;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .auth-form input {
+      width: 100%;
+      height: 48px;
+      padding: 0 15px;
+      border-radius: 12px;
+      border: 1px solid #2a3543;
+      background: #0b1017;
+      color: #fff;
+      outline: none;
+      font-size: 15px;
+    }
+
+    .auth-form input:focus {
+      border-color: #4d8dff;
+    }
+
+    .auth-form button {
+      height: 48px;
+      border: 0;
+      border-radius: 12px;
+      background: #3978ff;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .auth-form button:active {
+      transform: scale(0.98);
+    }
+
+    .auth-switch {
+      margin-top: 18px !important;
+      margin-bottom: 0 !important;
+    }
+
+    .auth-switch button {
+      background: none;
+      border: 0;
+      color: #5d95ff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .auth-error {
+      color: #ff6b6b !important;
+      margin: 0 !important;
+      text-align: left !important;
+      font-size: 13px !important;
+    }
 
     /* =====================================================
        CHAT SCREEN
-    ====================================================== */
+    ===================================================== */
 
-    #chatScreen {
+    .chat-screen {
       width: 100%;
       height: 100%;
-      min-height: 0;
-
       display: flex;
-      flex-direction: column;
-
-      overflow: hidden;
+      background: #080c11;
     }
 
-    #chatScreen.hidden {
-      display: none !important;
-    }
+    /*
+      NO SIDEBAR
+      NO TOP DARK CHAT BAR
+    */
 
-
-    /* =====================================================
-       TOP BAR
-    ====================================================== */
-
-    #chatScreen .top-bar {
-      flex: 0 0 auto;
-
+    .chat-area {
       width: 100%;
-      min-height: 64px;
-      height: 64px;
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      padding:
-        8px
-        16px
-        8px
-        16px;
-
-      box-sizing: border-box;
-
-      border-bottom:
-        1px solid rgba(255, 255, 255, 0.08);
-
-      background: inherit;
-
-      position: relative;
-
-      z-index: 20;
-    }
-
-
-    /* =====================================================
-       TOP BAR LEFT
-    ====================================================== */
-
-    #chatScreen .top-bar-left {
+      height: 100%;
       min-width: 0;
-
       display: flex;
-      align-items: center;
-
-      gap: 10px;
-    }
-
-
-    /* =====================================================
-       TOP BAR BRAND
-    ====================================================== */
-
-    #chatScreen .top-bar-brand {
-      display: flex;
-      align-items: center;
-
-      gap: 9px;
-
-      min-width: 0;
-    }
-
-    #chatScreen .top-bar-brand strong {
-      max-width: 220px;
-
-      overflow: hidden;
-
-      text-overflow: ellipsis;
-
-      white-space: nowrap;
-
-      font-size: 16px;
-    }
-
-    #chatScreen .top-bar-brand span {
-      font-size: 11px;
-
-      opacity: 0.55;
-
-      white-space: nowrap;
-    }
-
-
-    /* =====================================================
-       TOP BAR RIGHT
-    ====================================================== */
-
-    #chatScreen .top-bar-right {
-      flex: 0 0 auto;
-
-      display: flex;
-
-      align-items: center;
-
-      gap: 8px;
-    }
-
-
-    /* =====================================================
-       TOP BAR PROFILE
-    ====================================================== */
-
-    #chatScreen .top-profile {
-      display: flex;
-
-      align-items: center;
-
-      gap: 8px;
-
-      min-width: 0;
-    }
-
-    #chatScreen .top-profile-info {
-      display: flex;
-
       flex-direction: column;
-
-      min-width: 0;
-    }
-
-    #chatScreen .top-profile-info strong {
-      max-width: 150px;
-
-      overflow: hidden;
-
-      text-overflow: ellipsis;
-
-      white-space: nowrap;
-
-      font-size: 13px;
-    }
-
-    #chatScreen .top-profile-info span {
-      margin-top: 1px;
-
-      font-size: 10px;
-
-      opacity: 0.55;
-    }
-
-
-    /* =====================================================
-       TOP BAR BUTTONS
-    ====================================================== */
-
-    #chatScreen .top-bar .icon-btn {
-      flex: 0 0 auto;
-    }
-
-
-    /* =====================================================
-       MAIN CHAT AREA
-    ====================================================== */
-
-    #chatScreen .chat-area {
-      flex: 1 1 auto;
-
-      width: 100%;
-
-      min-width: 0;
-      min-height: 0;
-
-      height: 0;
-
-      display: flex !important;
-
-      flex-direction: column;
-
-      overflow: hidden;
-
       position: relative;
     }
 
-
     /* =====================================================
-       ACTIVE CHAT
-    ====================================================== */
+       CHAT
+    ===================================================== */
 
-    #chatScreen .active-chat {
+    .active-chat {
       width: 100%;
       height: 100%;
-
-      min-width: 0;
       min-height: 0;
-
       display: flex;
-
       flex-direction: column;
-
-      overflow: hidden;
+      background: #0b1016;
     }
 
-    #chatScreen .active-chat.hidden {
+    .active-chat.hidden {
       display: none !important;
     }
-
-
-    /* =====================================================
-       GROUP / PRIVATE CHAT
-    ====================================================== */
-
-    #groupChat,
-    #privateChat {
-      display: flex;
-
-      flex-direction: column;
-
-      width: 100%;
-      height: 100%;
-
-      min-width: 0;
-      min-height: 0;
-
-      overflow: hidden;
-    }
-
-    #groupChat.hidden,
-    #privateChat.hidden {
-      display: none !important;
-    }
-
 
     /* =====================================================
        CHAT HEADER
-    ====================================================== */
+    ===================================================== */
 
-    #chatScreen .chat-header {
-      flex: 0 0 auto;
-
+    .chat-header {
       width: 100%;
-
-      min-height: 64px;
-      height: 64px;
+      min-height: 72px;
+      flex-shrink: 0;
 
       display: flex;
-
       align-items: center;
       justify-content: space-between;
 
-      padding: 0 16px;
+      padding: 10px 16px;
 
-      box-sizing: border-box;
-
-      border-bottom:
-        1px solid rgba(255, 255, 255, 0.08);
-
-      overflow: hidden;
+      background: #111821;
+      border-bottom: 1px solid #202a35;
     }
 
-    #chatScreen .chat-user {
+    .chat-user {
       min-width: 0;
-
       display: flex;
-
       align-items: center;
-
-      gap: 10px;
+      gap: 12px;
     }
 
-    #chatScreen .chat-user > div:last-child {
+    .chat-user-info {
       min-width: 0;
-
-      display: flex;
-
-      flex-direction: column;
     }
 
-    #chatScreen .chat-user strong {
-      max-width: 300px;
-
+    .chat-user-info h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 650;
+      color: #fff;
+      white-space: nowrap;
       overflow: hidden;
-
       text-overflow: ellipsis;
-
-      white-space: nowrap;
     }
 
-    #chatScreen .chat-user span {
-      margin-top: 2px;
-
-      font-size: 11px;
-
-      opacity: 0.65;
-
-      white-space: nowrap;
+    .chat-user-info p {
+      margin: 3px 0 0;
+      font-size: 12px;
+      color: #8490a0;
     }
 
-    #chatScreen .chat-actions {
-      flex: 0 0 auto;
+    /* =====================================================
+       AVATAR
+    ===================================================== */
 
+    .avatar,
+    .profile-avatar,
+    .my-avatar {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #202a36;
       display: flex;
-
       align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+      user-select: none;
+    }
 
+    .avatar img,
+    .profile-avatar img,
+    .my-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* =====================================================
+       GROUP HEADER - MY PROFILE RIGHT SIDE
+    ===================================================== */
+
+    .group-header {
+      min-height: 76px;
+    }
+
+    .group-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .my-profile {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+      padding: 4px 8px 4px 5px;
+      border-radius: 12px;
+    }
+
+    .my-profile-info {
+      min-width: 0;
+      max-width: 130px;
+    }
+
+    .my-profile-name {
+      display: block;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .my-profile-label {
+      display: block;
+      color: #778392;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .my-avatar {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      cursor: pointer;
+      border: 1px solid #344252;
+    }
+
+    /* =====================================================
+       HEADER BUTTONS
+    ===================================================== */
+
+    .header-actions {
+      display: flex;
+      align-items: center;
       gap: 6px;
     }
 
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 11px;
+      background: #1a232e;
+      color: #dce3ec;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 17px;
+    }
+
+    .icon-btn:hover {
+      background: #24303d;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.95);
+    }
+
+    .logout-btn {
+      width: auto;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #ff8585;
+    }
 
     /* =====================================================
        MESSAGES
-    ====================================================== */
+    ===================================================== */
 
-    #chatScreen .messages {
-      flex: 1 1 auto;
-
-      width: 100%;
-
-      min-width: 0;
+    .messages {
+      flex: 1;
       min-height: 0;
-
       overflow-y: auto;
       overflow-x: hidden;
 
-      padding: 16px;
+      padding: 18px 18px 20px;
 
-      box-sizing: border-box;
-
-      scroll-behavior: smooth;
-
-      overscroll-behavior: contain;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
 
       scrollbar-width: thin;
+      scrollbar-color: #2a3542 transparent;
     }
 
+    .messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: #2a3542;
+      border-radius: 10px;
+    }
 
     /* =====================================================
        GROUP MESSAGE
-    ====================================================== */
+    ===================================================== */
 
-    #groupMessages .message-row {
+    .group-message {
       width: 100%;
-
-      min-width: 0;
-
       display: flex;
-
       align-items: flex-start;
-
-      gap: 8px;
-
-      margin-bottom: 10px;
-
-      box-sizing: border-box;
+      gap: 9px;
     }
 
-    #groupMessages .message-row.mine {
+    .group-message.mine {
       justify-content: flex-end;
     }
 
-    #groupMessages .avatar-button {
-      flex: 0 0 auto;
-
-      margin-top: 2px;
-    }
-
-    #groupMessages .group-message-content {
-      min-width: 0;
-
-      max-width: min(
-        78%,
-        600px
-      );
-
-      display: flex;
-
-      flex-direction: column;
-
-      align-items: flex-start;
-    }
-
-    #groupMessages .message-row.mine
-    .group-message-content {
+    .group-message.mine .message-content {
       align-items: flex-end;
     }
 
-    #groupMessages .group-message-user {
-      display: inline-block;
-
-      max-width: 100%;
-
-      margin: 0 0 3px;
-
-      padding: 0;
-
-      border: 0;
-
-      background: transparent;
-
-      color: inherit;
-
-      font: inherit;
-
-      font-size: 12px;
-
-      font-weight: 600;
-
-      opacity: 0.72;
-
-      cursor: pointer;
-
-      overflow: hidden;
-
-      text-overflow: ellipsis;
-
-      white-space: nowrap;
-    }
-
-    #groupMessages .group-message-user:hover {
-      opacity: 1;
-    }
-
-    #groupMessages .message {
-      max-width: 100%;
-
-      word-break: break-word;
-
-      overflow-wrap: anywhere;
-    }
-
-
-    /* =====================================================
-       CLICKABLE AVATAR
-    ====================================================== */
-
-    .avatar-button {
-      cursor: pointer;
-
-      -webkit-tap-highlight-color: transparent;
-
-      border: 0;
-
-      background: transparent;
-
-      padding: 0;
-
-      flex: 0 0 auto;
-    }
-
-    .avatar-button:active {
-      transform: scale(0.96);
-    }
-
-
-    /* =====================================================
-       MESSAGE FORMS
-    ====================================================== */
-
-    #groupMessageForm,
-    #messageForm {
-      flex: 0 0 auto !important;
-
-      display: flex !important;
-
-      align-items: center;
-
-      width: 100%;
-
-      min-height: 64px;
-
-      padding: 10px 16px;
-
-      box-sizing: border-box;
-
-      position: relative;
-
-      z-index: 5;
-
-      border-top:
-        1px solid rgba(255, 255, 255, 0.08);
-
-      gap: 8px;
-    }
-
-
-    /* =====================================================
-       MESSAGE INPUT
-    ====================================================== */
-
-    #groupMessageInput,
-    #messageInput {
-      display: block !important;
-
-      visibility: visible !important;
-
-      opacity: 1 !important;
-
-      flex: 1 1 auto;
-
-      width: 0;
-
-      min-width: 0;
-
-      height: 42px;
-
-      padding: 0 13px;
-
-      box-sizing: border-box;
-
-      border-radius: 10px;
-
-      outline: none;
-    }
-
-    #groupMessageInput::placeholder,
-    #messageInput::placeholder {
-      opacity: 0.55;
-    }
-
-
-    /* =====================================================
-       SEND BUTTON
-    ====================================================== */
-
-    #groupMessageForm .send-btn,
-    #messageForm .send-btn {
-      flex: 0 0 42px;
-
-      width: 42px;
-
-      min-width: 42px;
-
-      height: 42px;
-
-      margin-left: 0;
-
+    .message-sender {
       display: flex;
-
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
 
+    .message-sender .avatar {
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
       cursor: pointer;
-
-      border-radius: 10px;
-
-      transition:
-        transform 0.12s ease,
-        opacity 0.15s ease;
+      border: 1px solid #2c3947;
     }
 
-    #groupMessageForm .send-btn:active,
-    #messageForm .send-btn:active {
-      transform: scale(0.94);
+    .message-sender-name {
+      max-width: 90px;
+      color: #8793a2;
+      font-size: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
     }
 
+    .message-sender-name:hover {
+      color: #5f98ff;
+    }
+
+    .message-content {
+      max-width: min(75%, 600px);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .message-bubble {
+      padding: 10px 13px;
+      border-radius: 15px;
+      background: #18212c;
+      color: #e9edf2;
+      font-size: 14px;
+      line-height: 1.45;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .mine .message-bubble {
+      background: #2968e8;
+      color: #fff;
+      border-bottom-right-radius: 5px;
+    }
+
+    .group-message:not(.mine) .message-bubble {
+      border-top-left-radius: 5px;
+    }
+
+    .message-time {
+      margin-top: 4px;
+      padding: 0 3px;
+      color: #626e7d;
+      font-size: 10px;
+    }
+
+    /* =====================================================
+       PRIVATE MESSAGE
+    ===================================================== */
+
+    .private-message {
+      width: 100%;
+      display: flex;
+    }
+
+    .private-message.mine {
+      justify-content: flex-end;
+    }
+
+    .private-message .message-content {
+      max-width: min(75%, 600px);
+    }
 
     /* =====================================================
        EMPTY CHAT
-    ====================================================== */
+    ===================================================== */
 
-    #emptyChat {
+    .empty-chat {
       width: 100%;
       height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #687585;
+      background: #0b1016;
+    }
 
-      min-height: 0;
+    .empty-chat-inner {
+      padding: 30px;
+    }
+
+    .empty-chat-inner h2 {
+      margin: 0 0 8px;
+      color: #d7dde5;
+      font-size: 20px;
+    }
+
+    .empty-chat-inner p {
+      margin: 0;
+      color: #6d7988;
+      font-size: 13px;
+    }
+
+    /* =====================================================
+       MESSAGE COMPOSER
+    ===================================================== */
+
+    .message-form {
+      width: 100%;
+      flex-shrink: 0;
 
       display: flex;
+      align-items: center;
+      gap: 8px;
 
-      flex-direction: column;
+      padding: 10px 12px;
 
+      background: #111821;
+      border-top: 1px solid #202a35;
+    }
+
+    .message-input {
+      flex: 1;
+      min-width: 0;
+      height: 46px;
+
+      padding: 0 15px;
+
+      border: 1px solid #293541;
+      border-radius: 14px;
+
+      background: #0b1017;
+      color: #fff;
+
+      outline: none;
+      font-size: 14px;
+    }
+
+    .message-input:focus {
+      border-color: #3978ff;
+    }
+
+    .message-input::placeholder {
+      color: #657180;
+    }
+
+    .send-btn {
+      width: 46px;
+      height: 46px;
+      min-width: 46px;
+
+      border: 0;
+      border-radius: 14px;
+
+      background: #3978ff;
+      color: #fff;
+
+      cursor: pointer;
+
+      display: flex;
       align-items: center;
       justify-content: center;
 
-      text-align: center;
-
-      padding: 24px;
-
-      box-sizing: border-box;
+      font-size: 18px;
     }
 
-    #emptyChat.hidden {
-      display: none !important;
+    .send-btn:active {
+      transform: scale(0.95);
     }
-
 
     /* =====================================================
        PROFILE PANEL
-    ====================================================== */
+    ===================================================== */
 
-    #profilePanel {
-      z-index: 1000;
+    .profile-panel {
+      position: fixed;
+      top: 80px;
+      right: 16px;
+
+      width: 290px;
+
+      background: #111821;
+      border: 1px solid #293541;
+      border-radius: 16px;
+
+      padding: 18px;
+
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+
+      z-index: 100;
     }
 
-    #profilePanel.hidden {
-      display: none !important;
+    .profile-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
+    .profile-panel-info {
+      min-width: 0;
+    }
+
+    .profile-panel-info h3 {
+      margin: 0;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .profile-panel-info p {
+      margin: 4px 0 0;
+      color: #7f8b99;
+      font-size: 12px;
+    }
+
+    .profile-panel-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .profile-panel-actions button {
+      height: 42px;
+      border: 1px solid #293541;
+      border-radius: 10px;
+      background: #18212b;
+      color: #dce3ec;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .profile-panel-actions button:hover {
+      background: #202b37;
+    }
+
+    .profile-panel-actions .danger {
+      color: #ff7777;
+    }
+
+    /* =====================================================
+       TOAST
+    ===================================================== */
+
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: 25px;
+
+      transform: translateX(-50%);
+
+      max-width: calc(100% - 30px);
+
+      padding: 10px 16px;
+
+      border-radius: 10px;
+
+      background: #1b2430;
+      border: 1px solid #303c4a;
+
+      color: #fff;
+
+      font-size: 13px;
+
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+
+      z-index: 9999;
+    }
 
     /* =====================================================
        MOBILE
-    ====================================================== */
+    ===================================================== */
 
-    @media (max-width: 800px) {
+    @media (max-width: 700px) {
 
-      #chatScreen .top-bar {
-        min-height: 58px;
-
-        height: 58px;
-
-        padding:
-          7px
-          10px
-          7px
-          10px;
+      .chat-header {
+        min-height: 64px;
+        padding: 8px 10px;
       }
 
-      #chatScreen .top-bar-brand strong {
-        max-width: 150px;
-
-        font-size: 15px;
+      .group-header {
+        min-height: 68px;
       }
 
-      #chatScreen .top-bar-brand span {
-        display: none;
-      }
-
-      #chatScreen .top-profile-info {
-        display: none !important;
-      }
-
-      #chatScreen .top-bar-right {
-        gap: 5px;
-      }
-
-      #chatScreen .chat-header {
-        min-height: 60px;
-
-        height: 60px;
-
-        padding: 0 10px;
-      }
-
-      #chatScreen .chat-user {
+      .chat-user {
         gap: 8px;
       }
 
-      #chatScreen .chat-user strong {
-        max-width: 190px;
+      .avatar {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
       }
 
-      #chatScreen .messages {
-        padding: 12px;
+      .chat-user-info h2 {
+        font-size: 14px;
       }
 
-      #groupMessages .group-message-content {
+      .chat-user-info p {
+        font-size: 11px;
+      }
+
+      .my-profile {
+        padding: 3px;
+      }
+
+      .my-profile-info {
+        display: none;
+      }
+
+      .my-avatar {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+      }
+
+      .header-actions {
+        gap: 4px;
+      }
+
+      .icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+      }
+
+      .logout-btn {
+        width: 36px;
+        padding: 0;
+        font-size: 0;
+      }
+
+      .logout-btn::after {
+        content: "↪";
+        font-size: 18px;
+      }
+
+      .messages {
+        padding: 14px 10px 16px;
+      }
+
+      .message-content,
+      .private-message .message-content {
         max-width: 82%;
       }
 
-      #groupMessageForm,
-      #messageForm {
-        min-height: 58px;
-
-        padding:
-          8px
-          8px
-          calc(
-            8px +
-            env(safe-area-inset-bottom)
-          );
+      .message-sender .avatar {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
       }
 
-      #groupMessageInput,
-      #messageInput {
-        height: 38px;
-
-        font-size: 14px;
-
-        padding: 0 11px;
+      .message-sender-name {
+        max-width: 70px;
       }
 
-      #groupMessageForm .send-btn,
-      #messageForm .send-btn {
-        flex-basis: 38px;
-
-        width: 38px;
-
-        min-width: 38px;
-
-        height: 38px;
+      .message-bubble {
+        font-size: 13px;
+        padding: 9px 11px;
       }
 
-    }
-
-
-    /* =====================================================
-       VERY SMALL PHONES
-    ====================================================== */
-
-    @media (max-width: 430px) {
-
-      #chatScreen .top-bar {
-        padding-left: 7px;
-
-        padding-right: 7px;
+      .message-form {
+        padding: 8px;
       }
 
-      #chatScreen .top-bar-brand {
-        gap: 6px;
+      .message-input {
+        height: 44px;
       }
 
-      #chatScreen .top-bar-brand strong {
-        max-width: 125px;
-
-        font-size: 14px;
+      .send-btn {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
       }
 
-      #chatScreen .chat-header {
-        padding-left: 8px;
-
-        padding-right: 8px;
+      .profile-panel {
+        top: 70px;
+        right: 10px;
+        width: calc(100% - 20px);
       }
 
-      #chatScreen .chat-user strong {
-        max-width: 155px;
-      }
-
-      #chatScreen .messages {
-        padding: 10px;
-      }
-
-      #groupMessageForm,
-      #messageForm {
-        padding-left: 6px;
-
-        padding-right: 6px;
+      .auth-card {
+        padding: 22px;
       }
 
     }
 
+    @media (max-width: 380px) {
 
-    /* =====================================================
-       EXTRA SMALL HEIGHT
-    ====================================================== */
-
-    @media (max-height: 520px) {
-
-      #chatScreen .top-bar {
-        min-height: 52px;
-
-        height: 52px;
+      .group-header-right {
+        gap: 3px;
       }
 
-      #chatScreen .chat-header {
-        min-height: 54px;
-
-        height: 54px;
+      .header-actions .icon-btn {
+        width: 34px;
+        height: 34px;
       }
 
-      #groupMessageForm,
-      #messageForm {
-        min-height: 52px;
-
-        padding-top: 6px;
-
-        padding-bottom: 6px;
-      }
-
-      #groupMessageInput,
-      #messageInput,
-      #groupMessageForm .send-btn,
-      #messageForm .send-btn {
-        height: 36px;
-      }
-
-    }
-
-
-    /* =====================================================
-       TOUCH DEVICES
-    ====================================================== */
-
-    @media (hover: none) {
-
-      #groupMessages
-      .group-message-user:hover {
-        opacity: 0.72;
+      .my-avatar {
+        width: 35px;
+        height: 35px;
+        min-width: 35px;
       }
 
     }
@@ -861,205 +850,129 @@
 
   <!-- =====================================================
        AUTH
-  ====================================================== -->
+  ===================================================== -->
 
   <section
     id="authScreen"
     class="auth-screen"
   >
 
-    <div class="auth-card">
+    <!-- LOGIN -->
 
+    <div
+      id="loginBox"
+      class="auth-card"
+    >
 
-      <div class="brand">
+      <h1>Private Chat</h1>
 
-        <div class="brand-icon">
-          D
-        </div>
+      <p>Sign in to continue</p>
 
-        <div>
+      <form
+        id="loginForm"
+        class="auth-form"
+      >
 
-          <h1>
-            Dark Chat
-          </h1>
-
-          <p>
-            Private messaging
-          </p>
-
-        </div>
-
-      </div>
-
-
-      <!-- =================================================
-           LOGIN
-      ================================================== -->
-
-      <form id="loginForm">
-
-        <h2>
-          Welcome back
-        </h2>
-
-        <p class="auth-subtitle">
-          Sign in to continue
-        </p>
-
-
-        <div class="field">
-
-          <label for="loginEmail">
-            Email
-          </label>
-
-          <input
-            id="loginEmail"
-            type="email"
-            placeholder="Enter your email"
-            autocomplete="email"
-            required
-          >
-
-        </div>
-
-
-        <div class="field">
-
-          <label for="loginPassword">
-            Password
-          </label>
-
-          <input
-            id="loginPassword"
-            type="password"
-            placeholder="Enter your password"
-            autocomplete="current-password"
-            required
-          >
-
-        </div>
-
-
-        <button
-          class="primary-btn"
-          type="submit"
+        <input
+          id="loginUsername"
+          type="text"
+          placeholder="Username"
+          autocomplete="username"
+          required
         >
-          Sign In
-        </button>
 
+        <input
+          id="loginPassword"
+          type="password"
+          placeholder="Password"
+          autocomplete="current-password"
+          required
+        >
 
-        <div
+        <p
           id="loginError"
-          class="error"
-          role="alert"
-        ></div>
+          class="auth-error hidden"
+        ></p>
 
-
-        <button
-          type="button"
-          class="switch-btn"
-          id="showRegister"
-        >
-          Create an account
+        <button type="submit">
+          Login
         </button>
 
       </form>
 
+      <p class="auth-switch">
+        Don't have an account?
+        <button
+          id="showRegister"
+          type="button"
+        >
+          Register
+        </button>
+      </p>
 
-      <!-- =================================================
-           REGISTER
-      ================================================== -->
+    </div>
+
+
+    <!-- REGISTER -->
+
+    <div
+      id="registerBox"
+      class="auth-card hidden"
+    >
+
+      <h1>Create Account</h1>
+
+      <p>Register a new account</p>
 
       <form
         id="registerForm"
-        class="hidden"
+        class="auth-form"
       >
 
-        <h2>
-          Create account
-        </h2>
-
-        <p class="auth-subtitle">
-          Join Dark Chat
-        </p>
-
-
-        <div class="field">
-
-          <label for="registerUsername">
-            Username
-          </label>
-
-          <input
-            id="registerUsername"
-            type="text"
-            placeholder="Choose a username"
-            autocomplete="username"
-            required
-          >
-
-        </div>
-
-
-        <div class="field">
-
-          <label for="registerEmail">
-            Email
-          </label>
-
-          <input
-            id="registerEmail"
-            type="email"
-            placeholder="Enter your email"
-            autocomplete="email"
-            required
-          >
-
-        </div>
-
-
-        <div class="field">
-
-          <label for="registerPassword">
-            Password
-          </label>
-
-          <input
-            id="registerPassword"
-            type="password"
-            placeholder="At least 6 characters"
-            autocomplete="new-password"
-            required
-          >
-
-        </div>
-
-
-        <button
-          class="primary-btn"
-          type="submit"
+        <input
+          id="registerUsername"
+          type="text"
+          placeholder="Username"
+          autocomplete="username"
+          required
         >
-          Create Account
-        </button>
 
+        <input
+          id="registerPassword"
+          type="password"
+          placeholder="Password"
+          autocomplete="new-password"
+          required
+        >
 
-        <div
+        <input
+          id="registerPasswordConfirm"
+          type="password"
+          placeholder="Confirm password"
+          autocomplete="new-password"
+          required
+        >
+
+        <p
           id="registerError"
-          class="error"
-          role="alert"
-        ></div>
+          class="auth-error hidden"
+        ></p>
 
-
-        <button
-          type="button"
-          class="switch-btn"
-          id="showLogin"
-        >
-          Already have an account?
+        <button type="submit">
+          Register
         </button>
 
       </form>
+
+      <p class="auth-switch">
+        Already have an account?
+        <button
+          id="showLogin"
+          type="button"
+        >
+          Login
+        </button>
+      </p>
 
     </div>
 
@@ -1069,202 +982,152 @@
 
   <!-- =====================================================
        CHAT SCREEN
-  ====================================================== -->
+       NO SIDEBAR
+       NO TOP DARK CHAT BAR
+  ===================================================== -->
 
   <section
     id="chatScreen"
     class="chat-screen hidden"
   >
 
-
     <!-- ===================================================
-         TOP BAR
-    ==================================================== -->
-
-    <header class="top-bar">
-
-
-      <!-- =================================================
-           TOP BAR LEFT
-      ================================================== -->
-
-      <div class="top-bar-left">
-
-        <div class="top-bar-brand">
-
-          <div
-            class="brand-icon"
-            aria-hidden="true"
-          >
-            D
-          </div>
-
-          <div>
-
-            <strong>
-              Dark Chat
-            </strong>
-
-            <span>
-              Private messaging
-            </span>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <!-- =================================================
-           TOP BAR RIGHT
-      ================================================== -->
-
-      <div class="top-bar-right">
-
-
-        <!-- ===============================================
-             OWN PROFILE
-        ================================================ -->
-
-        <div class="top-profile">
-
-          <button
-            id="myAvatarBtn"
-            class="avatar-button"
-            type="button"
-            title="Profile"
-            aria-label="Open profile"
-          >
-
-            <div
-              id="myAvatar"
-              class="avatar"
-            >
-              D
-            </div>
-
-          </button>
-
-
-          <div class="top-profile-info">
-
-            <strong id="myUsername">
-              User
-            </strong>
-
-            <span>
-              Online
-            </span>
-
-          </div>
-
-        </div>
-
-
-        <!-- ===============================================
-             GROUP CHAT BUTTON
-        ================================================ -->
-
-        <button
-          id="groupChatNavBtn"
-          class="icon-btn"
-          type="button"
-          title="Group Chat"
-          aria-label="Open Group Chat"
-        >
-          👥
-        </button>
-
-
-        <!-- ===============================================
-             LOGOUT
-        ================================================ -->
-
-        <button
-          id="logoutBtn"
-          class="icon-btn"
-          type="button"
-          title="Logout"
-          aria-label="Logout"
-        >
-          ⎋
-        </button>
-
-      </div>
-
-    </header>
-
-
-
-    <!-- ===================================================
-         CHAT AREA
-    ==================================================== -->
+         MAIN CHAT AREA
+    =================================================== -->
 
     <main class="chat-area">
 
 
-      <!-- ================================================
+      <!-- =================================================
            PUBLIC GROUP CHAT
       ================================================= -->
 
-      <div
+      <section
         id="groupChat"
         class="active-chat"
       >
 
+        <!-- GROUP HEADER -->
 
-        <header class="chat-header">
+        <header
+          class="chat-header group-header"
+        >
+
+          <!-- LEFT : GROUP -->
 
           <div class="chat-user">
 
             <div
               id="groupAvatar"
               class="avatar"
-              aria-hidden="true"
             >
-              G
+              <span>G</span>
             </div>
 
+            <div class="chat-user-info">
 
-            <div>
-
-              <strong id="groupChatName">
+              <h2 id="groupChatName">
                 Public Group Chat
-              </strong>
+              </h2>
 
-              <span id="groupChatStatus">
+              <p id="groupChatStatus">
                 Everyone
-              </span>
+              </p>
 
             </div>
 
           </div>
 
 
-          <div class="chat-actions">
+          <!-- RIGHT : MY PROFILE -->
 
-            <button
-              id="reloadGroupMessages"
-              class="icon-btn"
-              type="button"
-              title="Refresh messages"
-              aria-label="Refresh group messages"
+          <div class="group-header-right">
+
+
+            <!-- MY PROFILE -->
+
+            <div
+              id="myProfile"
+              class="my-profile"
             >
-              ↻
-            </button>
+
+              <button
+                id="myAvatarBtn"
+                class="my-avatar"
+                type="button"
+                title="Profile"
+              >
+
+                <img
+                  id="myAvatar"
+                  src=""
+                  alt=""
+                  class="hidden"
+                >
+
+                <span id="myAvatarFallback">
+                  U
+                </span>
+
+              </button>
+
+
+              <div class="my-profile-info">
+
+                <span
+                  id="myUsername"
+                  class="my-profile-name"
+                >
+                  User
+                </span>
+
+                <span class="my-profile-label">
+                  You
+                </span>
+
+              </div>
+
+            </div>
+
+
+            <!-- HEADER ACTIONS -->
+
+            <div class="header-actions">
+
+              <button
+                id="reloadGroupMessages"
+                class="icon-btn"
+                type="button"
+                title="Refresh"
+              >
+                ↻
+              </button>
+
+              <button
+                id="logoutBtn"
+                class="icon-btn logout-btn"
+                type="button"
+                title="Logout"
+              >
+                Logout
+              </button>
+
+            </div>
 
           </div>
 
         </header>
 
 
+        <!-- GROUP MESSAGES -->
+
         <div
           id="groupMessages"
           class="messages"
-          aria-live="polite"
         ></div>
 
+
+        <!-- GROUP MESSAGE FORM -->
 
         <form
           id="groupMessageForm"
@@ -1273,76 +1136,82 @@
 
           <input
             id="groupMessageInput"
+            class="message-input"
             type="text"
-            placeholder="Write a message to everyone..."
-            maxlength="5000"
+            placeholder="Write a message..."
             autocomplete="off"
-            enterkeyhint="send"
           >
 
-
           <button
-            id="groupSendBtn"
             class="send-btn"
             type="submit"
             title="Send"
-            aria-label="Send group message"
           >
             ➤
           </button>
 
         </form>
 
-      </div>
+      </section>
 
 
 
-      <!-- ================================================
+      <!-- =================================================
            PRIVATE CHAT
       ================================================= -->
 
-      <div
+      <section
         id="privateChat"
         class="active-chat hidden"
       >
 
+        <!-- PRIVATE HEADER -->
 
-        <header class="chat-header">
+        <header
+          class="chat-header"
+        >
 
           <div class="chat-user">
 
-            <div
+            <button
               id="chatAvatar"
               class="avatar"
-              aria-hidden="true"
+              type="button"
             >
-              U
-            </div>
-
-
-            <div>
-
-              <strong id="chatUsername">
-                User
-              </strong>
-
-              <span id="chatStatus">
-                Available
+              <span id="chatAvatarFallback">
+                U
               </span>
+
+              <img
+                id="chatAvatarImage"
+                class="hidden"
+                src=""
+                alt=""
+              >
+            </button>
+
+            <div class="chat-user-info">
+
+              <h2 id="chatUsername">
+                User
+              </h2>
+
+              <p id="chatStatus">
+                Private Chat
+              </p>
 
             </div>
 
           </div>
 
 
-          <div class="chat-actions">
+          <div class="header-actions">
 
             <button
               id="reloadMessages"
               class="icon-btn"
               type="button"
-              title="Refresh messages"
-              aria-label="Refresh private messages"
+              title="Refresh"
             >
               ↻
             </button>
@@ -1352,12 +1221,15 @@
         </header>
 
 
+        <!-- PRIVATE MESSAGES -->
+
         <div
-          id="messages"
+          id="messagesBox"
           class="messages"
-          aria-live="polite"
         ></div>
 
+
+        <!-- PRIVATE MESSAGE FORM -->
 
         <form
           id="messageForm"
@@ -1366,172 +1238,155 @@
 
           <input
             id="messageInput"
+            class="message-input"
             type="text"
             placeholder="Write a message..."
-            maxlength="5000"
             autocomplete="off"
-            enterkeyhint="send"
           >
 
-
           <button
-            id="privateSendBtn"
             class="send-btn"
             type="submit"
             title="Send"
-            aria-label="Send private message"
           >
             ➤
           </button>
 
         </form>
 
-      </div>
+      </section>
 
 
 
-      <!-- ================================================
+      <!-- =================================================
            EMPTY CHAT
       ================================================= -->
 
-      <div
+      <section
         id="emptyChat"
         class="empty-chat hidden"
       >
 
-        <div class="empty-icon">
-          ◇
+        <div class="empty-chat-inner">
+
+          <h2>Private Chat</h2>
+
+          <p>
+            Select a user from Public Group Chat
+          </p>
+
         </div>
 
-        <h2>
-          Group Chat
-        </h2>
-
-        <p>
-          Everyone can chat here.
-        </p>
-
-      </div>
-
+      </section>
 
     </main>
 
-  </section>
-
-</div>
 
 
+    <!-- ===================================================
+         PROFILE PANEL
+    =================================================== -->
 
-<!-- =======================================================
-     PROFILE PANEL
-======================================================== -->
-
-<div
-  id="profilePanel"
-  class="profile-panel hidden"
->
-
-
-  <div
-    class="profile-panel-backdrop"
-    id="profilePanelBackdrop"
-  ></div>
-
-
-  <div class="profile-panel-card">
-
-
-    <button
-      id="closeProfilePanel"
-      class="profile-close"
-      type="button"
-      title="Close"
-      aria-label="Close profile"
-    >
-      ×
-    </button>
-
-
-    <button
-      id="profilePhotoBtn"
-      class="profile-photo-large-btn"
-      type="button"
-      title="Profile photo"
-      aria-label="Profile photo"
+    <div
+      id="profilePanel"
+      class="profile-panel hidden"
     >
 
-      <div
-        id="profilePhotoLarge"
-        class="profile-photo-large"
-      >
-        D
+      <div class="profile-panel-header">
+
+        <div
+          id="profileAvatar"
+          class="profile-avatar"
+        >
+
+          <img
+            id="profileAvatarImage"
+            src=""
+            alt=""
+            class="hidden"
+          >
+
+          <span id="profileAvatarFallback">
+            U
+          </span>
+
+        </div>
+
+        <div class="profile-panel-info">
+
+          <h3 id="profileUsername">
+            User
+          </h3>
+
+          <p>
+            Your profile
+          </p>
+
+        </div>
+
       </div>
 
-    </button>
 
+      <div class="profile-panel-actions">
 
-    <h3 id="profilePanelName">
-      User
-    </h3>
+        <label
+          for="profilePhotoInput"
+          style="
+            height:42px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border:1px solid #293541;
+            border-radius:10px;
+            background:#18212b;
+            color:#dce3ec;
+            cursor:pointer;
+            font-size:13px;
+          "
+        >
+          Change Profile Photo
+        </label>
 
+        <input
+          id="profilePhotoInput"
+          type="file"
+          accept="image/*"
+          class="hidden"
+        >
 
-    <p id="profilePanelEmail">
-      user@email.com
-    </p>
+        <button
+          id="removeProfilePhoto"
+          type="button"
+          class="danger"
+        >
+          Remove Profile Photo
+        </button>
 
-
-    <input
-      id="profilePhotoInput"
-      type="file"
-      accept="image/*"
-      hidden
-    >
-
-
-    <div class="profile-actions">
-
-      <button
-        id="changeProfilePhoto"
-        class="primary-btn"
-        type="button"
-      >
-        Change Photo
-      </button>
-
-
-      <button
-        id="removeProfilePhoto"
-        class="secondary-btn"
-        type="button"
-      >
-        Remove
-      </button>
+      </div>
 
     </div>
 
 
-  </div>
+  </section>
+
+
+
+  <!-- =====================================================
+       TOAST
+  ===================================================== -->
+
+  <div
+    id="toast"
+    class="hidden"
+  ></div>
+
 
 </div>
 
 
-
-<!-- =======================================================
-     TOAST
-======================================================== -->
-
-<div
-  id="toast"
-  class="toast"
-  role="status"
-  aria-live="polite"
-></div>
-
-
-
 <!-- =======================================================
      APP JAVASCRIPT
-======================================================== -->
+======================================================= -->
 
 <script src="/app.js"></script>
 
