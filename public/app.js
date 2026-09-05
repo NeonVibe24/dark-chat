@@ -7,14 +7,15 @@ let messageTimer = null;
 
 
 /* ============================================================
-   FIXED VIDEOLINK2ME ROOM
+   JITSI / 8x8.VC IN-APP API INTEGRATION
 ============================================================ */
 
-const VIDEOLINK2ME_ROOM =
-  "https://videolink2me.com/zm1nec";
+let jitsiApi = null;
 
+const JITSI_DOMAIN = "8x8.vc";
+// Using the custom cookie/tenant path if provided by the script, or standard 8x8.vc
 const CALL_MESSAGE_PREFIX =
-  "__PRIVATE_CHAT_VIDEOLINK2ME__";
+  "__PRIVATE_CHAT_JITSI_CALL__";
 
 
 /* ============================================================
@@ -239,7 +240,7 @@ function fixCallButtons() {
 
 
 /* ============================================================
-   CALL BUTTON EVENTS (ခလုတ်နှိပ်လျှင် Link တန်းပို့ပြီး Room ဝင်မည်)
+   CALL BUTTON EVENTS (ခလုတ်နှိပ်လျှင် Jitsi Room ဖန်တီး၍ ခေါ်ဆိုမည်)
 ============================================================ */
 
 document.addEventListener(
@@ -284,7 +285,7 @@ document.addEventListener(
 
 
 /* ============================================================
-   DIRECT CALL TRIGGER
+   DIRECT CALL TRIGGER (Jitsi In-App API)
 ============================================================ */
 
 async function triggerDirectCall(type) {
@@ -294,7 +295,11 @@ async function triggerDirectCall(type) {
   }
 
   try {
-    const message = createCallMessage(type);
+    // Generate a unique and consistent room name for both users based on IDs
+    const sortedIds = [currentUser.id, selectedUser.id].sort((a, b) => a - b);
+    const roomName = `darkchat-${sortedIds[0]}-${sortedIds[1]}-${Math.random().toString(36.substring(2, 9))}`;
+    
+    const message = createCallMessage(type, roomName);
 
     await api("/messages", {
       method: "POST",
@@ -305,7 +310,7 @@ async function triggerDirectCall(type) {
     });
 
     await loadMessages();
-    openVideolink2me(VIDEOLINK2ME_ROOM);
+    openJitsiCall(roomName, type === "voice");
 
   } catch (error) {
     showToast(error.message || "Could not start call");
@@ -1395,7 +1400,7 @@ function parseCallMessage(
 
     if (
       !data ||
-      !data.url
+      !data.roomName
     ) {
       return null;
     }
@@ -1410,48 +1415,12 @@ function parseCallMessage(
 
 
 /* ============================================================
-   VALIDATE VIDEOLINK2ME URL
-============================================================ */
-
-function isValidVideolink2meUrl(
-  value
-) {
-
-  try {
-
-    const url =
-      new URL(
-        String(value)
-      );
-
-    if (
-      url.protocol !==
-      "https:"
-    ) {
-      return false;
-    }
-
-    return (
-      url.hostname ===
-        "videolink2me.com" ||
-      url.hostname.endsWith(
-        ".videolink2me.com"
-      )
-    );
-
-  } catch {
-
-    return false;
-  }
-}
-
-
-/* ============================================================
    CREATE CALL MESSAGE
 ============================================================ */
 
 function createCallMessage(
-  type
+  type,
+  roomName
 ) {
 
   return (
@@ -1462,8 +1431,7 @@ function createCallMessage(
           ? "voice"
           : "video",
 
-      url:
-        VIDEOLINK2ME_ROOM
+      roomName: roomName
     })
   );
 }
@@ -1558,7 +1526,7 @@ function createCallMessageElement(
     );
 
   service.textContent =
-    "Videolink2me";
+    "8x8.vc In-App Call";
 
   service.style.fontSize =
     "13px";
@@ -1611,8 +1579,9 @@ function createCallMessageElement(
       event.preventDefault();
       event.stopPropagation();
 
-      openVideolink2me(
-        callData.url
+      openJitsiCall(
+        callData.roomName,
+        callData.type === "voice"
       );
     }
   );
@@ -2384,33 +2353,88 @@ function imageToDataURL(
 
 
 /* ============================================================
-   OPEN VIDEOLINK2ME
+   JITSI / 8x8.VC IN-APP EMBED FUNCTION
 ============================================================ */
 
-function openVideolink2me(
-  url
-) {
+function openJitsiCall(roomName, isVoiceOnly = false) {
+  // Ensure the call screen container is visible
+  if (!callScreen) return;
+  
+  callScreen.classList.remove("hidden");
 
-  if (
-    !isValidVideolink2meUrl(
-      url
-    )
-  ) {
+  // Clear out old videolink or old views if any
+  const videolinkContainer = document.getElementById("videolinkContainer");
+  if (videolinkContainer) videolinkContainer.style.display = "none";
 
-    showToast(
-      "Invalid Videolink2me link"
-    );
-
-    return;
+  // Check if a container for Jitsi exists inside callScreen, otherwise use remoteVideo area or dynamically create wrapper
+  let jitsiContainer = document.getElementById("jitsiInAppContainer");
+  if (!jitsiContainer) {
+    jitsiContainer = document.createElement("div");
+    jitsiContainer.id = "jitsiInAppContainer";
+    jitsiContainer.style.position = "absolute";
+    jitsiContainer.style.inset = "0";
+    jitsiContainer.style.width = "100%";
+    jitsiContainer.style.height = "100%";
+    jitsiContainer.style.zIndex = "1000";
+    jitsiContainer.style.background = "#000";
+    callScreen.appendChild(jitsiContainer);
+  } else {
+    jitsiContainer.style.display = "block";
+    jitsiContainer.innerHTML = "";
   }
 
-  window.location.href =
-    url;
+  const options = {
+    roomName: roomName,
+    width: "100%",
+    height: "100%",
+    parentNode: jitsiContainer,
+    userInfo: {
+      displayName: currentUser?.username || "User",
+      email: currentUser?.email || ""
+    },
+    configOverwrite: {
+      startWithAudioMuted: false,
+      startWithVideoMuted: isVoiceOnly
+    }
+  };
+
+  try {
+    if (typeof JitsiMeetExternalAPI === "undefined") {
+      showToast("Jitsi API script not loaded!");
+      return;
+    }
+
+    jitsiApi = new JitsiMeetExternalAPI(JITSI_DOMAIN, options);
+
+    jitsiApi.addEventListener("videoConferenceLeft", () => {
+      closeJitsiCall();
+    });
+  } catch (err) {
+    showToast("Failed to initialize video call");
+    console.error(err);
+  }
+}
+
+function closeJitsiCall() {
+  if (jitsiApi) {
+    try {
+      jitsiApi.dispose();
+    } catch {}
+    jitsiApi = null;
+  }
+
+  const jitsiContainer = document.getElementById("jitsiInAppContainer");
+  if (jitsiContainer) {
+    jitsiContainer.style.display = "none";
+    jitsiContainer.innerHTML = "";
+  }
+
+  callScreen?.classList.add("hidden");
 }
 
 
 /* ============================================================
-   OLD CALL UI
+   OLD CALL UI HANDLERS CLEANUP
 ============================================================ */
 
 function hideOldCallUI() {
@@ -2447,25 +2471,17 @@ async function pollCallSignals() {}
 
 
 /* ============================================================
-   OLD END CALL
+   OLD END CALL -> MAPPED TO JITSI CLOSE
 ============================================================ */
 
 async function endCall() {
-
-  currentCallType =
-    null;
-
-  currentCallUser =
-    null;
-
-  hideOldCallUI();
-
+  closeJitsiCall();
   return;
 }
 
 
 /* ============================================================
-   OLD CALL BUTTONS
+   CALL CONTROLS
 ============================================================ */
 
 if (acceptCallBtn) {
@@ -2476,9 +2492,7 @@ if (acceptCallBtn) {
 
       event.preventDefault();
 
-      showToast(
-        "Please use the Videolink2me room"
-      );
+      incomingCall?.classList.add("hidden");
     }
   );
 }
@@ -2503,10 +2517,13 @@ if (muteCallBtn) {
   muteCallBtn.addEventListener(
     "click",
     () => {
-
-      showToast(
-        "Call controls are available inside Videolink2me"
-      );
+      if (jitsiApi) {
+        jitsiApi.executeCommand('toggleAudio');
+      } else {
+        showToast(
+          "Call controls are available inside the call"
+        );
+      }
     }
   );
 }
@@ -2516,10 +2533,13 @@ if (cameraCallBtn) {
   cameraCallBtn.addEventListener(
     "click",
     () => {
-
-      showToast(
-        "Camera controls are available inside Videolink2me"
-      );
+      if (jitsiApi) {
+        jitsiApi.executeCommand('toggleVideo');
+      } else {
+        showToast(
+          "Camera controls are available inside the call"
+        );
+      }
     }
   );
 }
@@ -2529,10 +2549,13 @@ if (switchCameraBtn) {
   switchCameraBtn.addEventListener(
     "click",
     () => {
-
-      showToast(
-        "Camera controls are available inside Videolink2me"
-      );
+      if (jitsiApi && typeof jitsiApi.executeCommand === 'function') {
+        jitsiApi.executeCommand('toggleFacingMode');
+      } else {
+        showToast(
+          "Camera switch is not supported on this view"
+        );
+      }
     }
   );
 }
@@ -2563,6 +2586,7 @@ document.addEventListener(
     ) {
 
       closeProfile();
+      closeJitsiCall();
     }
   }
 );
