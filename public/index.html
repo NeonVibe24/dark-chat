@@ -106,7 +106,7 @@
 
 
     /* =====================================================
-       CHAT HEADER (FIXED HEIGHT)
+       CHAT HEADER
     ====================================================== */
 
     #chatScreen .chat-header {
@@ -122,7 +122,7 @@
 
 
     /* =====================================================
-       MESSAGES CONTAINER (SCROLLABLE AREA)
+       MESSAGES
     ====================================================== */
 
     #chatScreen .messages {
@@ -135,7 +135,7 @@
 
 
     /* =====================================================
-       MESSAGE FORMS & INPUTS (GUARANTEED TO SHOW)
+       MESSAGE FORMS & INPUTS
     ====================================================== */
 
     #groupMessageForm,
@@ -151,8 +151,6 @@
       background: inherit !important;
       position: relative !important;
       z-index: 10 !important;
-      visibility: visible !important;
-      opacity: 1 !important;
     }
 
     #groupMessageInput,
@@ -207,23 +205,8 @@
         z-index: 5;
       }
 
-      #groupMessageForm,
-      #messageForm {
-        flex: 0 0 56px !important;
-        height: 56px !important;
-        padding: 8px 12px !important;
-      }
-
-      #groupMessageInput,
-      #messageInput {
-        height: 38px;
-        font-size: 15px;
-      }
-
-      #groupMessageForm .send-btn,
-      #messageForm .send-btn {
-        height: 38px;
-        width: 38px;
+      #chatScreen .chat-area:has(.active-chat.hidden) {
+        display: none !important;
       }
     }
 
@@ -236,7 +219,6 @@
 
 <div id="app">
 
-  <!-- AUTH SCREEN -->
   <section
     id="authScreen"
     class="auth-screen"
@@ -343,13 +325,11 @@
     </div>
   </section>
 
-  <!-- CHAT APP -->
   <section
     id="chatScreen"
     class="chat-screen hidden"
   >
 
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="profile">
@@ -395,10 +375,8 @@
       </div>
     </aside>
 
-    <!-- MAIN CHAT AREA -->
     <main class="chat-area">
 
-      <!-- GROUP CHAT -->
       <div
         id="groupChat"
         class="active-chat"
@@ -450,7 +428,6 @@
         </form>
       </div>
 
-      <!-- PRIVATE CHAT -->
       <div
         id="privateChat"
         class="active-chat hidden"
@@ -560,6 +537,41 @@
   class="toast"
   role="status"
 ></div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const usersListContainer = document.getElementById('usersList');
+    const groupChat = document.getElementById('groupChat');
+    const privateChat = document.getElementById('privateChat');
+    const chatUsername = document.getElementById('chatUsername');
+    const chatAvatar = document.getElementById('chatAvatar');
+    const chatStatus = document.getElementById('chatStatus');
+
+    if (usersListContainer) {
+      usersListContainer.addEventListener('click', (e) => {
+        const userItem = e.target.closest('.user-item, [data-user-id], .profile, div');
+        if (userItem) {
+          const userNameText = userItem.textContent.trim() || 'User';
+          
+          if (groupChat && privateChat) {
+            groupChat.classList.add('hidden');
+            privateChat.classList.remove('hidden');
+            
+            if (chatUsername) {
+              chatUsername.textContent = userNameText;
+            }
+            if (chatAvatar) {
+              chatAvatar.textContent = userNameText.charAt(0).toUpperCase();
+            }
+            if (chatStatus) {
+              chatStatus.textContent = 'Online';
+            }
+          }
+        }
+      });
+    }
+  });
+</script>
 
 <script src="/app.js"></script>
 
