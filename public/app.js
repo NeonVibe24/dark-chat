@@ -7,20 +7,26 @@ let messageTimer = null;
 
 
 /* ============================================================
-   JITSI / 8x8.VC IN-APP API INTEGRATION
+   FIXED VIDEOLINK2ME ROOM
 ============================================================ */
 
-let jitsiApi = null;
+const VIDEOLINK2ME_ROOM =
+  "https://videolink2me.com/zm1nec";
 
-const JITSI_DOMAIN = "8x8.vc";
-// Using the custom cookie/tenant path if provided by the script, or standard 8x8.vc
 const CALL_MESSAGE_PREFIX =
-  "__PRIVATE_CHAT_JITSI_CALL__";
+  "__PRIVATE_CHAT_VIDEOLINK2ME__";
 
 
 /* ============================================================
    CALL STATE
 ============================================================ */
+
+/*
+ * WebRTC မသုံးတော့ပါ။
+ *
+ * Call တစ်ခုစတင်ရင် fixed Videolink2me room
+ * https://videolink2me.com/zm1nec ကို အသုံးပြုမယ်။
+ */
 
 let currentCallType = null;
 let currentCallUser = null;
@@ -240,7 +246,7 @@ function fixCallButtons() {
 
 
 /* ============================================================
-   CALL BUTTON EVENTS (ခလုတ်နှိပ်လျှင် Jitsi Room ဖန်တီး၍ ခေါ်ဆိုမည်)
+   CALL BUTTON EVENTS
 ============================================================ */
 
 document.addEventListener(
@@ -274,48 +280,14 @@ document.addEventListener(
     }
 
     if (voice) {
-      triggerDirectCall("voice");
+      startCall("voice");
     }
 
     if (video) {
-      triggerDirectCall("video");
+      startCall("video");
     }
   }
 );
-
-
-/* ============================================================
-   DIRECT CALL TRIGGER (Jitsi In-App API)
-============================================================ */
-
-async function triggerDirectCall(type) {
-  if (!selectedUser) {
-    showToast("Select a user first");
-    return;
-  }
-
-  try {
-    // Generate a unique and consistent room name for both users based on IDs
-    const sortedIds = [currentUser.id, selectedUser.id].sort((a, b) => a - b);
-    const roomName = `darkchat-${sortedIds[0]}-${sortedIds[1]}-${Math.random().toString(36.substring(2, 9))}`;
-    
-    const message = createCallMessage(type, roomName);
-
-    await api("/messages", {
-      method: "POST",
-      body: JSON.stringify({
-        receiver_id: selectedUser.id,
-        message
-      })
-    });
-
-    await loadMessages();
-    openJitsiCall(roomName, type === "voice");
-
-  } catch (error) {
-    showToast(error.message || "Could not start call");
-  }
-}
 
 
 /* ============================================================
@@ -409,6 +381,7 @@ const removeProfilePhoto =
 
 /* ============================================================
    OLD CALL ELEMENTS
+   Kept for HTML compatibility
 ============================================================ */
 
 const incomingCall =
@@ -1400,7 +1373,7 @@ function parseCallMessage(
 
     if (
       !data ||
-      !data.roomName
+      !data.url
     ) {
       return null;
     }
@@ -1415,12 +1388,48 @@ function parseCallMessage(
 
 
 /* ============================================================
+   VALIDATE VIDEOLINK2ME URL
+============================================================ */
+
+function isValidVideolink2meUrl(
+  value
+) {
+
+  try {
+
+    const url =
+      new URL(
+        String(value)
+      );
+
+    if (
+      url.protocol !==
+      "https:"
+    ) {
+      return false;
+    }
+
+    return (
+      url.hostname ===
+        "videolink2me.com" ||
+      url.hostname.endsWith(
+        ".videolink2me.com"
+      )
+    );
+
+  } catch {
+
+    return false;
+  }
+}
+
+
+/* ============================================================
    CREATE CALL MESSAGE
 ============================================================ */
 
 function createCallMessage(
-  type,
-  roomName
+  type
 ) {
 
   return (
@@ -1431,7 +1440,8 @@ function createCallMessage(
           ? "voice"
           : "video",
 
-      roomName: roomName
+      url:
+        VIDEOLINK2ME_ROOM
     })
   );
 }
@@ -1526,7 +1536,7 @@ function createCallMessageElement(
     );
 
   service.textContent =
-    "8x8.vc In-App Call";
+    "Videolink2me";
 
   service.style.fontSize =
     "13px";
@@ -1579,9 +1589,8 @@ function createCallMessageElement(
       event.preventDefault();
       event.stopPropagation();
 
-      openJitsiCall(
-        callData.roomName,
-        callData.type === "voice"
+      openVideolink2me(
+        callData.url
       );
     }
   );
@@ -2353,88 +2362,497 @@ function imageToDataURL(
 
 
 /* ============================================================
-   JITSI / 8x8.VC IN-APP EMBED FUNCTION
+   VIDEOLINK2ME CALL
 ============================================================ */
 
-function openJitsiCall(roomName, isVoiceOnly = false) {
-  // Ensure the call screen container is visible
-  if (!callScreen) return;
-  
-  callScreen.classList.remove("hidden");
+function startCall(
+  type
+) {
 
-  // Clear out old videolink or old views if any
-  const videolinkContainer = document.getElementById("videolinkContainer");
-  if (videolinkContainer) videolinkContainer.style.display = "none";
+  if (!selectedUser) {
 
-  // Check if a container for Jitsi exists inside callScreen, otherwise use remoteVideo area or dynamically create wrapper
-  let jitsiContainer = document.getElementById("jitsiInAppContainer");
-  if (!jitsiContainer) {
-    jitsiContainer = document.createElement("div");
-    jitsiContainer.id = "jitsiInAppContainer";
-    jitsiContainer.style.position = "absolute";
-    jitsiContainer.style.inset = "0";
-    jitsiContainer.style.width = "100%";
-    jitsiContainer.style.height = "100%";
-    jitsiContainer.style.zIndex = "1000";
-    jitsiContainer.style.background = "#000";
-    callScreen.appendChild(jitsiContainer);
-  } else {
-    jitsiContainer.style.display = "block";
-    jitsiContainer.innerHTML = "";
+    showToast(
+      "Select a user first"
+    );
+
+    return;
   }
 
-  const options = {
-    roomName: roomName,
-    width: "100%",
-    height: "100%",
-    parentNode: jitsiContainer,
-    userInfo: {
-      displayName: currentUser?.username || "User",
-      email: currentUser?.email || ""
-    },
-    configOverwrite: {
-      startWithAudioMuted: false,
-      startWithVideoMuted: isVoiceOnly
-    }
+  currentCallType =
+    type;
+
+  currentCallUser = {
+    ...selectedUser
   };
 
-  try {
-    if (typeof JitsiMeetExternalAPI === "undefined") {
-      showToast("Jitsi API script not loaded!");
-      return;
-    }
-
-    jitsiApi = new JitsiMeetExternalAPI(JITSI_DOMAIN, options);
-
-    jitsiApi.addEventListener("videoConferenceLeft", () => {
-      closeJitsiCall();
-    });
-  } catch (err) {
-    showToast("Failed to initialize video call");
-    console.error(err);
-  }
-}
-
-function closeJitsiCall() {
-  if (jitsiApi) {
-    try {
-      jitsiApi.dispose();
-    } catch {}
-    jitsiApi = null;
-  }
-
-  const jitsiContainer = document.getElementById("jitsiInAppContainer");
-  if (jitsiContainer) {
-    jitsiContainer.style.display = "none";
-    jitsiContainer.innerHTML = "";
-  }
-
-  callScreen?.classList.add("hidden");
+  showCallDialog(
+    type
+  );
 }
 
 
 /* ============================================================
-   OLD CALL UI HANDLERS CLEANUP
+   CALL DIALOG
+============================================================ */
+
+function showCallDialog(
+  type
+) {
+
+  const old =
+    document.getElementById(
+      "videolink2meCallDialog"
+    );
+
+  if (old) {
+    old.remove();
+  }
+
+  const overlay =
+    document.createElement(
+      "div"
+    );
+
+  overlay.id =
+    "videolink2meCallDialog";
+
+  overlay.style.position =
+    "fixed";
+
+  overlay.style.inset =
+    "0";
+
+  overlay.style.background =
+    "rgba(0,0,0,.78)";
+
+  overlay.style.display =
+    "flex";
+
+  overlay.style.alignItems =
+    "center";
+
+  overlay.style.justifyContent =
+    "center";
+
+  overlay.style.padding =
+    "20px";
+
+  overlay.style.boxSizing =
+    "border-box";
+
+  overlay.style.zIndex =
+    "999999";
+
+  const card =
+    document.createElement(
+      "div"
+    );
+
+  card.style.width =
+    "100%";
+
+  card.style.maxWidth =
+    "390px";
+
+  card.style.background =
+    "#161616";
+
+  card.style.color =
+    "#fff";
+
+  card.style.borderRadius =
+    "20px";
+
+  card.style.padding =
+    "24px";
+
+  card.style.boxSizing =
+    "border-box";
+
+  const icon =
+    document.createElement(
+      "div"
+    );
+
+  icon.textContent =
+    type === "voice"
+      ? "📞"
+      : "📹";
+
+  icon.style.fontSize =
+    "42px";
+
+  icon.style.marginBottom =
+    "10px";
+
+  const title =
+    document.createElement(
+      "div"
+    );
+
+  title.textContent =
+    type === "voice"
+      ? "Voice Call"
+      : "Video Call";
+
+  title.style.fontSize =
+    "22px";
+
+  title.style.fontWeight =
+    "700";
+
+  title.style.marginBottom =
+    "8px";
+
+  const description =
+    document.createElement(
+      "div"
+    );
+
+  description.textContent =
+    "Videolink2me room ကို အသုံးပြုပြီး call ဝင်ပါမယ်။";
+
+  description.style.fontSize =
+    "14px";
+
+  description.style.lineHeight =
+    "1.6";
+
+  description.style.color =
+    "#aaa";
+
+  description.style.marginBottom =
+    "18px";
+
+  const roomBox =
+    document.createElement(
+      "div"
+    );
+
+  roomBox.textContent =
+    VIDEOLINK2ME_ROOM;
+
+  roomBox.style.background =
+    "#242424";
+
+  roomBox.style.borderRadius =
+    "12px";
+
+  roomBox.style.padding =
+    "12px";
+
+  roomBox.style.fontSize =
+    "13px";
+
+  roomBox.style.wordBreak =
+    "break-all";
+
+  roomBox.style.marginBottom =
+    "18px";
+
+  const joinButton =
+    document.createElement(
+      "button"
+    );
+
+  joinButton.type =
+    "button";
+
+  joinButton.textContent =
+    "Join Call";
+
+  joinButton.style.width =
+    "100%";
+
+  joinButton.style.padding =
+    "14px";
+
+  joinButton.style.border =
+    "0";
+
+  joinButton.style.borderRadius =
+    "12px";
+
+  joinButton.style.background =
+    "#5865f2";
+
+  joinButton.style.color =
+    "#fff";
+
+  joinButton.style.fontSize =
+    "15px";
+
+  joinButton.style.fontWeight =
+    "700";
+
+  joinButton.style.cursor =
+    "pointer";
+
+  joinButton.style.marginBottom =
+    "10px";
+
+  joinButton.addEventListener(
+    "click",
+    () => {
+
+      overlay.remove();
+
+      openVideolink2me(
+        VIDEOLINK2ME_ROOM
+      );
+    }
+  );
+
+  const sendButton =
+    document.createElement(
+      "button"
+    );
+
+  sendButton.type =
+    "button";
+
+  sendButton.textContent =
+    "Send Room Link";
+
+  sendButton.style.width =
+    "100%";
+
+  sendButton.style.padding =
+    "14px";
+
+  sendButton.style.border =
+    "0";
+
+  sendButton.style.borderRadius =
+    "12px";
+
+  sendButton.style.background =
+    "#292929";
+
+  sendButton.style.color =
+    "#fff";
+
+  sendButton.style.fontSize =
+    "15px";
+
+  sendButton.style.fontWeight =
+    "700";
+
+  sendButton.style.cursor =
+    "pointer";
+
+  sendButton.style.marginBottom =
+    "10px";
+
+  sendButton.addEventListener(
+    "click",
+    async () => {
+
+      overlay.remove();
+
+      await sendCallLink(
+        type
+      );
+    }
+  );
+
+  const cancelButton =
+    document.createElement(
+      "button"
+    );
+
+  cancelButton.type =
+    "button";
+
+  cancelButton.textContent =
+    "Cancel";
+
+  cancelButton.style.width =
+    "100%";
+
+  cancelButton.style.padding =
+    "12px";
+
+  cancelButton.style.border =
+    "0";
+
+  cancelButton.style.background =
+    "transparent";
+
+  cancelButton.style.color =
+    "#aaa";
+
+  cancelButton.style.fontSize =
+    "14px";
+
+  cancelButton.style.cursor =
+    "pointer";
+
+  cancelButton.addEventListener(
+    "click",
+    () => {
+
+      overlay.remove();
+
+      currentCallType =
+        null;
+
+      currentCallUser =
+        null;
+    }
+  );
+
+  card.appendChild(
+    icon
+  );
+
+  card.appendChild(
+    title
+  );
+
+  card.appendChild(
+    description
+  );
+
+  card.appendChild(
+    roomBox
+  );
+
+  card.appendChild(
+    joinButton
+  );
+
+  card.appendChild(
+    sendButton
+  );
+
+  card.appendChild(
+    cancelButton
+  );
+
+  overlay.appendChild(
+    card
+  );
+
+  document.body.appendChild(
+    overlay
+  );
+
+  overlay.addEventListener(
+    "click",
+    event => {
+
+      if (
+        event.target ===
+        overlay
+      ) {
+
+        overlay.remove();
+
+        currentCallType =
+          null;
+
+        currentCallUser =
+          null;
+      }
+    }
+  );
+}
+
+
+/* ============================================================
+   SEND CALL LINK
+============================================================ */
+
+async function sendCallLink(
+  type
+) {
+
+  if (!selectedUser) {
+
+    showToast(
+      "Select a user first"
+    );
+
+    return;
+  }
+
+  try {
+
+    const message =
+      createCallMessage(
+        type
+      );
+
+    await api(
+      "/messages",
+      {
+        method: "POST",
+
+        body:
+          JSON.stringify({
+            receiver_id:
+              selectedUser.id,
+
+            message
+          })
+      }
+    );
+
+    await loadMessages();
+
+    showToast(
+      type === "voice"
+        ? "Voice call link sent"
+        : "Video call link sent"
+    );
+
+  } catch (error) {
+
+    showToast(
+      error.message ||
+      "Could not send call link"
+    );
+  }
+}
+
+
+/* ============================================================
+   OPEN VIDEOLINK2ME
+============================================================ */
+
+function openVideolink2me(
+  url
+) {
+
+  if (
+    !isValidVideolink2meUrl(
+      url
+    )
+  ) {
+
+    showToast(
+      "Invalid Videolink2me link"
+    );
+
+    return;
+  }
+
+  /*
+   * Same WebView ထဲမှာ တိုက်ရိုက်ဖွင့်မယ်။
+   *
+   * Android WebView မှာ camera / microphone သုံးဖို့
+   * native WebView permission handling လိုပါမယ်။
+   */
+
+  window.location.href =
+    url;
+}
+
+
+/* ============================================================
+   OLD CALL UI
+   Disable old WebRTC interface
 ============================================================ */
 
 function hideOldCallUI() {
@@ -2453,35 +2871,81 @@ hideOldCallUI();
 
 /* ============================================================
    OLD INCOMING CALL FUNCTIONS
+   Kept as no-op for compatibility
 ============================================================ */
 
-function startIncomingCallPolling() {}
-function stopIncomingCallPolling() {}
-async function checkIncomingCalls() {}
+function startIncomingCallPolling() {
+  /*
+   * Videolink2me fixed-room calls များအတွက်
+   * /calls/incoming polling မလိုတော့ပါ။
+   */
+}
+
+function stopIncomingCallPolling() {
+  /*
+   * No-op
+   */
+}
+
+async function checkIncomingCalls() {
+  /*
+   * No-op
+   */
+}
 
 
 /* ============================================================
    OLD SIGNAL FUNCTIONS
+   Kept as no-op for compatibility
 ============================================================ */
 
-function startSignalPolling() {}
-function stopSignalPolling() {}
-async function sendSignal() { return null; }
-async function pollCallSignals() {}
+function startSignalPolling() {
+  /*
+   * WebRTC signaling မသုံးတော့ပါ။
+   */
+}
+
+function stopSignalPolling() {
+  /*
+   * WebRTC signaling မသုံးတော့ပါ။
+   */
+}
+
+async function sendSignal() {
+  /*
+   * WebRTC signaling မသုံးတော့ပါ။
+   */
+  return null;
+}
+
+async function pollCallSignals() {
+  /*
+   * No-op
+   */
+}
 
 
 /* ============================================================
-   OLD END CALL -> MAPPED TO JITSI CLOSE
+   OLD END CALL
 ============================================================ */
 
 async function endCall() {
-  closeJitsiCall();
+
+  currentCallType =
+    null;
+
+  currentCallUser =
+    null;
+
+  hideOldCallUI();
+
   return;
 }
 
 
 /* ============================================================
-   CALL CONTROLS
+   OLD CALL BUTTONS
+   Do not use old WebRTC controls
 ============================================================ */
 
 if (acceptCallBtn) {
@@ -2492,7 +2956,9 @@ if (acceptCallBtn) {
 
       event.preventDefault();
 
-      incomingCall?.classList.add("hidden");
+      showToast(
+        "Please use the Videolink2me room"
+      );
     }
   );
 }
@@ -2517,13 +2983,10 @@ if (muteCallBtn) {
   muteCallBtn.addEventListener(
     "click",
     () => {
-      if (jitsiApi) {
-        jitsiApi.executeCommand('toggleAudio');
-      } else {
-        showToast(
-          "Call controls are available inside the call"
-        );
-      }
+
+      showToast(
+        "Call controls are available inside Videolink2me"
+      );
     }
   );
 }
@@ -2533,13 +2996,10 @@ if (cameraCallBtn) {
   cameraCallBtn.addEventListener(
     "click",
     () => {
-      if (jitsiApi) {
-        jitsiApi.executeCommand('toggleVideo');
-      } else {
-        showToast(
-          "Camera controls are available inside the call"
-        );
-      }
+
+      showToast(
+        "Camera controls are available inside Videolink2me"
+      );
     }
   );
 }
@@ -2549,13 +3009,10 @@ if (switchCameraBtn) {
   switchCameraBtn.addEventListener(
     "click",
     () => {
-      if (jitsiApi && typeof jitsiApi.executeCommand === 'function') {
-        jitsiApi.executeCommand('toggleFacingMode');
-      } else {
-        showToast(
-          "Camera switch is not supported on this view"
-        );
-      }
+
+      showToast(
+        "Camera controls are available inside Videolink2me"
+      );
     }
   );
 }
@@ -2585,8 +3042,16 @@ document.addEventListener(
       "Escape"
     ) {
 
+      const callDialog =
+        document.getElementById(
+          "videolink2meCallDialog"
+        );
+
+      if (callDialog) {
+        callDialog.remove();
+      }
+
       closeProfile();
-      closeJitsiCall();
     }
   }
 );
