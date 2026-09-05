@@ -7,7 +7,12 @@
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <meta
+    name="theme-color"
+    content="#0b172a"
   >
 
   <title>Dark Chat</title>
@@ -16,6 +21,494 @@
     rel="stylesheet"
     href="/style.css"
   >
+
+  <!-- =====================================================
+       IMPORTANT LAYOUT OVERRIDE
+       Prevents mobile Chat Area from disappearing.
+  ====================================================== -->
+
+  <style>
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* =====================================================
+       CHAT SCREEN
+    ====================================================== */
+
+    #chatScreen {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      overflow: hidden;
+    }
+
+    #chatScreen.hidden {
+      display: none !important;
+    }
+
+
+    /* =====================================================
+       SIDEBAR
+    ====================================================== */
+
+    #chatScreen .sidebar {
+      flex: 0 0 320px;
+      width: 320px;
+      min-width: 280px;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+
+    /* =====================================================
+       MAIN CHAT AREA
+    ====================================================== */
+
+    #chatScreen .chat-area {
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
+      height: 100%;
+      min-height: 0;
+      display: flex !important;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+
+    /* =====================================================
+       ACTIVE CHAT
+    ====================================================== */
+
+    #chatScreen .active-chat {
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #chatScreen .active-chat.hidden {
+      display: none !important;
+    }
+
+
+    /* =====================================================
+       GROUP CHAT
+    ====================================================== */
+
+    #groupChat {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    #groupChat.hidden {
+      display: none !important;
+    }
+
+
+    /* =====================================================
+       PRIVATE CHAT
+    ====================================================== */
+
+    #privateChat {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    #privateChat.hidden {
+      display: none !important;
+    }
+
+
+    /* =====================================================
+       CHAT HEADER
+    ====================================================== */
+
+    #chatScreen .chat-header {
+      flex: 0 0 auto;
+      width: 100%;
+      min-height: 72px;
+      box-sizing: border-box;
+    }
+
+
+    /* =====================================================
+       MESSAGES
+    ====================================================== */
+
+    #chatScreen .messages {
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+
+
+    /* =====================================================
+       GROUP MESSAGE FORM
+    ====================================================== */
+
+    #groupMessageForm {
+      flex: 0 0 auto !important;
+      display: flex !important;
+      width: 100%;
+      min-height: 64px;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 5;
+    }
+
+    #groupMessageInput {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+
+    /* =====================================================
+       PRIVATE MESSAGE FORM
+    ====================================================== */
+
+    #messageForm {
+      flex: 0 0 auto !important;
+      display: flex !important;
+      width: 100%;
+      min-height: 64px;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 5;
+    }
+
+    #messageInput {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+
+    /* =====================================================
+       SEND BUTTON
+    ====================================================== */
+
+    #groupMessageForm .send-btn,
+    #messageForm .send-btn {
+      flex: 0 0 auto;
+      cursor: pointer;
+    }
+
+
+    /* =====================================================
+       EMPTY CHAT
+    ====================================================== */
+
+    #emptyChat {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    #emptyChat.hidden {
+      display: none !important;
+    }
+
+
+    /* =====================================================
+       PROFILE CLICKABLE AREA
+    ====================================================== */
+
+    .avatar-button {
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .avatar-button:active {
+      transform: scale(0.97);
+    }
+
+
+    /* =====================================================
+       GROUP PROFILE BUTTONS
+       Used by app.js when rendering group messages.
+    ====================================================== */
+
+    .group-profile-button,
+    .group-message-user,
+    .group-message-sender {
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .group-profile-button {
+      border: 0;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+    }
+
+    .group-message-user,
+    .group-message-sender {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      padding: 0;
+    }
+
+
+    /* =====================================================
+       GROUP MESSAGE STRUCTURE
+    ====================================================== */
+
+    .group-message-row {
+      display: flex;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .group-message-avatar {
+      flex: 0 0 auto;
+    }
+
+    .group-message-content {
+      min-width: 0;
+    }
+
+    .group-message-sender {
+      display: inline-block;
+    }
+
+    .group-message-bubble {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .group-message-time {
+      display: block;
+    }
+
+
+    /* =====================================================
+       MOBILE
+       Keep BOTH People and Chat visible.
+    ====================================================== */
+
+    @media (max-width: 800px) {
+
+      #chatScreen {
+        display: flex !important;
+        flex-direction: row !important;
+      }
+
+      #chatScreen .sidebar {
+        flex: 0 0 34%;
+        width: 34%;
+        min-width: 0;
+        max-width: 34%;
+        height: 100%;
+      }
+
+      #chatScreen .chat-area {
+        flex: 1 1 66%;
+        width: 66%;
+        min-width: 0;
+        max-width: 66%;
+        height: 100%;
+        display: flex !important;
+      }
+
+      #chatScreen .sidebar-header {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      #chatScreen .sidebar-title {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      #chatScreen .profile-info {
+        min-width: 0;
+      }
+
+      #chatScreen .profile-info strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      #chatScreen .users-list {
+        overflow-x: hidden;
+      }
+
+      #chatScreen .user-item {
+        min-width: 0;
+      }
+
+      #chatScreen .user-info {
+        min-width: 0;
+      }
+
+      #chatScreen .user-info strong,
+      #chatScreen .user-info span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      #chatScreen .chat-header {
+        min-height: 68px;
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      #chatScreen .chat-user {
+        min-width: 0;
+      }
+
+      #chatScreen .chat-user > div:last-child {
+        min-width: 0;
+      }
+
+      #chatScreen .chat-user strong,
+      #chatScreen .chat-user span {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      #groupMessageForm,
+      #messageForm {
+        min-height: 58px;
+        padding: 8px;
+      }
+
+      #groupMessageInput,
+      #messageInput {
+        min-width: 0;
+        font-size: 15px;
+      }
+
+    }
+
+
+    /* =====================================================
+       VERY SMALL PHONES
+    ====================================================== */
+
+    @media (max-width: 430px) {
+
+      #chatScreen .sidebar {
+        flex-basis: 38%;
+        width: 38%;
+        max-width: 38%;
+      }
+
+      #chatScreen .chat-area {
+        flex-basis: 62%;
+        width: 62%;
+        max-width: 62%;
+      }
+
+      #chatScreen .sidebar-header {
+        padding: 10px;
+      }
+
+      #chatScreen .sidebar-title {
+        padding: 10px;
+      }
+
+      #chatScreen .profile {
+        gap: 7px;
+      }
+
+      #chatScreen .profile-info {
+        display: none;
+      }
+
+      #chatScreen .sidebar .avatar {
+        width: 42px;
+        height: 42px;
+      }
+
+      #chatScreen .users-list .user-item {
+        padding: 9px 7px;
+      }
+
+      #chatScreen .users-list .avatar {
+        width: 38px;
+        height: 38px;
+      }
+
+      #chatScreen .user-info span {
+        display: none;
+      }
+
+      #chatScreen .chat-header {
+        min-height: 62px;
+      }
+
+      #chatScreen .chat-header .avatar {
+        width: 38px;
+        height: 38px;
+      }
+
+      #chatScreen .chat-header strong {
+        font-size: 14px;
+      }
+
+      #chatScreen .chat-header span {
+        font-size: 12px;
+      }
+
+      #groupMessageInput,
+      #messageInput {
+        font-size: 14px;
+      }
+
+      #groupMessageForm .send-btn,
+      #messageForm .send-btn {
+        min-width: 42px;
+      }
+
+    }
+
+  </style>
 
 </head>
 
@@ -26,7 +519,7 @@
 
 
   <!-- =====================================================
-       AUTH
+       AUTH SCREEN
   ====================================================== -->
 
   <section
@@ -74,7 +567,7 @@
 
         <div class="field">
 
-          <label>
+          <label for="loginEmail">
             Email
           </label>
 
@@ -91,7 +584,7 @@
 
         <div class="field">
 
-          <label>
+          <label for="loginPassword">
             Password
           </label>
 
@@ -117,6 +610,7 @@
         <div
           id="loginError"
           class="error"
+          role="alert"
         ></div>
 
 
@@ -152,7 +646,7 @@
 
         <div class="field">
 
-          <label>
+          <label for="registerUsername">
             Username
           </label>
 
@@ -169,7 +663,7 @@
 
         <div class="field">
 
-          <label>
+          <label for="registerEmail">
             Email
           </label>
 
@@ -186,7 +680,7 @@
 
         <div class="field">
 
-          <label>
+          <label for="registerPassword">
             Password
           </label>
 
@@ -212,6 +706,7 @@
         <div
           id="registerError"
           class="error"
+          role="alert"
         ></div>
 
 
@@ -247,7 +742,10 @@
 
     <aside class="sidebar">
 
-      <!-- MY PROFILE -->
+
+      <!-- =================================================
+           MY PROFILE
+      ================================================== -->
 
       <div class="sidebar-header">
 
@@ -258,6 +756,7 @@
             class="avatar-button"
             type="button"
             title="Profile"
+            aria-label="Open profile"
           >
 
             <div
@@ -290,6 +789,7 @@
           class="icon-btn"
           type="button"
           title="Logout"
+          aria-label="Logout"
         >
           ⎋
         </button>
@@ -299,7 +799,7 @@
 
 
       <!-- =================================================
-           USERS
+           PEOPLE
       ================================================== -->
 
       <div class="sidebar-title">
@@ -313,6 +813,7 @@
           class="small-btn"
           type="button"
           title="Refresh"
+          aria-label="Refresh people"
         >
           ↻
         </button>
@@ -343,7 +844,8 @@
 
 
       <!-- =================================================
-           DEFAULT GROUP CHAT
+           GROUP CHAT
+           This is the default chat after login.
       ================================================== -->
 
       <div
@@ -352,7 +854,9 @@
       >
 
 
-        <!-- GROUP CHAT HEADER -->
+        <!-- =================================================
+             GROUP HEADER
+        ================================================== -->
 
         <header class="chat-header">
 
@@ -361,6 +865,7 @@
             <div
               id="groupAvatar"
               class="avatar"
+              aria-hidden="true"
             >
               G
             </div>
@@ -388,6 +893,7 @@
               class="icon-btn"
               type="button"
               title="Refresh messages"
+              aria-label="Refresh group messages"
             >
               ↻
             </button>
@@ -398,16 +904,21 @@
 
 
 
-        <!-- GROUP MESSAGES -->
+        <!-- =================================================
+             GROUP MESSAGES
+        ================================================== -->
 
         <div
           id="groupMessages"
           class="messages"
+          aria-live="polite"
         ></div>
 
 
 
-        <!-- GROUP MESSAGE FORM -->
+        <!-- =================================================
+             GROUP MESSAGE FORM
+        ================================================== -->
 
         <form
           id="groupMessageForm"
@@ -420,12 +931,16 @@
             placeholder="Write a message to everyone..."
             maxlength="5000"
             autocomplete="off"
+            enterkeyhint="send"
           >
 
 
           <button
+            id="groupSendBtn"
             class="send-btn"
             type="submit"
+            title="Send"
+            aria-label="Send group message"
           >
             ➤
           </button>
@@ -438,6 +953,7 @@
 
       <!-- =================================================
            PRIVATE CHAT
+           Opened when a person is clicked.
       ================================================== -->
 
       <div
@@ -446,7 +962,9 @@
       >
 
 
-        <!-- PRIVATE CHAT HEADER -->
+        <!-- =================================================
+             PRIVATE CHAT HEADER
+        ================================================== -->
 
         <header class="chat-header">
 
@@ -455,6 +973,7 @@
             <div
               id="chatAvatar"
               class="avatar"
+              aria-hidden="true"
             >
               U
             </div>
@@ -482,6 +1001,7 @@
               class="icon-btn"
               type="button"
               title="Refresh messages"
+              aria-label="Refresh private messages"
             >
               ↻
             </button>
@@ -492,16 +1012,21 @@
 
 
 
-        <!-- PRIVATE MESSAGES -->
+        <!-- =================================================
+             PRIVATE MESSAGES
+        ================================================== -->
 
         <div
           id="messages"
           class="messages"
+          aria-live="polite"
         ></div>
 
 
 
-        <!-- PRIVATE MESSAGE FORM -->
+        <!-- =================================================
+             PRIVATE MESSAGE FORM
+        ================================================== -->
 
         <form
           id="messageForm"
@@ -514,12 +1039,16 @@
             placeholder="Write a message..."
             maxlength="5000"
             autocomplete="off"
+            enterkeyhint="send"
           >
 
 
           <button
+            id="privateSendBtn"
             class="send-btn"
             type="submit"
+            title="Send"
+            aria-label="Send private message"
           >
             ➤
           </button>
@@ -583,6 +1112,7 @@
       class="profile-close"
       type="button"
       title="Close"
+      aria-label="Close profile"
     >
       ×
     </button>
@@ -593,6 +1123,7 @@
       class="profile-photo-large-btn"
       type="button"
       title="Profile photo"
+      aria-label="Profile photo"
     >
 
       <div
@@ -657,6 +1188,8 @@
 <div
   id="toast"
   class="toast"
+  role="status"
+  aria-live="polite"
 ></div>
 
 
@@ -666,6 +1199,7 @@
 ======================================================== -->
 
 <script src="/app.js"></script>
+
 
 </body>
 
