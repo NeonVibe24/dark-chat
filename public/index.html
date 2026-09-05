@@ -22,11 +22,6 @@
     href="/style.css"
   >
 
-  <!-- =====================================================
-       IMPORTANT LAYOUT OVERRIDE
-       Prevents mobile Chat Area from disappearing.
-  ====================================================== -->
-
   <style>
 
     html,
@@ -437,10 +432,6 @@
 <div id="app">
 
 
-  <!-- =====================================================
-       AUTH SCREEN
-  ====================================================== -->
-
   <section
     id="authScreen"
     class="auth-screen"
@@ -468,10 +459,6 @@
 
       </div>
 
-
-      <!-- =================================================
-           LOGIN
-      ================================================== -->
 
       <form id="loginForm">
 
@@ -544,10 +531,6 @@
       </form>
 
 
-
-      <!-- =================================================
-           REGISTER
-      ================================================== -->
 
       <form
         id="registerForm"
@@ -645,26 +628,14 @@
 
 
 
-  <!-- =====================================================
-       CHAT APP
-  ====================================================== -->
-
   <section
     id="chatScreen"
     class="chat-screen hidden"
   >
 
 
-    <!-- =================================================
-         SIDEBAR
-    ================================================== -->
-
     <aside class="sidebar">
 
-
-      <!-- =================================================
-           MY PROFILE
-      ================================================== -->
 
       <div class="sidebar-header">
 
@@ -717,10 +688,6 @@
 
 
 
-      <!-- =================================================
-           PEOPLE
-      ================================================== -->
-
       <div class="sidebar-title">
 
         <span>
@@ -755,27 +722,14 @@
 
 
 
-    <!-- =================================================
-         MAIN CHAT AREA
-    ================================================== -->
-
     <main class="chat-area">
 
-
-      <!-- =================================================
-           GROUP CHAT
-           This is the default chat after login.
-      ================================================== -->
 
       <div
         id="groupChat"
         class="active-chat"
       >
 
-
-        <!-- =================================================
-             GROUP HEADER
-        ================================================== -->
 
         <header class="chat-header">
 
@@ -823,10 +777,6 @@
 
 
 
-        <!-- =================================================
-             GROUP MESSAGES
-        ================================================== -->
-
         <div
           id="groupMessages"
           class="messages"
@@ -834,10 +784,6 @@
         ></div>
 
 
-
-        <!-- =================================================
-             GROUP MESSAGE FORM
-        ================================================== -->
 
         <form
           id="groupMessageForm"
@@ -870,20 +816,11 @@
 
 
 
-      <!-- =================================================
-           PRIVATE CHAT
-           Opened when a person is clicked.
-      ================================================== -->
-
       <div
         id="privateChat"
         class="active-chat hidden"
       >
 
-
-        <!-- =================================================
-             PRIVATE CHAT HEADER
-        ================================================== -->
 
         <header class="chat-header">
 
@@ -931,10 +868,6 @@
 
 
 
-        <!-- =================================================
-             PRIVATE MESSAGES
-        ================================================== -->
-
         <div
           id="messages"
           class="messages"
@@ -942,10 +875,6 @@
         ></div>
 
 
-
-        <!-- =================================================
-             PRIVATE MESSAGE FORM
-        ================================================== -->
 
         <form
           id="messageForm"
@@ -978,10 +907,6 @@
 
 
 
-      <!-- =================================================
-           EMPTY CHAT
-      ================================================== -->
-
       <div
         id="emptyChat"
         class="empty-chat hidden"
@@ -1008,10 +933,6 @@
 </div>
 
 
-
-<!-- =======================================================
-     MY PROFILE PANEL
-======================================================== -->
 
 <div
   id="profilePanel"
@@ -1100,10 +1021,6 @@
 
 
 
-<!-- =======================================================
-     TOAST
-======================================================== -->
-
 <div
   id="toast"
   class="toast"
@@ -1113,9 +1030,6 @@
 
 
 
-<!-- =======================================================
-     APP JAVASCRIPT (WITH PRIVATE CHAT CLICK HANDLER)
-======================================================== -->
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const usersListContainer = document.getElementById('usersList');
@@ -1125,25 +1039,39 @@
     const chatAvatar = document.getElementById('chatAvatar');
     const chatStatus = document.getElementById('chatStatus');
 
+    // Sidebar ရဲ့ People အောက်မှာ Group Chat ကို ပြန်သွားဖို့ ခလုတ်တစ်ခုကို ထည့်သွင်းပေးခြင်း
+    const sidebarTitle = document.querySelector('.sidebar-title');
+    if (sidebarTitle && !document.getElementById('groupChatNavBtn')) {
+      const navBtn = document.createElement('button');
+      navBtn.id = 'groupChatNavBtn';
+      navBtn.innerHTML = '👥 Group Chat';
+      navBtn.style.cssText = 'display: block; width: calc(100% - 24px); margin: 8px 12px; padding: 8px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: #fff; border-radius: 6px; cursor: pointer; text-align: left; font-size: 13px; font-weight: 500;';
+      
+      navBtn.addEventListener('click', () => {
+        if (groupChat && privateChat) {
+          privateChat.classList.add('hidden');
+          groupChat.classList.remove('hidden');
+        }
+      });
+      
+      sidebarTitle.parentNode.insertBefore(navBtn, sidebarTitle.nextSibling);
+    }
+
+    // User တစ်ဦးချင်းစီကို နှိပ်လျှင် Private Chat သို့ ပြောင်းလဲပေးရန်
     if (usersListContainer) {
       usersListContainer.addEventListener('click', (e) => {
-        const userItem = e.target.closest('.user-item, [data-user-id], .profile, div');
-        if (userItem) {
-          const userNameText = userItem.textContent.trim() || 'User';
+        const userItem = e.target.closest('.user-item') || e.target.closest('[data-user-id]') || e.target.closest('div');
+        
+        if (userItem && !userItem.closest('#myAvatarBtn')) {
+          const userNameText = userItem.querySelector('strong, span')?.textContent || userItem.textContent.trim() || 'User';
           
           if (groupChat && privateChat) {
             groupChat.classList.add('hidden');
             privateChat.classList.remove('hidden');
             
-            if (chatUsername) {
-              chatUsername.textContent = userNameText;
-            }
-            if (chatAvatar) {
-              chatAvatar.textContent = userNameText.charAt(0).toUpperCase();
-            }
-            if (chatStatus) {
-              chatStatus.textContent = 'Online';
-            }
+            if (chatUsername) chatUsername.textContent = userNameText;
+            if (chatAvatar) chatAvatar.textContent = userNameText.charAt(0).toUpperCase();
+            if (chatStatus) chatStatus.textContent = 'Online';
           }
         }
       });
