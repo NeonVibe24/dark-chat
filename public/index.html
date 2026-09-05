@@ -22,11 +22,6 @@
     href="/style.css"
   >
 
-  <!-- =====================================================
-       IMPORTANT LAYOUT OVERRIDE
-       Prevents mobile Chat Area from disappearing.
-  ====================================================== -->
-
   <style>
 
     html,
@@ -45,14 +40,9 @@
       overflow: hidden;
     }
 
-    /* =====================================================
-       CHAT SCREEN
-    ====================================================== */
-
     #chatScreen {
       width: 100%;
       height: 100%;
-      min-height: 0;
       display: flex;
       flex-direction: row;
       overflow: hidden;
@@ -71,9 +61,7 @@
     #chatScreen .sidebar {
       flex: 0 0 300px;
       width: 300px;
-      min-width: 280px;
       height: 100%;
-      min-height: 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -82,59 +70,16 @@
       background: inherit;
     }
 
-    #chatScreen .sidebar .sidebar-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      box-sizing: border-box;
-    }
-
-    #chatScreen .sidebar .profile {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
-      flex: 1;
-    }
-
-    #chatScreen .sidebar .profile-info {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
-
-    #chatScreen .sidebar .sidebar-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 16px;
-      box-sizing: border-box;
-      font-size: 12px;
-      letter-spacing: 0.5px;
-      opacity: 0.7;
-    }
-
-    #chatScreen .users-list {
-      flex: 1 1 auto;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding: 8px;
-      box-sizing: border-box;
-    }
-
 
     /* =====================================================
        MAIN CHAT AREA
     ====================================================== */
 
     #chatScreen .chat-area {
-      flex: 1 1 auto;
+      flex: 1;
       width: 0;
-      min-width: 0;
       height: 100%;
-      min-height: 0;
-      display: flex !important;
+      display: flex;
       flex-direction: column;
       overflow: hidden;
       position: relative;
@@ -142,66 +87,30 @@
 
 
     /* =====================================================
-       ACTIVE CHAT
+       ACTIVE CHAT (GROUP & PRIVATE)
     ====================================================== */
 
-    #chatScreen .active-chat {
-      width: 100%;
-      height: 100%;
-      min-width: 0;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    #chatScreen .active-chat.hidden {
-      display: none !important;
-    }
-
-
-    /* =====================================================
-       GROUP CHAT
-    ====================================================== */
-
-    #groupChat {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: 100%;
-      min-height: 0;
-    }
-
-    #groupChat.hidden {
-      display: none !important;
-    }
-
-
-    /* =====================================================
-       PRIVATE CHAT
-    ====================================================== */
-
+    #groupChat,
     #privateChat {
       display: flex;
       flex-direction: column;
       width: 100%;
       height: 100%;
-      min-height: 0;
+      overflow: hidden;
     }
 
+    #groupChat.hidden,
     #privateChat.hidden {
       display: none !important;
     }
 
 
     /* =====================================================
-       CHAT HEADER
+       CHAT HEADER (FIXED HEIGHT)
     ====================================================== */
 
     #chatScreen .chat-header {
-      flex: 0 0 auto;
-      width: 100%;
-      min-height: 64px;
+      flex: 0 0 64px;
       height: 64px;
       display: flex;
       align-items: center;
@@ -211,22 +120,13 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    #chatScreen .chat-header .chat-user {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
-    }
-
 
     /* =====================================================
-       MESSAGES
+       MESSAGES CONTAINER (SCROLLABLE AREA)
     ====================================================== */
 
     #chatScreen .messages {
-      flex: 1 1 auto;
-      width: 100%;
-      min-height: 0;
+      flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
       padding: 16px;
@@ -235,174 +135,56 @@
 
 
     /* =====================================================
-       GROUP MESSAGE FORM
+       MESSAGE FORMS & INPUTS (GUARANTEED TO SHOW)
     ====================================================== */
 
-    #groupMessageForm {
-      flex: 0 0 auto !important;
+    #groupMessageForm,
+    #messageForm {
+      flex: 0 0 64px !important;
+      height: 64px !important;
       display: flex !important;
-      align-items: center;
-      width: 100%;
-      min-height: 64px;
-      padding: 10px 16px;
-      box-sizing: border-box;
-      position: relative;
-      z-index: 5;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    #groupMessageInput {
-      display: block !important;
+      align-items: center !important;
+      width: 100% !important;
+      padding: 10px 16px !important;
+      box-sizing: border-box !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+      background: inherit !important;
+      position: relative !important;
+      z-index: 10 !important;
       visibility: visible !important;
       opacity: 1 !important;
-      flex: 1 1 auto;
-      min-width: 0;
-      height: 40px;
-      padding: 0 12px;
-      box-sizing: border-box;
     }
 
-
-    /* =====================================================
-       PRIVATE MESSAGE FORM
-    ====================================================== */
-
-    #messageForm {
-      flex: 0 0 auto !important;
-      display: flex !important;
-      align-items: center;
-      width: 100%;
-      min-height: 64px;
-      padding: 10px 16px;
-      box-sizing: border-box;
-      position: relative;
-      z-index: 5;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
+    #groupMessageInput,
     #messageInput {
       display: block !important;
       visibility: visible !important;
       opacity: 1 !important;
-      flex: 1 1 auto;
-      min-width: 0;
+      flex: 1;
       height: 40px;
       padding: 0 12px;
       box-sizing: border-box;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: inherit;
     }
-
-
-    /* =====================================================
-       SEND BUTTON
-    ====================================================== */
 
     #groupMessageForm .send-btn,
     #messageForm .send-btn {
-      flex: 0 0 auto;
-      cursor: pointer;
+      flex: 0 0 40px;
       height: 40px;
-      min-width: 40px;
+      width: 40px;
       margin-left: 8px;
-    }
-
-
-    /* =====================================================
-       EMPTY CHAT
-    ====================================================== */
-
-    #emptyChat {
-      width: 100%;
-      height: 100%;
-      min-height: 0;
+      cursor: pointer;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
     }
 
-    #emptyChat.hidden {
-      display: none !important;
-    }
-
 
     /* =====================================================
-       PROFILE CLICKABLE AREA
-    ====================================================== */
-
-    .avatar-button {
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .avatar-button:active {
-      transform: scale(0.97);
-    }
-
-
-    /* =====================================================
-       GROUP PROFILE BUTTONS
-    ====================================================== */
-
-    .group-profile-button,
-    .group-message-user,
-    .group-message-sender {
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .group-profile-button {
-      border: 0;
-      padding: 0;
-      margin: 0;
-      background: transparent;
-      color: inherit;
-      font: inherit;
-    }
-
-    .group-message-user,
-    .group-message-sender {
-      border: 0;
-      background: transparent;
-      color: inherit;
-      font: inherit;
-      padding: 0;
-    }
-
-
-    /* =====================================================
-       GROUP MESSAGE STRUCTURE
-    ====================================================== */
-
-    .group-message-row {
-      display: flex;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .group-message-avatar {
-      flex: 0 0 auto;
-    }
-
-    .group-message-content {
-      min-width: 0;
-    }
-
-    .group-message-sender {
-      display: inline-block;
-    }
-
-    .group-message-bubble {
-      word-break: break-word;
-      overflow-wrap: anywhere;
-    }
-
-    .group-message-time {
-      display: block;
-    }
-
-
-    /* =====================================================
-       MOBILE RESPONSIVE FIX (FOR PHONES)
+       MOBILE RESPONSIVE
     ====================================================== */
 
     @media (max-width: 768px) {
@@ -412,8 +194,6 @@
 
       #chatScreen .sidebar {
         width: 100%;
-        max-width: 100%;
-        flex: 1 1 auto;
         height: 100%;
       }
 
@@ -427,14 +207,11 @@
         z-index: 5;
       }
 
-      #chatScreen .chat-area:has(.active-chat.hidden) {
-        display: none !important;
-      }
-
       #groupMessageForm,
       #messageForm {
-        min-height: 56px;
-        padding: 8px 12px;
+        flex: 0 0 56px !important;
+        height: 56px !important;
+        padding: 8px 12px !important;
       }
 
       #groupMessageInput,
@@ -446,7 +223,7 @@
       #groupMessageForm .send-btn,
       #messageForm .send-btn {
         height: 38px;
-        min-width: 38px;
+        width: 38px;
       }
     }
 
@@ -459,60 +236,25 @@
 
 <div id="app">
 
-
-  <!-- =====================================================
-       AUTH SCREEN
-  ====================================================== -->
-
+  <!-- AUTH SCREEN -->
   <section
     id="authScreen"
     class="auth-screen"
   >
-
     <div class="auth-card">
-
       <div class="brand">
-
-        <div class="brand-icon">
-          D
-        </div>
-
+        <div class="brand-icon">D</div>
         <div>
-
-          <h1>
-            Dark Chat
-          </h1>
-
-          <p>
-            Private messaging
-          </p>
-
+          <h1>Dark Chat</h1>
+          <p>Private messaging</p>
         </div>
-
       </div>
 
-
-      <!-- =================================================
-           LOGIN
-      ================================================== -->
-
       <form id="loginForm">
-
-        <h2>
-          Welcome back
-        </h2>
-
-        <p class="auth-subtitle">
-          Sign in to continue
-        </p>
-
-
+        <h2>Welcome back</h2>
+        <p class="auth-subtitle">Sign in to continue</p>
         <div class="field">
-
-          <label for="loginEmail">
-            Email
-          </label>
-
+          <label for="loginEmail">Email</label>
           <input
             id="loginEmail"
             type="email"
@@ -520,16 +262,9 @@
             autocomplete="email"
             required
           >
-
         </div>
-
-
         <div class="field">
-
-          <label for="loginPassword">
-            Password
-          </label>
-
+          <label for="loginPassword">Password</label>
           <input
             id="loginPassword"
             type="password"
@@ -537,61 +272,31 @@
             autocomplete="current-password"
             required
           >
-
         </div>
-
-
         <button
           class="primary-btn"
           type="submit"
-        >
-          Sign In
-        </button>
-
-
+        >Sign In</button>
         <div
           id="loginError"
           class="error"
           role="alert"
         ></div>
-
-
         <button
           type="button"
           class="switch-btn"
           id="showRegister"
-        >
-          Create an account
-        </button>
-
+        >Create an account</button>
       </form>
-
-
-
-      <!-- =================================================
-           REGISTER
-      ================================================== -->
 
       <form
         id="registerForm"
         class="hidden"
       >
-
-        <h2>
-          Create account
-        </h2>
-
-        <p class="auth-subtitle">
-          Join Dark Chat
-        </p>
-
-
+        <h2>Create account</h2>
+        <p class="auth-subtitle">Join Dark Chat</p>
         <div class="field">
-
-          <label for="registerUsername">
-            Username
-          </label>
-
+          <label for="registerUsername">Username</label>
           <input
             id="registerUsername"
             type="text"
@@ -599,16 +304,9 @@
             autocomplete="username"
             required
           >
-
         </div>
-
-
         <div class="field">
-
-          <label for="registerEmail">
-            Email
-          </label>
-
+          <label for="registerEmail">Email</label>
           <input
             id="registerEmail"
             type="email"
@@ -616,16 +314,9 @@
             autocomplete="email"
             required
           >
-
         </div>
-
-
         <div class="field">
-
-          <label for="registerPassword">
-            Password
-          </label>
-
+          <label for="registerPassword">Password</label>
           <input
             id="registerPassword"
             type="password"
@@ -633,240 +324,115 @@
             autocomplete="new-password"
             required
           >
-
         </div>
-
-
         <button
           class="primary-btn"
           type="submit"
-        >
-          Create Account
-        </button>
-
-
+        >Create Account</button>
         <div
           id="registerError"
           class="error"
           role="alert"
         ></div>
-
-
         <button
           type="button"
           class="switch-btn"
           id="showLogin"
-        >
-          Already have an account?
-        </button>
-
+        >Already have an account?</button>
       </form>
-
     </div>
-
   </section>
 
-
-
-  <!-- =====================================================
-       CHAT APP
-  ====================================================== -->
-
+  <!-- CHAT APP -->
   <section
     id="chatScreen"
     class="chat-screen hidden"
   >
 
-
-    <!-- =================================================
-         SIDEBAR
-    ================================================== -->
-
+    <!-- SIDEBAR -->
     <aside class="sidebar">
-
-
-      <!-- =================================================
-           MY PROFILE
-      ================================================== -->
-
       <div class="sidebar-header">
-
         <div class="profile">
-
           <button
             id="myAvatarBtn"
             class="avatar-button"
             type="button"
             title="Profile"
-            aria-label="Open profile"
           >
-
             <div
               id="myAvatar"
               class="avatar"
-            >
-              D
-            </div>
-
+            >D</div>
           </button>
-
-
           <div class="profile-info">
-
-            <strong id="myUsername">
-              User
-            </strong>
-
-            <span>
-              Online
-            </span>
-
+            <strong id="myUsername">User</strong>
+            <span>Online</span>
           </div>
-
         </div>
-
-
         <button
           id="logoutBtn"
           class="icon-btn"
           type="button"
           title="Logout"
-          aria-label="Logout"
-        >
-          ⎋
-        </button>
-
+        >⎋</button>
       </div>
 
-
-
-      <!-- =================================================
-           PEOPLE
-      ================================================== -->
-
       <div class="sidebar-title">
-
-        <span>
-          People
-        </span>
-
+        <span>People</span>
         <button
           id="refreshUsers"
           class="small-btn"
           type="button"
           title="Refresh"
-          aria-label="Refresh people"
-        >
-          ↻
-        </button>
-
+        >↻</button>
       </div>
-
 
       <div
         id="usersList"
         class="users-list"
       >
-
-        <div class="loading">
-          Loading users...
-        </div>
-
+        <div class="loading">Loading users...</div>
       </div>
-
     </aside>
 
-
-
-    <!-- =================================================
-         MAIN CHAT AREA
-    ================================================== -->
-
+    <!-- MAIN CHAT AREA -->
     <main class="chat-area">
 
-
-      <!-- =================================================
-           GROUP CHAT
-           This is the default chat after login.
-      ================================================== -->
-
+      <!-- GROUP CHAT -->
       <div
         id="groupChat"
         class="active-chat"
       >
-
-
-        <!-- =================================================
-             GROUP HEADER
-        ================================================== -->
-
         <header class="chat-header">
-
           <div class="chat-user">
-
             <div
               id="groupAvatar"
               class="avatar"
-              aria-hidden="true"
-            >
-              G
-            </div>
-
-
+            >G</div>
             <div>
-
-              <strong id="groupChatName">
-                Group Chat
-              </strong>
-
-              <span id="groupChatStatus">
-                Everyone
-              </span>
-
+              <strong id="groupChatName">Group Chat</strong>
+              <span id="groupChatStatus">Everyone</span>
             </div>
-
           </div>
-
-
           <div class="chat-actions">
-
             <button
               id="reloadGroupMessages"
               class="icon-btn"
               type="button"
               title="Refresh messages"
-              aria-label="Refresh group messages"
-            >
-              ↻
-            </button>
-
+            >↻</button>
           </div>
-
         </header>
-
-
-
-        <!-- =================================================
-             GROUP MESSAGES
-        ================================================== -->
 
         <div
           id="groupMessages"
           class="messages"
-          aria-live="polite"
         ></div>
-
-
-
-        <!-- =================================================
-             GROUP MESSAGE FORM
-        ================================================== -->
 
         <form
           id="groupMessageForm"
           class="message-form"
         >
-
           <input
             id="groupMessageInput"
             type="text"
@@ -875,106 +441,50 @@
             autocomplete="off"
             enterkeyhint="send"
           >
-
-
           <button
             id="groupSendBtn"
             class="send-btn"
             type="submit"
             title="Send"
-            aria-label="Send group message"
-          >
-            ➤
-          </button>
-
+          >➤</button>
         </form>
-
       </div>
 
-
-
-      <!-- =================================================
-           PRIVATE CHAT
-           Opened when a person is clicked.
-      ================================================== -->
-
+      <!-- PRIVATE CHAT -->
       <div
         id="privateChat"
         class="active-chat hidden"
       >
-
-
-        <!-- =================================================
-             PRIVATE CHAT HEADER
-        ================================================== -->
-
         <header class="chat-header">
-
           <div class="chat-user">
-
             <div
               id="chatAvatar"
               class="avatar"
-              aria-hidden="true"
-            >
-              U
-            </div>
-
-
+            >U</div>
             <div>
-
-              <strong id="chatUsername">
-                User
-              </strong>
-
-              <span id="chatStatus">
-                Offline
-              </span>
-
+              <strong id="chatUsername">User</strong>
+              <span id="chatStatus">Offline</span>
             </div>
-
           </div>
-
-
           <div class="chat-actions">
-
             <button
               id="reloadMessages"
               class="icon-btn"
               type="button"
               title="Refresh messages"
-              aria-label="Refresh private messages"
-            >
-              ↻
-            </button>
-
+            >↻</button>
           </div>
-
         </header>
-
-
-
-        <!-- =================================================
-             PRIVATE MESSAGES
-        ================================================== -->
 
         <div
           id="messages"
           class="messages"
-          aria-live="polite"
         ></div>
-
-
-
-        <!-- =================================================
-             PRIVATE MESSAGE FORM
-        ================================================== -->
 
         <form
           id="messageForm"
           class="message-form"
         >
-
           <input
             id="messageInput"
             type="text"
@@ -983,45 +493,13 @@
             autocomplete="off"
             enterkeyhint="send"
           >
-
-
           <button
             id="privateSendBtn"
             class="send-btn"
             type="submit"
             title="Send"
-            aria-label="Send private message"
-          >
-            ➤
-          </button>
-
+          >➤</button>
         </form>
-
-      </div>
-
-
-
-      <!-- =================================================
-           EMPTY CHAT
-      ================================================== -->
-
-      <div
-        id="emptyChat"
-        class="empty-chat hidden"
-      >
-
-        <div class="empty-icon">
-          ◇
-        </div>
-
-        <h2>
-          Group Chat
-        </h2>
-
-        <p>
-          Everyone can chat here.
-        </p>
-
       </div>
 
     </main>
@@ -1030,118 +508,60 @@
 
 </div>
 
-
-
-<!-- =======================================================
-     MY PROFILE PANEL
-======================================================== -->
-
 <div
   id="profilePanel"
   class="profile-panel hidden"
 >
-
   <div
     class="profile-panel-backdrop"
     id="profilePanelBackdrop"
   ></div>
-
-
   <div class="profile-panel-card">
-
     <button
       id="closeProfilePanel"
       class="profile-close"
       type="button"
-      title="Close"
-      aria-label="Close profile"
-    >
-      ×
-    </button>
-
-
+    >×</button>
     <button
       id="profilePhotoBtn"
       class="profile-photo-large-btn"
       type="button"
-      title="Profile photo"
-      aria-label="Profile photo"
     >
-
       <div
         id="profilePhotoLarge"
         class="profile-photo-large"
-      >
-        D
-      </div>
-
+      >D</div>
     </button>
-
-
-    <h3 id="profilePanelName">
-      User
-    </h3>
-
-
-    <p id="profilePanelEmail">
-      user@email.com
-    </p>
-
-
+    <h3 id="profilePanelName">User</h3>
+    <p id="profilePanelEmail">user@email.com</p>
     <input
       id="profilePhotoInput"
       type="file"
       accept="image/*"
       hidden
     >
-
-
     <div class="profile-actions">
-
       <button
         id="changeProfilePhoto"
         class="primary-btn"
         type="button"
-      >
-        Change Photo
-      </button>
-
-
+      >Change Photo</button>
       <button
         id="removeProfilePhoto"
         class="secondary-btn"
         type="button"
-      >
-        Remove
-      </button>
-
+      >Remove</button>
     </div>
-
   </div>
-
 </div>
-
-
-
-<!-- =======================================================
-     TOAST
-======================================================== -->
 
 <div
   id="toast"
   class="toast"
   role="status"
-  aria-live="polite"
 ></div>
 
-
-
-<!-- =======================================================
-     APP JAVASCRIPT
-======================================================== -->
-
 <script src="/app.js"></script>
-
 
 </body>
 
