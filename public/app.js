@@ -7,28 +7,35 @@ let groupMessageTimer = null;
 let privateMessageTimer = null;
 let inboxTimer = null;
 
-let token = localStorage.getItem("dark_chat_token") || "";
+let token =
+  localStorage.getItem("dark_chat_token") || "";
 
 
-/* =========================================================
+/* ============================================================
    DOM HELPERS
-========================================================= */
+============================================================ */
 
 function $(id) {
   return document.getElementById(id);
 }
 
-function show(el) {
-  if (!el) return;
-  el.classList.remove("hidden");
+
+function show(element) {
+  if (!element) return;
+
+  element.classList.remove("hidden");
 }
 
-function hide(el) {
-  if (!el) return;
-  el.classList.add("hidden");
+
+function hide(element) {
+  if (!element) return;
+
+  element.classList.add("hidden");
 }
 
-function escapeHtml(value) {
+
+function escapeHTML(value) {
+
   return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -37,558 +44,1132 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
-function initials(name) {
-  const value = String(name || "U").trim();
-  return value ? value.charAt(0).toUpperCase() : "U";
-}
 
-function formatTime(value) {
-  if (!value) return "";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-
-/* =========================================================
+/* ============================================================
    TOAST
-========================================================= */
-
-let toastTimer = null;
+============================================================ */
 
 function toast(message) {
-  const el = $("toast");
 
-  if (!el) return;
+  const existing =
+    document.querySelector(".dark-chat-toast");
 
-  el.textContent = message || "";
+  if (existing) {
+    existing.remove();
+  }
 
-  show(el);
 
-  clearTimeout(toastTimer);
+  const el =
+    document.createElement("div");
 
-  toastTimer = setTimeout(() => {
-    hide(el);
-  }, 2500);
+  el.className =
+    "dark-chat-toast";
+
+  el.textContent =
+    String(message || "");
+
+
+  Object.assign(
+    el.style,
+    {
+      position: "fixed",
+      left: "50%",
+      bottom: "24px",
+      transform: "translateX(-50%)",
+      zIndex: "99999",
+      padding: "12px 18px",
+      borderRadius: "12px",
+      background: "#171717",
+      color: "#fff",
+      border: "1px solid rgba(255,255,255,.12)",
+      boxShadow: "0 10px 30px rgba(0,0,0,.35)",
+      fontSize: "14px",
+      maxWidth: "90%",
+      textAlign: "center"
+    }
+  );
+
+
+  document.body.appendChild(el);
+
+
+  setTimeout(() => {
+
+    if (el.parentNode) {
+      el.remove();
+    }
+
+  }, 3000);
 }
 
 
-/* =========================================================
-   API
-========================================================= */
+/* ============================================================
+   USER ID NORMALIZER
 
-async function api(path, options = {}) {
+   IMPORTANT
+
+   Worker POST /api/messages expects:
+
+     receiver_id
+
+   Other API endpoints use:
+
+     user_id
+
+   This helper makes sure the correct numeric user ID
+   is always extracted from a user object.
+============================================================ */
+
+function getUserId(user) {
+
+  if (!user) {
+    return 0;
+  }
+
+
+  const possibleIds = [
+
+    user.id,
+
+    user.user_id,
+
+    user.userId,
+
+    user.receiver_id,
+
+    user.receiverId,
+
+    user.sender_id,
+
+    user.senderId,
+
+    user?.user?.id,
+
+    user?.user?.user_id,
+
+    user?.sender?.id,
+
+    user?.other_user_id
+
+  ];
+
+
+  for (
+    const value of possibleIds
+  ) {
+
+    if (
+      value !== undefined &&
+      value !== null &&
+      String(value).trim() !== ""
+    ) {
+
+      const number =
+        Number(value);
+
+
+      if (
+        Number.isInteger(number) &&
+        number > 0
+      ) {
+
+        return number;
+
+      }
+
+    }
+
+  }
+
+
+  return 0;
+}
+
+
+/* ============================================================
+   API HELPER
+============================================================ */
+
+async function api(
+  path,
+  options = {}
+) {
+
   const headers = {
     ...(options.headers || {})
   };
 
-  if (!headers["Content-Type"] && options.body) {
-    headers["Content-Type"] = "application/json";
+
+  if (options.body !== undefined) {
+
+    headers["Content-Type"] =
+      "application/json";
+
   }
+
 
   if (token) {
-    headers.Authorization = `Bearer ${token}`;
+
+    headers["Authorization"] =
+      `Bearer ${token}`;
+
   }
 
-  const response = await fetch(API + path, {
-    ...options,
-    headers
-  });
+
+  const response =
+    await fetch(
+      `${API}${path}`,
+      {
+        ...options,
+        headers
+      }
+    );
+
 
   let data = null;
 
+
   try {
-    data = await response.json();
+
+    data =
+      await response.json();
+
   } catch {
+
     data = null;
+
   }
 
+
   if (!response.ok) {
+
     const message =
       data?.error ||
       data?.message ||
       `Request failed (${response.status})`;
 
-    throw new Error(message);
+
+    const error =
+      new Error(message);
+
+
+    error.status =
+      response.status;
+
+
+    error.data =
+      data;
+
+
+    throw error;
+
   }
+
 
   return data;
+
 }
 
 
-/* =========================================================
-   AUTH ELEMENTS
-========================================================= */
+/* ============================================================
+   ELEMENTS
+============================================================ */
 
-const authScreen = $("authScreen");
-const loginBox = $("loginBox");
-const registerBox = $("registerBox");
+const authScreen =
+  $("authScreen");
 
-const loginForm = $("loginForm");
-const registerForm = $("registerForm");
+const loginForm =
+  $("loginForm");
 
-const loginUsername = $("loginUsername");
-const loginPassword = $("loginPassword");
+const registerForm =
+  $("registerForm");
 
-const registerUsername = $("registerUsername");
-const registerPassword = $("registerPassword");
-const registerPasswordConfirm = $("registerPasswordConfirm");
+const loginSection =
+  $("loginSection");
 
-const loginError = $("loginError");
-const registerError = $("registerError");
+const registerSection =
+  $("registerSection");
 
-const showRegisterBtn = $("showRegister");
-const showLoginBtn = $("showLogin");
+const appScreen =
+  $("appScreen");
+
+const authError =
+  $("authError");
+
+const loginError =
+  $("loginError");
+
+const registerError =
+  $("registerError");
+
+const usernameInput =
+  $("username");
+
+const emailInput =
+  $("email");
+
+const passwordInput =
+  $("password");
+
+const registerUsernameInput =
+  $("registerUsername");
+
+const registerEmailInput =
+  $("registerEmail");
+
+const registerPasswordInput =
+  $("registerPassword");
+
+const usersList =
+  $("usersList");
+
+const inboxList =
+  $("inboxList");
+
+const inboxCount =
+  $("inboxCount");
+
+const groupChat =
+  $("groupChat");
+
+const privateChat =
+  $("privateChat");
+
+const emptyChat =
+  $("emptyChat");
+
+const groupMessages =
+  $("groupMessages");
+
+const privateMessages =
+  $("privateMessages");
+
+const groupMessageForm =
+  $("groupMessageForm");
+
+const messageForm =
+  $("messageForm");
+
+const groupMessageInput =
+  $("groupMessageInput");
+
+const messageInput =
+  $("messageInput");
+
+const privateChatUsername =
+  $("privateChatUsername");
+
+const privateChatAvatar =
+  $("privateChatAvatar");
+
+const groupChatAvatar =
+  $("groupChatAvatar");
+
+const currentUsername =
+  $("currentUsername");
+
+const currentAvatar =
+  $("currentAvatar");
+
+const profilePhotoInput =
+  $("profilePhotoInput");
+
+const profilePhotoPreview =
+  $("profilePhotoPreview");
+
+const logoutButton =
+  $("logoutButton");
+
+const backButton =
+  $("backButton");
+
+const groupButton =
+  $("groupButton");
+
+const profileButton =
+  $("profileButton");
+
+const profilePanel =
+  $("profilePanel");
 
 
-/* =========================================================
-   CHAT ELEMENTS
-========================================================= */
-
-const chatScreen = $("chatScreen");
-
-const groupChat = $("groupChat");
-const privateChat = $("privateChat");
-const emptyChat = $("emptyChat");
-
-const groupMessages = $("groupMessages");
-const messagesBox = $("messagesBox");
-
-const groupMessageForm = $("groupMessageForm");
-const groupMessageInput = $("groupMessageInput");
-
-const messageForm = $("messageForm");
-const messageInput = $("messageInput");
-
-const privateBackBtn = $("privateBackBtn");
-
-const reloadGroupMessages = $("reloadGroupMessages");
-const reloadMessages = $("reloadMessages");
-
-const logoutBtn = $("logoutBtn");
-
-
-/* =========================================================
-   PROFILE ELEMENTS
-========================================================= */
-
-const myAvatarBtn = $("myAvatarBtn");
-const myAvatar = $("myAvatar");
-const myAvatarFallback = $("myAvatarFallback");
-const myUsername = $("myUsername");
-
-const profilePanel = $("profilePanel");
-
-const profileAvatarImage = $("profileAvatarImage");
-const profileAvatarFallback = $("profileAvatarFallback");
-const profileUsername = $("profileUsername");
-
-const profilePhotoInput = $("profilePhotoInput");
-const removeProfilePhoto = $("removeProfilePhoto");
-
-
-/* =========================================================
-   PRIVATE CHAT HEADER
-========================================================= */
-
-const chatUsername = $("chatUsername");
-const chatStatus = $("chatStatus");
-
-const chatAvatar = $("chatAvatar");
-const chatAvatarImage = $("chatAvatarImage");
-const chatAvatarFallback = $("chatAvatarFallback");
-
-
-/* =========================================================
+/* ============================================================
    AUTH SCREEN
-========================================================= */
+============================================================ */
 
-function openLogin() {
+function showAuth() {
+
   show(authScreen);
-  show(loginBox);
-  hide(registerBox);
+  hide(appScreen);
+
+}
+
+
+function showApp() {
+
+  hide(authScreen);
+  show(appScreen);
+
+}
+
+
+/* ============================================================
+   AUTH ERROR
+============================================================ */
+
+function setAuthError(message) {
+
+  if (authError) {
+
+    authError.textContent =
+      message || "";
+
+    if (message) {
+      show(authError);
+    } else {
+      hide(authError);
+    }
+
+  }
+
+}
+
+
+function setLoginError(message) {
 
   if (loginError) {
-    loginError.textContent = "";
-    hide(loginError);
+
+    loginError.textContent =
+      message || "";
+
+    if (message) {
+      show(loginError);
+    } else {
+      hide(loginError);
+    }
+
   }
+
 }
 
-function openRegister() {
-  show(authScreen);
-  hide(loginBox);
-  show(registerBox);
+
+function setRegisterError(message) {
 
   if (registerError) {
-    registerError.textContent = "";
-    hide(registerError);
+
+    registerError.textContent =
+      message || "";
+
+    if (message) {
+      show(registerError);
+    } else {
+      hide(registerError);
+    }
+
   }
-}
 
-if (showRegisterBtn) {
-  showRegisterBtn.addEventListener("click", openRegister);
-}
-
-if (showLoginBtn) {
-  showLoginBtn.addEventListener("click", openLogin);
 }
 
 
-/* =========================================================
+/* ============================================================
+   AUTH TABS
+============================================================ */
+
+function showLoginForm() {
+
+  show(loginSection);
+  hide(registerSection);
+
+}
+
+
+function showRegisterForm() {
+
+  hide(loginSection);
+  show(registerSection);
+
+}
+
+
+document
+  .querySelectorAll(
+    "[data-auth='login'], #showLogin"
+  )
+  .forEach(button => {
+
+    button.addEventListener(
+      "click",
+      event => {
+
+        event.preventDefault();
+
+        showLoginForm();
+
+      }
+    );
+
+  });
+
+
+document
+  .querySelectorAll(
+    "[data-auth='register'], #showRegister"
+  )
+  .forEach(button => {
+
+    button.addEventListener(
+      "click",
+      event => {
+
+        event.preventDefault();
+
+        showRegisterForm();
+
+      }
+    );
+
+  });
+
+
+/* ============================================================
    LOGIN
-========================================================= */
+============================================================ */
 
 if (loginForm) {
-  loginForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
 
-    const username = loginUsername?.value.trim() || "";
-    const password = loginPassword?.value || "";
+  loginForm.addEventListener(
+    "submit",
+    async event => {
 
-    if (!username || !password) {
-      setAuthError(loginError, "Enter username and password.");
-      return;
-    }
+      event.preventDefault();
 
-    const submitBtn =
-      loginForm.querySelector('button[type="submit"]');
+      setLoginError("");
 
-    if (submitBtn) {
-      submitBtn.disabled = true;
-    }
 
-    try {
-      const data = await api("/login", {
-        method: "POST",
-        body: JSON.stringify({
-          username,
-          password
-        })
-      });
+      const username =
+        String(
+          usernameInput?.value || ""
+        ).trim();
 
-      token =
-        data?.token ||
-        data?.access_token ||
-        data?.session?.token ||
-        "";
 
-      if (!token) {
-        throw new Error("Login token was not returned.");
+      const email =
+        String(
+          emailInput?.value || ""
+        ).trim();
+
+
+      const password =
+        String(
+          passwordInput?.value || ""
+        );
+
+
+      if (
+        !username &&
+        !email
+      ) {
+
+        setLoginError(
+          "Username or email is required."
+        );
+
+        return;
+
       }
 
-      localStorage.setItem("dark_chat_token", token);
 
-      currentUser =
-        data?.user ||
-        data?.currentUser ||
-        null;
+      if (!password) {
 
-      if (!currentUser) {
-        currentUser = await getCurrentUser();
+        setLoginError(
+          "Password is required."
+        );
+
+        return;
+
       }
 
-      await enterChat();
 
-    } catch (error) {
-      setAuthError(
-        loginError,
-        error?.message || "Login failed."
-      );
-    } finally {
-      if (submitBtn) {
-        submitBtn.disabled = false;
+      try {
+
+        const data =
+          await api(
+            "/login",
+            {
+              method: "POST",
+
+              body:
+                JSON.stringify({
+
+                  username,
+
+                  email,
+
+                  password
+
+                })
+
+            }
+          );
+
+
+        if (data?.token) {
+
+          token =
+            data.token;
+
+          localStorage.setItem(
+            "dark_chat_token",
+            token
+          );
+
+        }
+
+
+        currentUser =
+          data?.user ||
+          null;
+
+
+        if (!currentUser) {
+
+          await getCurrentUser();
+
+        }
+
+
+        showApp();
+
+        await initializeApp();
+
+      } catch (error) {
+
+        console.error(
+          "Login:",
+          error
+        );
+
+
+        setLoginError(
+          error?.message ||
+          "Login failed."
+        );
+
       }
+
     }
-  });
+  );
+
 }
 
 
-/* =========================================================
+/* ============================================================
    REGISTER
-========================================================= */
+============================================================ */
 
 if (registerForm) {
-  registerForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
 
-    const username =
-      registerUsername?.value.trim() || "";
+  registerForm.addEventListener(
+    "submit",
+    async event => {
 
-    const password =
-      registerPassword?.value || "";
+      event.preventDefault();
 
-    const confirm =
-      registerPasswordConfirm?.value || "";
+      setRegisterError("");
 
-    if (!username || !password || !confirm) {
-      setAuthError(
-        registerError,
-        "Please fill in all fields."
-      );
-      return;
-    }
 
-    if (password !== confirm) {
-      setAuthError(
-        registerError,
-        "Passwords do not match."
-      );
-      return;
-    }
+      const username =
+        String(
+          registerUsernameInput?.value || ""
+        ).trim();
 
-    const submitBtn =
-      registerForm.querySelector('button[type="submit"]');
 
-    if (submitBtn) {
-      submitBtn.disabled = true;
-    }
+      const email =
+        String(
+          registerEmailInput?.value || ""
+        ).trim();
 
-    try {
-      await api("/register", {
-        method: "POST",
-        body: JSON.stringify({
-          username,
-          password
-        })
-      });
 
-      toast("Account created.");
+      const password =
+        String(
+          registerPasswordInput?.value || ""
+        );
 
-      registerForm.reset();
 
-      openLogin();
+      if (!username) {
 
-      if (loginUsername) {
-        loginUsername.value = username;
+        setRegisterError(
+          "Username is required."
+        );
+
+        return;
+
       }
 
-      if (loginPassword) {
-        loginPassword.focus();
+
+      if (!password) {
+
+        setRegisterError(
+          "Password is required."
+        );
+
+        return;
+
       }
 
-    } catch (error) {
-      setAuthError(
-        registerError,
-        error?.message || "Registration failed."
-      );
-    } finally {
-      if (submitBtn) {
-        submitBtn.disabled = false;
+
+      try {
+
+        const data =
+          await api(
+            "/register",
+            {
+              method: "POST",
+
+              body:
+                JSON.stringify({
+
+                  username,
+
+                  email,
+
+                  password
+
+                })
+
+            }
+          );
+
+
+        if (data?.token) {
+
+          token =
+            data.token;
+
+          localStorage.setItem(
+            "dark_chat_token",
+            token
+          );
+
+        }
+
+
+        currentUser =
+          data?.user ||
+          null;
+
+
+        if (!currentUser) {
+
+          await getCurrentUser();
+
+        }
+
+
+        showApp();
+
+        await initializeApp();
+
+      } catch (error) {
+
+        console.error(
+          "Register:",
+          error
+        );
+
+
+        setRegisterError(
+          error?.message ||
+          "Registration failed."
+        );
+
       }
+
     }
-  });
+  );
+
 }
 
 
-function setAuthError(element, message) {
-  if (!element) return;
-
-  element.textContent = message || "";
-
-  if (message) {
-    show(element);
-  } else {
-    hide(element);
-  }
-}
-
-
-/* =========================================================
+/* ============================================================
    CURRENT USER
-========================================================= */
+============================================================ */
 
 async function getCurrentUser() {
-  const possibleEndpoints = [
+
+  if (!token) {
+    return null;
+  }
+
+
+  const endpoints = [
+
     "/me",
+
     "/profile",
+
     "/auth/me"
+
   ];
 
-  let lastError = null;
 
-  for (const endpoint of possibleEndpoints) {
+  for (
+    const endpoint of endpoints
+  ) {
+
     try {
-      const data = await api(endpoint);
 
-      return (
+      const data =
+        await api(endpoint);
+
+
+      const user =
         data?.user ||
-        data?.currentUser ||
-        data
-      );
+        data?.data ||
+        data;
+
+
+      if (user) {
+
+        const id =
+          getUserId(user);
+
+
+        if (id > 0) {
+
+          currentUser = {
+            ...user,
+            id
+          };
+
+
+          return currentUser;
+
+        }
+
+      }
+
     } catch (error) {
-      lastError = error;
+
+      console.log(
+        `Current user ${endpoint}:`,
+        error?.message
+      );
+
     }
+
   }
 
-  throw lastError || new Error("Unable to load profile.");
+
+  return null;
 }
 
 
-/* =========================================================
-   ENTER CHAT
-========================================================= */
+/* ============================================================
+   USER PROFILE UI
+============================================================ */
 
-async function enterChat() {
-  show(chatScreen);
-  hide(authScreen);
+function updateCurrentUserUI() {
 
-  show(groupChat);
-  hide(privateChat);
-  hide(emptyChat);
-
-  selectedUser = null;
-
-  updateMyProfile();
-
-  await loadGroupMessages();
-
-  startTimers();
-
-  updateKeyboardLayout();
-
-  setTimeout(() => {
-    if (groupMessageInput) {
-      groupMessageInput.focus({
-        preventScroll: true
-      });
-    }
-  }, 150);
-}
-
-
-/* =========================================================
-   PROFILE DISPLAY
-========================================================= */
-
-function getAvatarUrl(user) {
-  if (!user) return "";
-
-  return (
-    user.avatar_url ||
-    user.avatarUrl ||
-    user.profile_photo ||
-    user.profile_photo_url ||
-    user.photo_url ||
-    user.photo ||
-    ""
-  );
-}
-
-function updateAvatar(image, fallback, user) {
-  if (!image || !fallback) return;
-
-  const name =
-    user?.username ||
-    user?.name ||
-    "U";
-
-  fallback.textContent = initials(name);
-
-  const url = getAvatarUrl(user);
-
-  if (url) {
-    image.src = url;
-    show(image);
-    hide(fallback);
-
-    image.onerror = () => {
-      image.removeAttribute("src");
-      hide(image);
-      show(fallback);
-    };
-  } else {
-    image.removeAttribute("src");
-    hide(image);
-    show(fallback);
+  if (!currentUser) {
+    return;
   }
-}
 
-function updateMyProfile() {
-  if (!currentUser) return;
 
   const username =
     currentUser.username ||
-    currentUser.name ||
     "User";
 
-  if (myUsername) {
-    myUsername.textContent = username;
+
+  const avatar =
+    currentUser.profile_photo ||
+    "";
+
+
+  if (currentUsername) {
+
+    currentUsername.textContent =
+      username;
+
   }
 
-  updateAvatar(
-    myAvatar,
-    myAvatarFallback,
-    currentUser
-  );
 
-  updateAvatar(
-    profileAvatarImage,
-    profileAvatarFallback,
-    currentUser
-  );
+  if (currentAvatar) {
 
-  if (profileUsername) {
-    profileUsername.textContent = username;
+    if (avatar) {
+
+      currentAvatar.src =
+        avatar;
+
+      currentAvatar.style.display =
+        "block";
+
+    } else {
+
+      currentAvatar.removeAttribute(
+        "src"
+      );
+
+      currentAvatar.style.display =
+        "";
+
+    }
+
   }
+
+
+  if (profilePhotoPreview) {
+
+    if (avatar) {
+
+      profilePhotoPreview.src =
+        avatar;
+
+    } else {
+
+      profilePhotoPreview.removeAttribute(
+        "src"
+      );
+
+    }
+
+  }
+
 }
 
 
-/* =========================================================
-   LOGOUT
-========================================================= */
+/* ============================================================
+   SELECTED PRIVATE USER
+============================================================ */
 
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", async () => {
-    try {
-      await api("/logout", {
-        method: "POST"
+function normalizeSelectedUser(user) {
+
+  const id =
+    getUserId(user);
+
+
+  return {
+
+    ...(user || {}),
+
+    id,
+
+    user_id:
+      id,
+
+    username:
+      user?.username ||
+      user?.sender_username ||
+      user?.name ||
+      user?.other_username ||
+      "User",
+
+    profile_photo:
+      user?.profile_photo ||
+      user?.sender_profile_photo ||
+      user?.avatar_url ||
+      user?.avatar ||
+      user?.other_profile_photo ||
+      ""
+
+  };
+
+}
+
+
+/* ============================================================
+   PRIVATE HEADER
+============================================================ */
+
+function updatePrivateHeader() {
+
+  if (!selectedUser) {
+    return;
+  }
+
+
+  const username =
+    selectedUser.username ||
+    "User";
+
+
+  const avatar =
+    selectedUser.profile_photo ||
+    "";
+
+
+  if (privateChatUsername) {
+
+    privateChatUsername.textContent =
+      username;
+
+  }
+
+
+  if (privateChatAvatar) {
+
+    if (avatar) {
+
+      privateChatAvatar.src =
+        avatar;
+
+      privateChatAvatar.style.display =
+        "block";
+
+    } else {
+
+      privateChatAvatar.removeAttribute(
+        "src"
+      );
+
+      privateChatAvatar.style.display =
+        "";
+
+    }
+
+  }
+
+}
+
+
+/* ============================================================
+   OPEN PRIVATE CHAT
+============================================================ */
+
+async function openPrivateChat(user) {
+
+  const normalized =
+    normalizeSelectedUser(user);
+
+
+  if (
+    !normalized.id
+  ) {
+
+    toast(
+      "Invalid user."
+    );
+
+    console.error(
+      "Invalid selected user:",
+      user
+    );
+
+    return;
+
+  }
+
+
+  if (
+    currentUser &&
+    normalized.id ===
+      getUserId(currentUser)
+  ) {
+
+    return;
+
+  }
+
+
+  selectedUser =
+    normalized;
+
+
+  hide(groupChat);
+  show(privateChat);
+  hide(emptyChat);
+
+
+  updatePrivateHeader();
+
+
+  await loadPrivateMessages();
+
+
+  startPrivateTimer();
+
+
+  setTimeout(() => {
+
+    if (messageInput) {
+
+      messageInput.focus({
+        preventScroll: true
       });
-    } catch {
-      // Local logout still works if server logout fails.
+
     }
 
-    stopTimers();
+  }, 100);
 
-    token = "";
-    currentUser = null;
-    selectedUser = null;
-
-    localStorage.removeItem("dark_chat_token");
-
-    closeProfile();
-
-    if (loginForm) {
-      loginForm.reset();
-    }
-
-    if (registerForm) {
-      registerForm.reset();
-    }
-
-    openLogin();
-
-    toast("Logged out.");
-  });
 }
 
 
-/* =========================================================
-   GROUP CHAT
-========================================================= */
+/* ============================================================
+   OPEN PUBLIC GROUP
+============================================================ */
 
-async function loadGroupMessages() {
-  if (!groupMessages) return;
+async function openGroupChat() {
+
+  selectedUser =
+    null;
+
+
+  stopPrivateTimer();
+
+
+  hide(privateChat);
+  hide(emptyChat);
+  show(groupChat);
+
+
+  await loadGroupMessages();
+
+
+  startGroupTimer();
+
+}
+
+
+/* ============================================================
+   PRIVATE MESSAGES
+============================================================ */
+
+async function loadPrivateMessages() {
+
+  if (
+    !privateMessages ||
+    !selectedUser
+  ) {
+
+    return;
+
+  }
+
+
+  const userId =
+    getUserId(
+      selectedUser
+    );
+
+
+  if (!userId) {
+
+    console.error(
+      "Private chat user ID is invalid:",
+      selectedUser
+    );
+
+    return;
+
+  }
+
 
   try {
-    const data = await api("/group/messages");
+
+    const data =
+      await api(
+        `/messages?user_id=${encodeURIComponent(userId)}`
+      );
+
 
     const messages =
       Array.isArray(data)
@@ -600,59 +1181,503 @@ async function loadGroupMessages() {
           []
         );
 
-    renderGroupMessages(messages);
+
+    renderPrivateMessages(
+      messages
+    );
+
+
+    await markPrivateMessagesRead(
+      userId
+    );
+
 
   } catch (error) {
-    console.error("Group messages:", error);
+
+    console.error(
+      "Private messages:",
+      error
+    );
+
   }
+
 }
 
 
-function renderGroupMessages(messages) {
-  if (!groupMessages) return;
+/* ============================================================
+   RENDER PRIVATE MESSAGES
+============================================================ */
 
-  if (!messages.length) {
-    groupMessages.innerHTML = `
-      <div class="empty-chat">
-        <div class="empty-chat-inner">
-          <h2>Public Group Chat</h2>
-          <p>No messages yet.</p>
-        </div>
-      </div>
-    `;
+function renderPrivateMessages(
+  messages
+) {
 
+  if (!privateMessages) {
     return;
   }
 
-  const wasNearBottom =
-    groupMessages.scrollHeight -
-    groupMessages.scrollTop -
-    groupMessages.clientHeight < 120;
 
-  groupMessages.innerHTML = messages
-    .map(renderGroupMessage)
-    .join("");
+  privateMessages.innerHTML =
+    "";
 
-  attachGroupUserButtons();
 
-  if (wasNearBottom) {
-    scrollToBottom(groupMessages);
+  const currentId =
+    getUserId(
+      currentUser
+    );
+
+
+  for (
+    const message of messages
+  ) {
+
+    const sender =
+      message?.sender ||
+      message?.user ||
+      {};
+
+
+    const senderId =
+      getUserId({
+
+        id:
+          message?.sender_id ??
+          sender?.id,
+
+        user_id:
+          message?.sender_id ??
+          sender?.user_id
+
+      });
+
+
+    const isMine =
+      String(senderId) ===
+      String(currentId);
+
+
+    const row =
+      document.createElement("div");
+
+
+    row.className =
+      isMine
+        ? "private-message mine"
+        : "private-message";
+
+
+    const bubble =
+      document.createElement("div");
+
+
+    bubble.className =
+      "message-bubble";
+
+
+    const content =
+      message?.message ??
+      message?.content ??
+      message?.text ??
+      "";
+
+
+    bubble.textContent =
+      content;
+
+
+    row.appendChild(
+      bubble
+    );
+
+
+    privateMessages.appendChild(
+      row
+    );
+
   }
+
+
+  scrollPrivateMessagesToBottom();
+
 }
 
 
-function renderGroupMessage(message) {
+/* ============================================================
+   PRIVATE SEND MESSAGE
+
+   IMPORTANT FIX
+
+   Worker expects:
+
+     receiver_id
+     message
+
+   Previously app.js sent:
+
+     user_id
+
+   which caused:
+
+     Invalid receiver ID
+
+============================================================ */
+
+if (messageForm) {
+
+  messageForm.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      if (!selectedUser) {
+
+        toast(
+          "Select a user first."
+        );
+
+        return;
+
+      }
+
+
+      const input =
+        messageInput;
+
+
+      if (!input) {
+        return;
+      }
+
+
+      const text =
+        String(
+          input.value || ""
+        ).trim();
+
+
+      if (!text) {
+
+        input.focus();
+
+        return;
+
+      }
+
+
+      const receiverId =
+        getUserId(
+          selectedUser
+        );
+
+
+      if (
+        !Number.isInteger(
+          receiverId
+        ) ||
+        receiverId <= 0
+      ) {
+
+        console.error(
+          "Invalid receiver:",
+          selectedUser
+        );
+
+
+        toast(
+          "Invalid receiver ID."
+        );
+
+        return;
+
+      }
+
+
+      const currentId =
+        getUserId(
+          currentUser
+        );
+
+
+      if (
+        currentId &&
+        receiverId === currentId
+      ) {
+
+        toast(
+          "You cannot message yourself."
+        );
+
+        return;
+
+      }
+
+
+      const submitBtn =
+        messageForm.querySelector(
+          'button[type="submit"]'
+        );
+
+
+      if (submitBtn) {
+
+        submitBtn.disabled =
+          true;
+
+      }
+
+
+      try {
+
+        /*
+         * Worker requires receiver_id.
+         *
+         * Only send the fields the Worker
+         * actually needs.
+         */
+
+        await api(
+          "/messages",
+          {
+            method: "POST",
+
+            body:
+              JSON.stringify({
+
+                receiver_id:
+                  receiverId,
+
+                message:
+                  text
+
+              })
+
+          }
+        );
+
+
+        input.value =
+          "";
+
+
+        await loadPrivateMessages();
+
+
+        keepInputFocused(
+          input
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Send private message:",
+          error
+        );
+
+
+        toast(
+          error?.message ||
+          "Message could not be sent."
+        );
+
+
+      } finally {
+
+        if (submitBtn) {
+
+          submitBtn.disabled =
+            false;
+
+        }
+
+      }
+
+    }
+  );
+
+}
+
+
+/* ============================================================
+   MARK PRIVATE MESSAGES READ
+============================================================ */
+
+async function markPrivateMessagesRead(
+  userId
+) {
+
+  const otherUserId =
+    Number(userId);
+
+
+  if (
+    !Number.isInteger(
+      otherUserId
+    ) ||
+    otherUserId <= 0
+  ) {
+
+    return;
+
+  }
+
+
+  try {
+
+    await api(
+      "/messages/read",
+      {
+        method: "POST",
+
+        body:
+          JSON.stringify({
+
+            user_id:
+              otherUserId
+
+          })
+
+      }
+    );
+
+
+    await loadInbox(
+      false
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Mark read:",
+      error
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   GROUP MESSAGES
+============================================================ */
+
+async function loadGroupMessages() {
+
+  if (!groupMessages) {
+    return;
+  }
+
+
+  try {
+
+    const data =
+      await api(
+        "/group/messages"
+      );
+
+
+    const messages =
+      Array.isArray(data)
+        ? data
+        : (
+          data?.messages ||
+          data?.items ||
+          data?.results ||
+          []
+        );
+
+
+    renderGroupMessages(
+      messages
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Group messages:",
+      error
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   RENDER GROUP MESSAGES
+============================================================ */
+
+function renderGroupMessages(
+  messages
+) {
+
+  if (!groupMessages) {
+    return;
+  }
+
+
+  groupMessages.innerHTML =
+    "";
+
+
+  for (
+    const message of messages
+  ) {
+
+    renderGroupMessage(
+      message
+    );
+
+  }
+
+
+  attachGroupUserButtons();
+
+
+  scrollGroupMessagesToBottom();
+
+}
+
+
+/* ============================================================
+   GROUP MESSAGE
+============================================================ */
+
+function renderGroupMessage(
+  message
+) {
+
+  if (!groupMessages) {
+    return;
+  }
+
+
   const sender =
     message?.user ||
     message?.sender ||
     message?.author ||
     {};
 
+
   const senderId =
-    message?.user_id ??
-    message?.sender_id ??
-    sender?.id ??
-    "";
+    getUserId({
+
+      id:
+        message?.sender_id ??
+        message?.user_id ??
+        sender?.id,
+
+      user_id:
+        message?.sender_id ??
+        message?.user_id ??
+        sender?.user_id
+
+    });
+
 
   const senderName =
     message?.username ||
@@ -661,111 +1686,163 @@ function renderGroupMessage(message) {
     sender?.name ||
     "User";
 
-  const text =
-    message?.content ??
+
+  const avatar =
+    message?.profile_photo ||
+    message?.sender_profile_photo ||
+    sender?.profile_photo ||
+    "";
+
+
+  const content =
     message?.message ??
+    message?.content ??
     message?.text ??
     "";
 
-  const time =
-    message?.created_at ||
-    message?.createdAt ||
-    message?.timestamp ||
-    message?.time ||
-    "";
 
-  const avatar =
-    getAvatarUrl(message) ||
-    getAvatarUrl(sender);
+  const row =
+    document.createElement("div");
 
-  const mine =
-    currentUser &&
-    String(senderId) === String(currentUser.id);
 
-  const avatarHtml = avatar
-    ? `
-      <img
-        src="${escapeHtml(avatar)}"
-        alt=""
-        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-      >
-      <span
-        class="avatar-fallback"
-        style="display:none;"
-      >
-        ${escapeHtml(initials(senderName))}
-      </span>
-    `
-    : `
-      <span class="avatar-fallback">
-        ${escapeHtml(initials(senderName))}
-      </span>
-    `;
+  row.className =
+    "group-message";
 
-  return `
-    <div
-      class="group-message ${mine ? "mine" : ""}"
-      data-user-id="${escapeHtml(senderId)}"
-    >
 
-      ${
-        mine
-          ? ""
-          : `
-            <div class="message-sender">
+  const userArea =
+    document.createElement("div");
 
-              <button
-                type="button"
-                class="avatar group-user-avatar"
-                data-user-id="${escapeHtml(senderId)}"
-                data-username="${escapeHtml(senderName)}"
-                data-avatar="${escapeHtml(avatar)}"
-              >
-                ${avatarHtml}
-              </button>
 
-              <button
-                type="button"
-                class="message-sender-name group-user-name"
-                data-user-id="${escapeHtml(senderId)}"
-                data-username="${escapeHtml(senderName)}"
-              >
-                ${escapeHtml(senderName)}
-              </button>
+  userArea.className =
+    "group-message-user";
 
-            </div>
-          `
-      }
 
-      <div class="message-content">
+  const avatarButton =
+    document.createElement("button");
 
-        ${
-          mine
-            ? ""
-            : ""
-        }
 
-        <div class="message-bubble">
-          ${escapeHtml(text)}
-        </div>
+  avatarButton.type =
+    "button";
 
-        <div class="message-time">
-          ${escapeHtml(formatTime(time))}
-        </div>
 
-      </div>
+  avatarButton.className =
+    "group-user-avatar";
 
-    </div>
-  `;
+
+  avatarButton.dataset.userId =
+    String(senderId);
+
+
+  avatarButton.dataset.username =
+    senderName;
+
+
+  avatarButton.dataset.avatar =
+    avatar;
+
+
+  if (avatar) {
+
+    const img =
+      document.createElement("img");
+
+    img.src =
+      avatar;
+
+    img.alt =
+      senderName;
+
+    avatarButton.appendChild(
+      img
+    );
+
+  } else {
+
+    avatarButton.textContent =
+      senderName
+        .charAt(0)
+        .toUpperCase();
+
+  }
+
+
+  const nameButton =
+    document.createElement("button");
+
+
+  nameButton.type =
+    "button";
+
+
+  nameButton.className =
+    "group-user-name";
+
+
+  nameButton.textContent =
+    senderName;
+
+
+  nameButton.dataset.userId =
+    String(senderId);
+
+
+  nameButton.dataset.username =
+    senderName;
+
+
+  nameButton.dataset.avatar =
+    avatar;
+
+
+  userArea.appendChild(
+    avatarButton
+  );
+
+
+  userArea.appendChild(
+    nameButton
+  );
+
+
+  const bubble =
+    document.createElement("div");
+
+
+  bubble.className =
+    "group-message-bubble";
+
+
+  bubble.textContent =
+    content;
+
+
+  row.appendChild(
+    userArea
+  );
+
+
+  row.appendChild(
+    bubble
+  );
+
+
+  groupMessages.appendChild(
+    row
+  );
+
 }
 
 
-/* =========================================================
-   GROUP USER CLICK
-========================================================= */
+/* ============================================================
+   GROUP USER -> PRIVATE CHAT
+============================================================ */
 
 function attachGroupUserButtons() {
-  if (!groupMessages) return;
+
+  if (!groupMessages) {
+    return;
+  }
+
 
   groupMessages
     .querySelectorAll(
@@ -773,558 +1850,362 @@ function attachGroupUserButtons() {
     )
     .forEach(button => {
 
-      button.addEventListener("click", () => {
-        const id =
-          button.dataset.userId;
+      button.addEventListener(
+        "click",
+        () => {
 
-        const username =
-          button.dataset.username ||
-          "User";
+          const id =
+            Number(
+              button.dataset.userId
+            );
 
-        if (!id) return;
 
-        if (
-          currentUser &&
-          String(id) === String(currentUser.id)
-        ) {
-          return;
+          const username =
+            button.dataset.username ||
+            "User";
+
+
+          const avatar =
+            button.dataset.avatar ||
+            "";
+
+
+          if (
+            !Number.isInteger(id) ||
+            id <= 0
+          ) {
+
+            toast(
+              "Invalid user."
+            );
+
+            return;
+
+          }
+
+
+          if (
+            currentUser &&
+            id ===
+              getUserId(currentUser)
+          ) {
+
+            return;
+
+          }
+
+
+          openPrivateChat({
+
+            id,
+
+            user_id:
+              id,
+
+            username,
+
+            profile_photo:
+              avatar,
+
+            avatar_url:
+              avatar
+
+          });
+
         }
-
-        openPrivateChat({
-          id,
-          username,
-          avatar_url:
-            button.dataset.avatar || ""
-        });
-      });
+      );
 
     });
+
 }
 
 
-/* =========================================================
-   SEND GROUP MESSAGE
-========================================================= */
+/* ============================================================
+   GROUP SEND
+============================================================ */
 
 if (groupMessageForm) {
-  groupMessageForm.addEventListener("submit", async event => {
-    event.preventDefault();
 
-    if (!currentUser) {
-      toast("Please login first.");
-      return;
-    }
-
-    const input =
-      groupMessageInput;
-
-    if (!input) return;
-
-    const text =
-      input.value.trim();
-
-    if (!text) {
-      input.focus();
-      return;
-    }
-
-    const submitBtn =
-      groupMessageForm.querySelector(
-        'button[type="submit"]'
-      );
-
-    if (submitBtn) {
-      submitBtn.disabled = true;
-    }
-
-    try {
-      await api("/group/messages", {
-        method: "POST",
-        body: JSON.stringify({
-          content: text,
-          message: text,
-          text: text
-        })
-      });
-
-      input.value = "";
-
-      await loadGroupMessages();
-
-      keepInputFocused(input);
-
-    } catch (error) {
-      toast(
-        error?.message ||
-        "Message could not be sent."
-      );
-
-    } finally {
-      if (submitBtn) {
-        submitBtn.disabled = false;
-      }
-    }
-  });
-}
-
-
-/* =========================================================
-   PRIVATE CHAT
-========================================================= */
-
-async function openPrivateChat(user) {
-  if (!user) return;
-
-  selectedUser = {
-    ...user
-  };
-
-  hide(groupChat);
-  show(privateChat);
-  hide(emptyChat);
-
-  updatePrivateHeader();
-
-  await loadPrivateMessages();
-
-  startPrivateTimer();
-
-  setTimeout(() => {
-    if (messageInput) {
-      messageInput.focus({
-        preventScroll: true
-      });
-    }
-  }, 100);
-}
-
-
-function updatePrivateHeader() {
-  if (!selectedUser) return;
-
-  const username =
-    selectedUser.username ||
-    selectedUser.name ||
-    "User";
-
-  if (chatUsername) {
-    chatUsername.textContent =
-      username;
-  }
-
-  if (chatStatus) {
-    chatStatus.textContent =
-      "Private Chat";
-  }
-
-  updateAvatar(
-    chatAvatarImage,
-    chatAvatarFallback,
-    selectedUser
-  );
-}
-
-
-/* =========================================================
-   PRIVATE BACK
-========================================================= */
-
-function closePrivateChat() {
-  selectedUser = null;
-
-  stopPrivateTimer();
-
-  hide(privateChat);
-  show(groupChat);
-  hide(emptyChat);
-
-  loadGroupMessages();
-
-  setTimeout(() => {
-    if (groupMessageInput) {
-      groupMessageInput.focus({
-        preventScroll: true
-      });
-    }
-  }, 100);
-}
-
-if (privateBackBtn) {
-  privateBackBtn.addEventListener(
-    "click",
-    closePrivateChat
-  );
-}
-
-
-/* =========================================================
-   PRIVATE MESSAGES
-========================================================= */
-
-async function loadPrivateMessages() {
-  if (!messagesBox || !selectedUser) return;
-
-  const userId =
-    selectedUser.id ??
-    selectedUser.user_id;
-
-  if (!userId) return;
-
-  try {
-    const data = await api(
-      `/messages?user_id=${encodeURIComponent(userId)}`
-    );
-
-    const messages =
-      Array.isArray(data)
-        ? data
-        : (
-          data?.messages ||
-          data?.items ||
-          data?.results ||
-          []
-        );
-
-    renderPrivateMessages(messages);
-
-    markPrivateMessagesRead(userId);
-
-  } catch (error) {
-    console.error(
-      "Private messages:",
-      error
-    );
-  }
-}
-
-
-function renderPrivateMessages(messages) {
-  if (!messagesBox) return;
-
-  if (!messages.length) {
-    messagesBox.innerHTML = `
-      <div class="empty-chat">
-        <div class="empty-chat-inner">
-          <h2>Private Chat</h2>
-          <p>No messages yet.</p>
-        </div>
-      </div>
-    `;
-
-    return;
-  }
-
-  const wasNearBottom =
-    messagesBox.scrollHeight -
-    messagesBox.scrollTop -
-    messagesBox.clientHeight < 120;
-
-  messagesBox.innerHTML = messages
-    .map(renderPrivateMessage)
-    .join("");
-
-  if (wasNearBottom) {
-    scrollToBottom(messagesBox);
-  }
-}
-
-
-function renderPrivateMessage(message) {
-  const sender =
-    message?.user ||
-    message?.sender ||
-    {};
-
-  const senderId =
-    message?.sender_id ??
-    message?.user_id ??
-    sender?.id ??
-    "";
-
-  const text =
-    message?.content ??
-    message?.message ??
-    message?.text ??
-    "";
-
-  const time =
-    message?.created_at ||
-    message?.createdAt ||
-    message?.timestamp ||
-    "";
-
-  const mine =
-    currentUser &&
-    String(senderId) ===
-      String(currentUser.id);
-
-  return `
-    <div
-      class="private-message ${mine ? "mine" : ""}"
-    >
-
-      <div class="message-content">
-
-        <div class="message-bubble">
-          ${escapeHtml(text)}
-        </div>
-
-        <div class="message-time">
-          ${escapeHtml(formatTime(time))}
-        </div>
-
-      </div>
-
-    </div>
-  `;
-}
-
-
-/* =========================================================
-   SEND PRIVATE MESSAGE
-========================================================= */
-
-if (messageForm) {
-  messageForm.addEventListener(
+  groupMessageForm.addEventListener(
     "submit",
     async event => {
 
       event.preventDefault();
 
-      if (!selectedUser) {
-        toast("Select a user first.");
-        return;
-      }
 
       const input =
-        messageInput;
+        groupMessageInput;
 
-      if (!input) return;
+
+      if (!input) {
+        return;
+      }
+
 
       const text =
-        input.value.trim();
+        String(
+          input.value || ""
+        ).trim();
+
 
       if (!text) {
+
         input.focus();
+
         return;
+
       }
 
-      const userId =
-        selectedUser.id ??
-        selectedUser.user_id;
-
-      if (!userId) {
-        toast("Invalid user.");
-        return;
-      }
 
       const submitBtn =
-        messageForm.querySelector(
+        groupMessageForm.querySelector(
           'button[type="submit"]'
         );
 
+
       if (submitBtn) {
-        submitBtn.disabled = true;
+
+        submitBtn.disabled =
+          true;
+
       }
 
+
       try {
-        await api("/messages", {
-          method: "POST",
-          body: JSON.stringify({
-            user_id: userId,
-            content: text,
-            message: text,
-            text: text
-          })
-        });
 
-        input.value = "";
+        await api(
+          "/group/messages",
+          {
+            method: "POST",
 
-        await loadPrivateMessages();
+            body:
+              JSON.stringify({
 
-        keepInputFocused(input);
+                message:
+                  text
+
+              })
+
+          }
+        );
+
+
+        input.value =
+          "";
+
+
+        await loadGroupMessages();
+
+
+        keepInputFocused(
+          input
+        );
+
 
       } catch (error) {
+
+        console.error(
+          "Group send:",
+          error
+        );
+
+
         toast(
           error?.message ||
           "Message could not be sent."
         );
 
+
       } finally {
+
         if (submitBtn) {
-          submitBtn.disabled = false;
+
+          submitBtn.disabled =
+            false;
+
         }
+
       }
+
     }
   );
+
 }
 
 
-/* =========================================================
-   READ PRIVATE MESSAGES
-========================================================= */
-
-async function markPrivateMessagesRead(userId) {
-  if (!userId) return;
-
-  try {
-    await api("/messages/read", {
-      method: "POST",
-      body: JSON.stringify({
-        user_id: userId
-      })
-    });
-  } catch (error) {
-    console.error(
-      "Mark read:",
-      error
-    );
-  }
-}
-
-
-/* =========================================================
+/* ============================================================
    INBOX
-========================================================= */
+============================================================ */
 
-async function loadInbox() {
-  if (!profilePanel) return;
+async function loadInbox(
+  showLoading = true
+) {
+
+  if (!inboxList) {
+    return;
+  }
+
 
   try {
-    const data =
-      await api("/messages/inbox");
 
-    const items =
+    const data =
+      await api(
+        "/messages/inbox"
+      );
+
+
+    const inbox =
       Array.isArray(data)
         ? data
         : (
-          data?.messages ||
           data?.inbox ||
+          data?.users ||
           data?.items ||
           []
         );
 
-    renderInbox(items);
+
+    renderInbox(
+      inbox
+    );
+
+
+    const total =
+      Number(
+        data?.total_unread ??
+        data?.unread_count ??
+        inbox.reduce(
+          (
+            sum,
+            item
+          ) =>
+            sum +
+            Number(
+              item?.unread_count ||
+              item?.unread ||
+              0
+            ),
+          0
+        )
+      );
+
+
+    updateInboxCount(
+      total
+    );
+
 
   } catch (error) {
+
     console.error(
       "Inbox:",
       error
     );
+
   }
+
 }
 
 
-function renderInbox(items) {
-  if (!profilePanel) return;
+/* ============================================================
+   RENDER INBOX
+============================================================ */
 
-  let inbox =
-    $("privateInbox");
-
-  if (!inbox) {
-    inbox =
-      document.createElement("div");
-
-    inbox.id =
-      "privateInbox";
-
-    inbox.className =
-      "private-inbox";
-
-    profilePanel.appendChild(inbox);
-  }
-
-  inbox.innerHTML = `
-    <div class="private-inbox-title">
-      Private Messages
-    </div>
-
-    <div
-      id="privateUserList"
-      class="private-user-list"
-    >
-      ${
-        items.length
-          ? items.map(renderInboxItem).join("")
-          : `
-            <div
-              id="privateInboxEmpty"
-              class="private-inbox-empty"
-            >
-              No private messages
-            </div>
-          `
-      }
-    </div>
-  `;
-
+function renderInbox(
   inbox
-    .querySelectorAll(
-      ".private-inbox-item"
-    )
-    .forEach(item => {
+) {
 
-      item.addEventListener(
-        "click",
-        () => {
+  if (!inboxList) {
+    return;
+  }
 
-          const userId =
-            item.dataset.userId;
 
-          const username =
-            item.dataset.username ||
-            "User";
+  inboxList.innerHTML =
+    "";
 
-          const avatar =
-            item.dataset.avatar ||
-            "";
 
-          if (!userId) return;
+  for (
+    const item of inbox
+  ) {
 
-          openPrivateChat({
-            id: userId,
-            username,
-            avatar_url: avatar
-          });
+    renderInboxItem(
+      item
+    );
 
-          closeProfile();
-        }
-      );
+  }
 
-    });
 }
 
 
-function renderInboxItem(item) {
+/* ============================================================
+   INBOX ITEM
+============================================================ */
+
+function renderInboxItem(
+  item
+) {
+
+  if (!inboxList) {
+    return;
+  }
+
+
   const user =
     item?.user ||
     item?.sender ||
     item?.other_user ||
     {};
 
+
   const userId =
-    item?.user_id ??
-    item?.sender_id ??
-    item?.other_user_id ??
-    user?.id ??
-    "";
+    getUserId({
+
+      id:
+        item?.user_id ??
+        item?.sender_id ??
+        item?.other_user_id ??
+        user?.id,
+
+      user_id:
+        item?.user_id ??
+        item?.sender_id ??
+        item?.other_user_id ??
+        user?.user_id,
+
+      sender_id:
+        item?.sender_id ??
+        user?.sender_id
+
+    });
+
+
+  if (!userId) {
+    return;
+  }
+
 
   const username =
     item?.username ||
     item?.sender_username ||
+    item?.other_username ||
     user?.username ||
     user?.name ||
     "User";
 
-  const avatar =
-    getAvatarUrl(item) ||
-    getAvatarUrl(user);
 
-  const preview =
+  const avatar =
+    item?.profile_photo ||
+    item?.sender_profile_photo ||
+    item?.other_profile_photo ||
+    user?.profile_photo ||
+    "";
+
+
+  const lastMessage =
     item?.last_message ||
-    item?.content ||
     item?.message ||
     "";
+
 
   const unread =
     Number(
@@ -1333,502 +2214,1112 @@ function renderInboxItem(item) {
       0
     );
 
-  const time =
-    item?.created_at ||
-    item?.updated_at ||
-    item?.timestamp ||
-    "";
 
-  const avatarHtml = avatar
-    ? `
-      <img
-        src="${escapeHtml(avatar)}"
-        alt=""
-        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-      >
-      <span
-        style="display:none;"
-        class="avatar-fallback"
-      >
-        ${escapeHtml(initials(username))}
-      </span>
-    `
-    : `
-      <span class="avatar-fallback">
-        ${escapeHtml(initials(username))}
-      </span>
-    `;
-
-  return `
-    <button
-      type="button"
-      class="private-inbox-item"
-      data-user-id="${escapeHtml(userId)}"
-      data-username="${escapeHtml(username)}"
-      data-avatar="${escapeHtml(avatar)}"
-    >
-
-      <div class="private-inbox-avatar">
-        ${avatarHtml}
-      </div>
-
-      <div class="private-inbox-info">
-
-        <div class="private-inbox-username">
-          ${escapeHtml(username)}
-        </div>
-
-        <div class="private-inbox-preview">
-          ${escapeHtml(preview)}
-        </div>
-
-      </div>
-
-      <div class="private-inbox-right">
-
-        ${
-          unread > 0
-            ? `
-              <span class="private-inbox-badge">
-                ${escapeHtml(unread)}
-              </span>
-            `
-            : ""
-        }
-
-        <span class="private-inbox-time">
-          ${escapeHtml(formatTime(time))}
-        </span>
-
-      </div>
-
-    </button>
-  `;
-}
+  const button =
+    document.createElement("button");
 
 
-/* =========================================================
-   PROFILE PANEL
-========================================================= */
+  button.type =
+    "button";
 
-function openProfile() {
-  if (!profilePanel) return;
 
-  updateMyProfile();
+  button.className =
+    "inbox-item";
 
-  show(profilePanel);
 
-  loadInbox();
-}
+  button.dataset.userId =
+    String(userId);
 
-function closeProfile() {
-  hide(profilePanel);
-}
 
-if (myAvatarBtn) {
-  myAvatarBtn.addEventListener(
+  const avatarEl =
+    document.createElement("div");
+
+
+  avatarEl.className =
+    "inbox-avatar";
+
+
+  if (avatar) {
+
+    const img =
+      document.createElement("img");
+
+    img.src =
+      avatar;
+
+    img.alt =
+      username;
+
+    avatarEl.appendChild(
+      img
+    );
+
+  } else {
+
+    avatarEl.textContent =
+      username
+        .charAt(0)
+        .toUpperCase();
+
+  }
+
+
+  const content =
+    document.createElement("div");
+
+
+  content.className =
+    "inbox-content";
+
+
+  const name =
+    document.createElement("div");
+
+
+  name.className =
+    "inbox-name";
+
+
+  name.textContent =
+    username;
+
+
+  const preview =
+    document.createElement("div");
+
+
+  preview.className =
+    "inbox-preview";
+
+
+  preview.textContent =
+    lastMessage;
+
+
+  content.appendChild(
+    name
+  );
+
+
+  content.appendChild(
+    preview
+  );
+
+
+  button.appendChild(
+    avatarEl
+  );
+
+
+  button.appendChild(
+    content
+  );
+
+
+  if (unread > 0) {
+
+    const badge =
+      document.createElement("span");
+
+
+    badge.className =
+      "inbox-unread";
+
+
+    badge.textContent =
+      String(unread);
+
+
+    button.appendChild(
+      badge
+    );
+
+  }
+
+
+  button.addEventListener(
     "click",
-    event => {
-      event.stopPropagation();
+    () => {
 
-      if (
-        profilePanel &&
-        !profilePanel.classList.contains("hidden")
-      ) {
-        closeProfile();
-      } else {
-        openProfile();
-      }
+      openPrivateChat({
+
+        id:
+          userId,
+
+        user_id:
+          userId,
+
+        username,
+
+        profile_photo:
+          avatar,
+
+        avatar_url:
+          avatar
+
+      });
+
     }
   );
+
+
+  inboxList.appendChild(
+    button
+  );
+
 }
 
 
-/* =========================================================
-   PROFILE PHOTO
-========================================================= */
+/* ============================================================
+   INBOX COUNT
+============================================================ */
+
+function updateInboxCount(
+  count
+) {
+
+  const value =
+    Math.max(
+      0,
+      Number(count) || 0
+    );
+
+
+  if (inboxCount) {
+
+    inboxCount.textContent =
+      value > 0
+        ? String(value)
+        : "";
+
+    if (value > 0) {
+      inboxCount.classList.add(
+        "has-unread"
+      );
+    } else {
+      inboxCount.classList.remove(
+        "has-unread"
+      );
+    }
+
+  }
+
+
+  document
+    .querySelectorAll(
+      "[data-inbox-count]"
+    )
+    .forEach(element => {
+
+      element.textContent =
+        value > 0
+          ? String(value)
+          : "";
+
+    });
+
+}
+
+
+/* ============================================================
+   PROFILE PHOTO UPLOAD
+============================================================ */
 
 if (profilePhotoInput) {
+
   profilePhotoInput.addEventListener(
     "change",
-    async () => {
+    async event => {
 
       const file =
-        profilePhotoInput.files?.[0];
+        event.target.files?.[0];
 
-      if (!file) return;
 
-      try {
-
-        const formData =
-          new FormData();
-
-        formData.append(
-          "photo",
-          file
-        );
-
-        const response =
-          await fetch(
-            API + "/profile/photo",
-            {
-              method: "POST",
-              headers: token
-                ? {
-                    Authorization:
-                      `Bearer ${token}`
-                  }
-                : {},
-              body: formData
-            }
-          );
-
-        const data =
-          await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data?.error ||
-            data?.message ||
-            "Upload failed."
-          );
-        }
-
-        currentUser =
-          data?.user ||
-          data?.currentUser ||
-          {
-            ...currentUser,
-            ...(data || {})
-          };
-
-        updateMyProfile();
-
-        toast(
-          "Profile photo updated."
-        );
-
-      } catch (error) {
-
-        toast(
-          error?.message ||
-          "Profile photo upload failed."
-        );
-
-      } finally {
-        profilePhotoInput.value = "";
+      if (!file) {
+        return;
       }
-    }
-  );
-}
 
 
-/* =========================================================
-   REMOVE PROFILE PHOTO
-========================================================= */
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
 
-if (removeProfilePhoto) {
-  removeProfilePhoto.addEventListener(
-    "click",
-    async () => {
+        toast(
+          "Please select an image."
+        );
+
+        profilePhotoInput.value =
+          "";
+
+        return;
+
+      }
+
 
       try {
+
+        const base64 =
+          await fileToDataURL(
+            file
+          );
+
 
         const data =
           await api(
             "/profile/photo",
             {
-              method: "DELETE"
+              method: "POST",
+
+              body:
+                JSON.stringify({
+
+                  profile_photo:
+                    base64
+
+                })
+
             }
           );
 
+
         currentUser =
           data?.user ||
-          data?.currentUser ||
-          {
-            ...currentUser,
-            avatar_url: null,
-            avatarUrl: null,
-            profile_photo: null,
-            profile_photo_url: null,
-            photo_url: null,
-            photo: null
-          };
+          currentUser;
 
-        updateMyProfile();
+
+        updateCurrentUserUI();
+
 
         toast(
-          "Profile photo removed."
+          "Profile photo updated."
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Profile photo:",
+          error
+        );
+
+
+        toast(
+          error?.message ||
+          "Profile photo could not be updated."
+        );
+
+      }
+
+
+      profilePhotoInput.value =
+        "";
+
+    }
+  );
+
+}
+
+
+/* ============================================================
+   FILE -> DATA URL
+============================================================ */
+
+function fileToDataURL(
+  file
+) {
+
+  return new Promise(
+    (
+      resolve,
+      reject
+    ) => {
+
+      const reader =
+        new FileReader();
+
+
+      reader.onload =
+        () => resolve(
+          reader.result
+        );
+
+
+      reader.onerror =
+        () => reject(
+          new Error(
+            "Could not read image."
+          )
+        );
+
+
+      reader.readAsDataURL(
+        file
+      );
+
+    }
+  );
+
+}
+
+
+/* ============================================================
+   PROFILE PHOTO DELETE
+============================================================ */
+
+document
+  .querySelectorAll(
+    "#removeProfilePhoto, [data-remove-profile-photo]"
+  )
+  .forEach(button => {
+
+    button.addEventListener(
+      "click",
+      async event => {
+
+        event.preventDefault();
+
+
+        try {
+
+          const data =
+            await api(
+              "/profile/photo",
+              {
+                method: "DELETE"
+              }
+            );
+
+
+          currentUser =
+            data?.user ||
+            currentUser;
+
+
+          updateCurrentUserUI();
+
+
+          toast(
+            "Profile photo removed."
+          );
+
+
+        } catch (error) {
+
+          console.error(
+            "Remove profile photo:",
+            error
+          );
+
+
+          toast(
+            error?.message ||
+            "Profile photo could not be removed."
+          );
+
+        }
+
+      }
+    );
+
+  });
+
+
+/* ============================================================
+   LOGOUT
+============================================================ */
+
+if (logoutButton) {
+
+  logoutButton.addEventListener(
+    "click",
+    async event => {
+
+      event.preventDefault();
+
+
+      try {
+
+        await api(
+          "/logout",
+          {
+            method: "POST"
+          }
         );
 
       } catch (error) {
 
-        toast(
-          error?.message ||
-          "Could not remove photo."
+        console.error(
+          "Logout:",
+          error
         );
 
       }
+
+
+      token =
+        "";
+
+
+      currentUser =
+        null;
+
+
+      selectedUser =
+        null;
+
+
+      localStorage.removeItem(
+        "dark_chat_token"
+      );
+
+
+      stopAllTimers();
+
+
+      showAuth();
+
+
+      showLoginForm();
+
     }
   );
+
 }
 
 
-/* =========================================================
-   REFRESH BUTTONS
-========================================================= */
+/* ============================================================
+   BACK BUTTON
+============================================================ */
 
-if (reloadGroupMessages) {
-  reloadGroupMessages.addEventListener(
+if (backButton) {
+
+  backButton.addEventListener(
     "click",
-    async () => {
-      await loadGroupMessages();
+    event => {
+
+      event.preventDefault();
+
+      selectedUser =
+        null;
+
+
+      stopPrivateTimer();
+
+
+      hide(privateChat);
+
+
+      if (emptyChat) {
+        show(emptyChat);
+      }
+
+
+      openGroupChat();
+
     }
   );
+
 }
 
-if (reloadMessages) {
-  reloadMessages.addEventListener(
+
+/* ============================================================
+   GROUP BUTTON
+============================================================ */
+
+if (groupButton) {
+
+  groupButton.addEventListener(
     "click",
-    async () => {
-      await loadPrivateMessages();
+    event => {
+
+      event.preventDefault();
+
+      openGroupChat();
+
     }
   );
+
 }
 
 
-/* =========================================================
-   TIMERS
-========================================================= */
+/* ============================================================
+   PROFILE BUTTON
+============================================================ */
 
-function startTimers() {
-  stopTimers();
+if (profileButton) {
 
-  groupMessageTimer =
-    setInterval(
-      () => {
-        if (
-          currentUser &&
-          groupChat &&
-          !groupChat.classList.contains("hidden")
-        ) {
-          loadGroupMessages();
-        }
-      },
-      3000
-    );
+  profileButton.addEventListener(
+    "click",
+    event => {
 
-  inboxTimer =
-    setInterval(
-      () => {
-        if (
-          profilePanel &&
-          !profilePanel.classList.contains("hidden")
-        ) {
-          loadInbox();
-        }
-      },
-      3000
-    );
+      event.preventDefault();
 
-  if (selectedUser) {
-    startPrivateTimer();
-  }
-}
+      if (!profilePanel) {
+        return;
+      }
 
 
-function startPrivateTimer() {
-  stopPrivateTimer();
+      profilePanel.classList.toggle(
+        "hidden"
+      );
 
-  if (!selectedUser) return;
-
-  privateMessageTimer =
-    setInterval(
-      () => {
-        if (
-          selectedUser &&
-          privateChat &&
-          !privateChat.classList.contains("hidden")
-        ) {
-          loadPrivateMessages();
-        }
-      },
-      3000
-    );
-}
-
-
-function stopPrivateTimer() {
-  if (privateMessageTimer) {
-    clearInterval(
-      privateMessageTimer
-    );
-
-    privateMessageTimer = null;
-  }
-}
-
-
-function stopTimers() {
-  if (groupMessageTimer) {
-    clearInterval(
-      groupMessageTimer
-    );
-
-    groupMessageTimer = null;
-  }
-
-  if (inboxTimer) {
-    clearInterval(
-      inboxTimer
-    );
-
-    inboxTimer = null;
-  }
-
-  stopPrivateTimer();
-}
-
-
-/* =========================================================
-   SCROLL
-========================================================= */
-
-function scrollToBottom(element) {
-  if (!element) return;
-
-  requestAnimationFrame(() => {
-    element.scrollTop =
-      element.scrollHeight;
-  });
-}
-
-
-/* =========================================================
-   KEEP KEYBOARD INPUT
-========================================================= */
-
-function keepInputFocused(input) {
-  if (!input) return;
-
-  setTimeout(() => {
-
-    try {
-      input.focus({
-        preventScroll: true
-      });
-    } catch {
-      input.focus();
     }
-
-  }, 80);
-}
-
-
-/* =========================================================
-   MOBILE KEYBOARD / VISUAL VIEWPORT
-========================================================= */
-
-function updateKeyboardLayout() {
-  const viewport =
-    window.visualViewport;
-
-  if (!viewport) return;
-
-  const height =
-    viewport.height;
-
-  document.documentElement.style.setProperty(
-    "--app-vh",
-    `${height}px`
-  );
-}
-
-if (window.visualViewport) {
-
-  window.visualViewport.addEventListener(
-    "resize",
-    updateKeyboardLayout
   );
 
-  window.visualViewport.addEventListener(
-    "scroll",
-    updateKeyboardLayout
-  );
 }
 
-window.addEventListener(
-  "resize",
-  updateKeyboardLayout
-);
 
+/* ============================================================
+   USERS LIST
+============================================================ */
 
-/* =========================================================
-   CLOSE PROFILE WHEN CLICKING OUTSIDE
-========================================================= */
+async function loadUsers() {
 
-document.addEventListener(
-  "click",
-  event => {
-
-    if (!profilePanel) return;
-
-    if (
-      profilePanel.classList.contains("hidden")
-    ) {
-      return;
-    }
-
-    if (
-      profilePanel.contains(event.target) ||
-      myAvatarBtn?.contains(event.target)
-    ) {
-      return;
-    }
-
-    closeProfile();
-  }
-);
-
-
-/* =========================================================
-   STARTUP
-========================================================= */
-
-async function startApp() {
-
-  updateKeyboardLayout();
-
-  if (!token) {
-    openLogin();
+  if (!usersList) {
     return;
   }
 
+
   try {
 
-    currentUser =
-      await getCurrentUser();
+    const data =
+      await api(
+        "/users"
+      );
 
-    await enterChat();
+
+    const users =
+      Array.isArray(data)
+        ? data
+        : (
+          data?.users ||
+          data?.items ||
+          data?.results ||
+          []
+        );
+
+
+    renderUsers(
+      users
+    );
+
 
   } catch (error) {
 
     console.error(
-      "Session restore:",
+      "Users:",
       error
     );
 
-    token = "";
+  }
+
+}
+
+
+/* ============================================================
+   RENDER USERS
+============================================================ */
+
+function renderUsers(
+  users
+) {
+
+  if (!usersList) {
+    return;
+  }
+
+
+  usersList.innerHTML =
+    "";
+
+
+  for (
+    const user of users
+  ) {
+
+    const id =
+      getUserId(
+        user
+      );
+
+
+    if (!id) {
+      continue;
+    }
+
+
+    const username =
+      user?.username ||
+      "User";
+
+
+    const avatar =
+      user?.profile_photo ||
+      "";
+
+
+    const button =
+      document.createElement("button");
+
+
+    button.type =
+      "button";
+
+
+    button.className =
+      "user-item";
+
+
+    button.dataset.userId =
+      String(id);
+
+
+    const avatarEl =
+      document.createElement("div");
+
+
+    avatarEl.className =
+      "user-avatar";
+
+
+    if (avatar) {
+
+      const img =
+        document.createElement("img");
+
+
+      img.src =
+        avatar;
+
+
+      img.alt =
+        username;
+
+
+      avatarEl.appendChild(
+        img
+      );
+
+    } else {
+
+      avatarEl.textContent =
+        username
+          .charAt(0)
+          .toUpperCase();
+
+    }
+
+
+    const name =
+      document.createElement("span");
+
+
+    name.className =
+      "user-name";
+
+
+    name.textContent =
+      username;
+
+
+    button.appendChild(
+      avatarEl
+    );
+
+
+    button.appendChild(
+      name
+    );
+
+
+    button.addEventListener(
+      "click",
+      () => {
+
+        openPrivateChat(
+          normalizeSelectedUser(
+            user
+          )
+        );
+
+      }
+    );
+
+
+    usersList.appendChild(
+      button
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   SCROLL
+============================================================ */
+
+function scrollPrivateMessagesToBottom() {
+
+  if (!privateMessages) {
+    return;
+  }
+
+
+  privateMessages.scrollTop =
+    privateMessages.scrollHeight;
+
+}
+
+
+function scrollGroupMessagesToBottom() {
+
+  if (!groupMessages) {
+    return;
+  }
+
+
+  groupMessages.scrollTop =
+    groupMessages.scrollHeight;
+
+}
+
+
+/* ============================================================
+   INPUT FOCUS
+============================================================ */
+
+function keepInputFocused(
+  input
+) {
+
+  if (!input) {
+    return;
+  }
+
+
+  setTimeout(() => {
+
+    try {
+
+      input.focus({
+        preventScroll: true
+      });
+
+    } catch {
+
+      input.focus();
+
+    }
+
+  }, 50);
+
+}
+
+
+/* ============================================================
+   ENTER KEY
+============================================================ */
+
+function setupMessageKeyboard(
+  input,
+  form
+) {
+
+  if (!input || !form) {
+    return;
+  }
+
+
+  input.addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey
+      ) {
+
+        event.preventDefault();
+
+
+        if (
+          typeof form.requestSubmit ===
+          "function"
+        ) {
+
+          form.requestSubmit();
+
+        } else {
+
+          form.dispatchEvent(
+            new Event(
+              "submit",
+              {
+                bubbles: true,
+                cancelable: true
+              }
+            )
+          );
+
+        }
+
+      }
+
+    }
+  );
+
+}
+
+
+setupMessageKeyboard(
+  messageInput,
+  messageForm
+);
+
+
+setupMessageKeyboard(
+  groupMessageInput,
+  groupMessageForm
+);
+
+
+/* ============================================================
+   REFRESH TIMERS
+============================================================ */
+
+function startGroupTimer() {
+
+  stopGroupTimer();
+
+
+  groupMessageTimer =
+    setInterval(
+      async () => {
+
+        if (
+          !groupChat ||
+          groupChat.classList.contains(
+            "hidden"
+          )
+        ) {
+
+          return;
+
+        }
+
+
+        await loadGroupMessages();
+
+      },
+      3000
+    );
+
+}
+
+
+function stopGroupTimer() {
+
+  if (
+    groupMessageTimer
+  ) {
+
+    clearInterval(
+      groupMessageTimer
+    );
+
+
+    groupMessageTimer =
+      null;
+
+  }
+
+}
+
+
+function startPrivateTimer() {
+
+  stopPrivateTimer();
+
+
+  privateMessageTimer =
+    setInterval(
+      async () => {
+
+        if (
+          !selectedUser ||
+          !privateChat ||
+          privateChat.classList.contains(
+            "hidden"
+          )
+        ) {
+
+          return;
+
+        }
+
+
+        await loadPrivateMessages();
+
+      },
+      3000
+    );
+
+}
+
+
+function stopPrivateTimer() {
+
+  if (
+    privateMessageTimer
+  ) {
+
+    clearInterval(
+      privateMessageTimer
+    );
+
+
+    privateMessageTimer =
+      null;
+
+  }
+
+}
+
+
+function startInboxTimer() {
+
+  stopInboxTimer();
+
+
+  inboxTimer =
+    setInterval(
+      async () => {
+
+        await loadInbox(
+          false
+        );
+
+      },
+      5000
+    );
+
+}
+
+
+function stopInboxTimer() {
+
+  if (
+    inboxTimer
+  ) {
+
+    clearInterval(
+      inboxTimer
+    );
+
+
+    inboxTimer =
+      null;
+
+  }
+
+}
+
+
+function stopAllTimers() {
+
+  stopGroupTimer();
+
+  stopPrivateTimer();
+
+  stopInboxTimer();
+
+}
+
+
+/* ============================================================
+   INITIALIZE APP
+============================================================ */
+
+async function initializeApp() {
+
+  updateCurrentUserUI();
+
+
+  await Promise.allSettled([
+
+    loadUsers(),
+
+    loadInbox(),
+
+    loadGroupMessages()
+
+  ]);
+
+
+  await openGroupChat();
+
+
+  startInboxTimer();
+
+}
+
+
+/* ============================================================
+   STARTUP
+============================================================ */
+
+async function startup() {
+
+  if (!token) {
+
+    showAuth();
+
+    showLoginForm();
+
+    return;
+
+  }
+
+
+  const user =
+    await getCurrentUser();
+
+
+  if (!user) {
+
+    token =
+      "";
 
     localStorage.removeItem(
       "dark_chat_token"
     );
 
-    currentUser = null;
 
-    openLogin();
+    showAuth();
+
+    showLoginForm();
+
+    return;
+
   }
+
+
+  showApp();
+
+
+  await initializeApp();
+
 }
 
 
-startApp();
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    startup();
+
+  }
+);
