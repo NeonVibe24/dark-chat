@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-
   <meta charset="UTF-8">
 
   <meta
@@ -16,7 +15,6 @@
     rel="stylesheet"
     href="/style.css"
   >
-
 </head>
 
 
@@ -31,9 +29,6 @@
 
   <section id="authScreen">
 
-
-    <!-- ================= LOGIN ================= -->
-
     <div id="loginBox">
 
       <h1>Private Chat</h1>
@@ -43,7 +38,6 @@
         <input
           type="text"
           id="loginUsername"
-          name="username"
           placeholder="Username"
           autocomplete="username"
           required
@@ -52,15 +46,12 @@
         <input
           type="password"
           id="loginPassword"
-          name="password"
           placeholder="Password"
           autocomplete="current-password"
           required
         >
 
-        <button
-          type="submit"
-        >
+        <button type="submit">
           Login
         </button>
 
@@ -71,14 +62,13 @@
 
       </form>
 
-
       <div class="auth-switch">
 
         Don't have an account?
 
         <button
           type="button"
-          id="showRegisterBtn"
+          id="showRegister"
         >
           Register
         </button>
@@ -87,9 +77,6 @@
 
     </div>
 
-
-
-    <!-- ================= REGISTER ================= -->
 
     <div
       id="registerBox"
@@ -103,7 +90,6 @@
         <input
           type="text"
           id="registerUsername"
-          name="username"
           placeholder="Username"
           autocomplete="username"
           required
@@ -112,7 +98,6 @@
         <input
           type="password"
           id="registerPassword"
-          name="password"
           placeholder="Password"
           autocomplete="new-password"
           required
@@ -121,15 +106,12 @@
         <input
           type="password"
           id="registerPasswordConfirm"
-          name="passwordConfirm"
           placeholder="Confirm Password"
           autocomplete="new-password"
           required
         >
 
-        <button
-          type="submit"
-        >
+        <button type="submit">
           Register
         </button>
 
@@ -140,14 +122,13 @@
 
       </form>
 
-
       <div class="auth-switch">
 
         Already have an account?
 
         <button
           type="button"
-          id="showLoginBtn"
+          id="showLogin"
         >
           Login
         </button>
@@ -171,7 +152,7 @@
 
 
     <!-- ===================================================
-         PUBLIC GROUP CHAT
+         GROUP CHAT
     ==================================================== -->
 
     <main
@@ -179,34 +160,18 @@
       class="active-chat"
     >
 
-
-      <!-- ================= GROUP HEADER ================= -->
-
       <header
         class="chat-header group-header"
       >
 
-
-        <!-- GROUP USER -->
-
         <div class="chat-user">
-
-
-          <!-- GROUP AVATAR -->
 
           <div
             id="groupAvatar"
             class="avatar"
           >
-
-            <span>
-              G
-            </span>
-
+            G
           </div>
-
-
-          <!-- GROUP INFO -->
 
           <div class="chat-user-info">
 
@@ -229,13 +194,7 @@
         </div>
 
 
-
-        <!-- ================= HEADER ACTIONS ================= -->
-
         <div class="header-actions">
-
-
-          <!-- MY PROFILE -->
 
           <div class="my-profile">
 
@@ -262,15 +221,11 @@
 
               </div>
 
-
-              <!-- UNREAD BADGE -->
-
               <span
                 id="profileNotificationBadge"
               ></span>
 
             </button>
-
 
             <span
               id="myUsername"
@@ -280,27 +235,19 @@
           </div>
 
 
-
-          <!-- REFRESH GROUP -->
-
           <button
             type="button"
             id="reloadGroupMessages"
             title="Refresh"
-            aria-label="Refresh group messages"
           >
             ↻
           </button>
 
 
-
-          <!-- LOGOUT -->
-
           <button
             type="button"
             id="logoutBtn"
             title="Logout"
-            aria-label="Logout"
           >
             ⎋
           </button>
@@ -310,16 +257,10 @@
       </header>
 
 
-
-      <!-- ================= GROUP MESSAGES ================= -->
-
       <div
         id="groupMessages"
       ></div>
 
-
-
-      <!-- ================= GROUP MESSAGE FORM ================= -->
 
       <form
         id="groupMessageForm"
@@ -329,18 +270,13 @@
         <input
           type="text"
           id="groupMessageInput"
-          name="message"
           placeholder="Write a message..."
           autocomplete="off"
           maxlength="2000"
           required
         >
 
-        <button
-          type="submit"
-          title="Send"
-          aria-label="Send message"
-        >
+        <button type="submit">
           ➤
         </button>
 
@@ -359,36 +295,24 @@
       class="active-chat hidden"
     >
 
-
-      <!-- ================= PRIVATE HEADER ================= -->
-
       <header
         class="chat-header private-chat-header"
       >
 
-
-        <!-- ================= LEFT SIDE ================= -->
-
         <div
-          class="chat-user private-chat-user"
+          class="chat-user"
         >
-
-
-          <!-- BACK TO GROUP -->
 
           <button
             type="button"
             id="privateBackBtn"
             class="private-back-btn"
-            title="Back to Group Chat"
-            aria-label="Back to Group Chat"
+            title="Back"
+            aria-label="Back"
           >
             ←
           </button>
 
-
-
-          <!-- PRIVATE AVATAR -->
 
           <div
             id="chatAvatar"
@@ -411,9 +335,6 @@
           </div>
 
 
-
-          <!-- PRIVATE USER INFO -->
-
           <div class="chat-user-info">
 
             <span
@@ -435,19 +356,12 @@
         </div>
 
 
-
-        <!-- ================= RIGHT SIDE ================= -->
-
         <div class="header-actions">
-
-
-          <!-- REFRESH PRIVATE CHAT -->
 
           <button
             type="button"
             id="reloadMessages"
             title="Refresh"
-            aria-label="Refresh messages"
           >
             ↻
           </button>
@@ -457,16 +371,10 @@
       </header>
 
 
-
-      <!-- ================= PRIVATE MESSAGES ================= -->
-
       <div
         id="messagesBox"
       ></div>
 
-
-
-      <!-- ================= PRIVATE MESSAGE FORM ================= -->
 
       <form
         id="messageForm"
@@ -476,18 +384,13 @@
         <input
           type="text"
           id="messageInput"
-          name="message"
           placeholder="Write a message..."
           autocomplete="off"
           maxlength="2000"
           required
         >
 
-        <button
-          type="submit"
-          title="Send"
-          aria-label="Send message"
-        >
+        <button type="submit">
           ➤
         </button>
 
@@ -504,13 +407,7 @@
     <section
       id="emptyChat"
       class="hidden"
-    >
-
-      <div>
-        Select a user to start a private chat.
-      </div>
-
-    </section>
+    ></section>
 
   </section>
 
@@ -522,15 +419,10 @@
 
   <aside
     id="profilePanel"
-    class="profile-panel hidden"
+    class="hidden"
   >
 
-
-    <!-- ================= PROFILE HEADER ================= -->
-
-    <header
-      class="profile-panel-header"
-    >
+    <div class="profile-panel-header">
 
       <h3>
         Profile
@@ -541,27 +433,16 @@
         id="closeProfileBtn"
         class="icon-btn"
         title="Close"
-        aria-label="Close profile"
       >
         ×
       </button>
 
-    </header>
+    </div>
 
 
+    <div class="profile-panel-info">
 
-    <!-- ================= PROFILE INFO ================= -->
-
-    <div
-      class="profile-panel-info"
-    >
-
-
-      <!-- PROFILE AVATAR -->
-
-      <div
-        id="profileAvatar"
-      >
+      <div id="profileAvatar">
 
         <img
           id="profileAvatarImage"
@@ -579,9 +460,6 @@
       </div>
 
 
-
-      <!-- USERNAME -->
-
       <div
         id="profileUsername"
       >
@@ -591,9 +469,6 @@
     </div>
 
 
-
-    <!-- ================= EDIT PROFILE ================= -->
-
     <button
       type="button"
       id="editProfileBtn"
@@ -601,7 +476,6 @@
     >
       Edit Profile
     </button>
-
 
 
     <!-- ===================================================
@@ -613,12 +487,7 @@
       class="private-inbox"
     >
 
-
-      <!-- ================= INBOX TITLE ================= -->
-
-      <div
-        class="private-inbox-title"
-      >
+      <div class="private-inbox-title">
 
         <span>
           Messages
@@ -626,7 +495,6 @@
 
         <span
           id="privateInboxCount"
-          class="private-inbox-count"
         >
           0
         </span>
@@ -634,17 +502,11 @@
       </div>
 
 
-
-      <!-- ================= USER LIST ================= -->
-
       <div
         id="privateUserList"
         class="private-user-list"
       ></div>
 
-
-
-      <!-- ================= EMPTY INBOX ================= -->
 
       <div
         id="privateInboxEmpty"
@@ -656,17 +518,11 @@
     </section>
 
 
-
     <!-- ===================================================
-         PROFILE PHOTO CONTROLS
+         PROFILE PHOTO
     ==================================================== -->
 
-    <div
-      class="profile-photo-actions"
-    >
-
-
-      <!-- CHANGE PHOTO -->
+    <div class="profile-photo-actions">
 
       <label
         for="profilePhotoInput"
@@ -683,9 +539,6 @@
       </label>
 
 
-
-      <!-- REMOVE PHOTO -->
-
       <button
         type="button"
         id="removeProfilePhoto"
@@ -694,14 +547,6 @@
       </button>
 
     </div>
-
-
-
-    <!-- ================= PROFILE ACTIONS ================= -->
-
-    <div
-      class="profile-panel-actions"
-    ></div>
 
   </aside>
 
@@ -717,79 +562,11 @@
   ></div>
 
 
-
-  <!-- =====================================================
-       CALL UI
-       Intentionally not included
-  ====================================================== -->
-
-
 </div>
 
 
 
-<!-- =======================================================
-     AUTH SWITCH
-======================================================== -->
-
-<script>
-
-  const loginBox =
-    document.getElementById("loginBox");
-
-  const registerBox =
-    document.getElementById("registerBox");
-
-  const showRegisterBtn =
-    document.getElementById("showRegisterBtn");
-
-  const showLoginBtn =
-    document.getElementById("showLoginBtn");
-
-
-  if (showRegisterBtn) {
-
-    showRegisterBtn.addEventListener(
-      "click",
-      () => {
-
-        loginBox.classList.add("hidden");
-
-        registerBox.classList.remove("hidden");
-
-      }
-    );
-
-  }
-
-
-  if (showLoginBtn) {
-
-    showLoginBtn.addEventListener(
-      "click",
-      () => {
-
-        registerBox.classList.add("hidden");
-
-        loginBox.classList.remove("hidden");
-
-      }
-    );
-
-  }
-
-</script>
-
-
-
-<!-- =======================================================
-     APP JS
-======================================================== -->
-
-<script
-  src="/app.js"
-></script>
-
+<script src="/app.js"></script>
 
 </body>
 
