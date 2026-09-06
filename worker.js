@@ -10,6 +10,9 @@
    - Session authentication
    - Profile photo upload / delete
    - Private 1-to-1 text messages
+   - Private Inbox
+   - Private unread message notification count
+   - Mark private messages as read
    - One shared Public Group Chat
    - Click another user's avatar/name in Group Chat
      -> Private Chat
@@ -123,8 +126,6 @@ function randomToken() {
 
 /* ============================================================
    DATABASE INITIALIZATION
-   ------------------------------------------------------------
-   Only executed for API requests.
 ============================================================ */
 
 let databaseInitPromise = null;
@@ -273,6 +274,41 @@ async function initializeDatabase(db) {
 
 
   /* ----------------------------------------------------------
+     PRIVATE MESSAGE READ STATE
+     
+     Stores the last private message ID that a user
+     has read from another user.
+
+     This is used for:
+     - Inbox
+     - unread count
+     - profile notification badge
+  ---------------------------------------------------------- */
+
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS private_message_reads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+      user_id INTEGER NOT NULL,
+
+      other_user_id INTEGER NOT NULL,
+
+      last_read_message_id INTEGER NOT NULL DEFAULT 0,
+
+      UNIQUE(user_id, other_user_id),
+
+      FOREIGN KEY(user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+      FOREIGN KEY(other_user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+    )
+  `).run();
+
+
+  /* ----------------------------------------------------------
      PUBLIC GROUP CHAT
   ---------------------------------------------------------- */
 
@@ -337,6 +373,60 @@ async function initializeDatabase(db) {
 
     await db.prepare(`
       CREATE INDEX IF NOT EXISTS
+      idx_messages_receiver
+      ON messages(receiver_id, id)
+    `).run();
+
+  } catch (error) {
+
+    console.error(
+      "RECEIVER MESSAGE INDEX ERROR:",
+      error
+    );
+
+  }
+
+
+  try {
+
+    await db.prepare(`
+      CREATE INDEX IF NOT EXISTS
+      idx_messages_sender_receiver
+      ON messages(sender_id, receiver_id, id)
+    `).run();
+
+  } catch (error) {
+
+    console.error(
+      "SENDER RECEIVER INDEX ERROR:",
+      error
+    );
+
+  }
+
+
+  try {
+
+    await db.prepare(`
+      CREATE INDEX IF NOT EXISTS
+      idx_private_reads_user
+      ON private_message_reads(user_id, other_user_id)
+    `).run();
+
+  } catch (error) {
+
+    console.error(
+      "PRIVATE READ INDEX ERROR:",
+      error
+    );
+
+  }
+
+
+  try {
+
+    await db.prepare(`
+      CREATE INDEX IF NOT EXISTS
       idx_group_messages_created
       ON global_group_messages(created_at)
     `).run();
@@ -365,7 +455,8 @@ function formatUser(row) {
 
   return {
 
-    id: Number(row.id),
+    id:
+      Number(row.id),
 
     username:
       row.username || "",
@@ -646,10 +737,6 @@ export default {
 
       /* ======================================================
          FRONTEND ASSETS
-         
-         IMPORTANT:
-         Static files are served BEFORE database
-         initialization.
       ====================================================== */
 
       if (
@@ -693,8 +780,6 @@ export default {
 
       /* ======================================================
          DATABASE INITIALIZATION
-         
-         Only API requests reach here.
       ====================================================== */
 
       await initDatabase(
@@ -775,10 +860,6 @@ export default {
             .trim()
             .toLowerCase();
 
-
-        /* ----------------------------------------------------
-           VALIDATION
-        ---------------------------------------------------- */
 
         if (
           !username ||
@@ -861,12 +942,6 @@ export default {
         }
 
 
-        /* ----------------------------------------------------
-           USERNAME DUPLICATE CHECK
-           
-           Case-insensitive.
-        ---------------------------------------------------- */
-
         const existingUsername =
           await env.DB.prepare(`
             SELECT id
@@ -894,10 +969,6 @@ export default {
 
         }
 
-
-        /* ----------------------------------------------------
-           EMAIL
-        ---------------------------------------------------- */
 
         if (email) {
 
@@ -936,19 +1007,11 @@ export default {
         }
 
 
-        /* ----------------------------------------------------
-           PASSWORD
-        ---------------------------------------------------- */
-
         const passwordHash =
           await hashPassword(
             password
           );
 
-
-        /* ----------------------------------------------------
-           CREATE USER
-        ---------------------------------------------------- */
 
         let userId;
 
@@ -1002,10 +1065,6 @@ export default {
         }
 
 
-        /* ----------------------------------------------------
-           AUTO LOGIN
-        ---------------------------------------------------- */
-
         const token =
           randomToken();
 
@@ -1048,10 +1107,6 @@ export default {
 
         }
 
-
-        /* ----------------------------------------------------
-           GET CREATED USER
-        ---------------------------------------------------- */
 
         const user =
           await env.DB.prepare(`
@@ -1169,10 +1224,6 @@ export default {
         let user = null;
 
 
-        /* ----------------------------------------------------
-           EMAIL LOGIN
-        ---------------------------------------------------- */
-
         if (email) {
 
           user =
@@ -1203,10 +1254,6 @@ export default {
 
         }
 
-
-        /* ----------------------------------------------------
-           USERNAME LOGIN
-        ---------------------------------------------------- */
 
         if (
           !user &&
@@ -1255,10 +1302,6 @@ export default {
 
         }
 
-
-        /* ----------------------------------------------------
-           NEW SESSION
-        ---------------------------------------------------- */
 
         const token =
           randomToken();
@@ -1973,7 +2016,65 @@ export default {
                 WHEN c.user1_id = ?
                 THEN u2.profile_photo
                 ELSE u1.profile_photo
-              END AS other_profile_photo
+              END AS other_profile_photo,
+
+
+              (
+                SELECT COUNT(*)
+
+                FROM messages m
+
+                WHERE m.conversation_id = c.id
+
+                  AND m.receiver_id = ?
+
+                  AND m.id >
+                    COALESCE(
+                      (
+                        SELECT last_read_message_id
+
+                        FROM private_message_reads pmr
+
+                        WHERE pmr.user_id = ?
+
+                          AND pmr.other_user_id =
+                            CASE
+                              WHEN c.user1_id = ?
+                              THEN c.user2_id
+                              ELSE c.user1_id
+                            END
+
+                        LIMIT 1
+                      ),
+                      0
+                    )
+              ) AS unread_count,
+
+
+              (
+                SELECT m.message
+
+                FROM messages m
+
+                WHERE m.conversation_id = c.id
+
+                ORDER BY m.id DESC
+
+                LIMIT 1
+              ) AS last_message,
+
+
+              (
+                SELECT m.id
+
+                FROM messages m
+
+                WHERE m.conversation_id = c.id
+
+                ORDER BY m.id DESC
+
+                LIMIT 1
+              ) AS last_message_id
 
 
             FROM conversations c
@@ -1996,6 +2097,22 @@ export default {
 
 
             ORDER BY
+
+              COALESCE(
+                (
+                  SELECT m.id
+
+                  FROM messages m
+
+                  WHERE m.conversation_id = c.id
+
+                  ORDER BY m.id DESC
+
+                  LIMIT 1
+                ),
+                0
+              ) DESC,
+
               c.id DESC
           `)
             .bind(
@@ -2003,18 +2120,605 @@ export default {
               currentUser.id,
               currentUser.id,
               currentUser.id,
+
+              currentUser.id,
+              currentUser.id,
+
+              currentUser.id,
+
               currentUser.id,
               currentUser.id
             )
             .all();
 
 
+        const conversations =
+          (
+            result.results || []
+          ).map(row => ({
+
+            id:
+              Number(row.id),
+
+            user1_id:
+              Number(row.user1_id),
+
+            user2_id:
+              Number(row.user2_id),
+
+            other_user_id:
+              Number(row.other_user_id),
+
+            other_username:
+              row.other_username || "",
+
+            other_email:
+              row.other_email || "",
+
+            other_profile_photo:
+              row.other_profile_photo ||
+              null,
+
+            unread_count:
+              Number(
+                row.unread_count || 0
+              ),
+
+            last_message:
+              row.last_message ||
+              "",
+
+            last_message_id:
+              row.last_message_id
+                ? Number(
+                    row.last_message_id
+                  )
+                : null
+
+          }));
+
+
         return json({
 
           success: true,
 
-          conversations:
+          conversations
+
+        });
+
+      }
+
+
+      /* ======================================================
+         PRIVATE INBOX
+         
+         Returns users who have sent private messages
+         to the current user.
+
+         Also returns:
+         - unread_count
+         - latest message
+         - latest message id
+         - sender information
+      ====================================================== */
+
+      if (
+        path === "/api/inbox" &&
+        method === "GET"
+      ) {
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
+
+        if (!currentUser) {
+
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
+
+        }
+
+
+        const result =
+          await env.DB.prepare(`
+            SELECT
+
+              u.id
+                AS sender_id,
+
+              u.username
+                AS sender_username,
+
+              u.email
+                AS sender_email,
+
+              u.profile_photo
+                AS sender_profile_photo,
+
+
+              latest.message
+                AS last_message,
+
+              latest.id
+                AS last_message_id,
+
+              latest.conversation_id
+                AS conversation_id,
+
+
+              (
+                SELECT COUNT(*)
+
+                FROM messages unread
+
+                WHERE unread.sender_id = u.id
+
+                  AND unread.receiver_id = ?
+
+                  AND unread.id >
+                    COALESCE(
+                      (
+                        SELECT last_read_message_id
+
+                        FROM private_message_reads pmr
+
+                        WHERE pmr.user_id = ?
+
+                          AND pmr.other_user_id = u.id
+
+                        LIMIT 1
+                      ),
+                      0
+                    )
+              ) AS unread_count
+
+
+            FROM users u
+
+
+            INNER JOIN (
+
+              SELECT
+
+                m.sender_id,
+
+                m.receiver_id,
+
+                m.id,
+
+                m.message,
+
+                m.conversation_id
+
+
+              FROM messages m
+
+
+              INNER JOIN (
+
+                SELECT
+
+                  sender_id,
+
+                  MAX(id) AS max_id
+
+                FROM messages
+
+                WHERE receiver_id = ?
+
+                GROUP BY sender_id
+
+              ) latest_ids
+
+                ON latest_ids.max_id = m.id
+
+
+              WHERE m.receiver_id = ?
+
+            ) latest
+
+              ON latest.sender_id = u.id
+
+
+            WHERE u.id != ?
+
+
+            ORDER BY
+
+              latest.id DESC
+          `)
+            .bind(
+              currentUser.id,
+              currentUser.id,
+
+              currentUser.id,
+              currentUser.id,
+
+              currentUser.id
+            )
+            .all();
+
+
+        const inbox =
+          (
             result.results || []
+          ).map(row => ({
+
+            sender_id:
+              Number(
+                row.sender_id
+              ),
+
+            sender_username:
+              row.sender_username || "",
+
+            sender_email:
+              row.sender_email || "",
+
+            sender_profile_photo:
+              row.sender_profile_photo ||
+              null,
+
+            last_message:
+              row.last_message || "",
+
+            last_message_id:
+              Number(
+                row.last_message_id
+              ),
+
+            conversation_id:
+              Number(
+                row.conversation_id
+              ),
+
+            unread_count:
+              Number(
+                row.unread_count || 0
+              ),
+
+            sender: {
+
+              id:
+                Number(
+                  row.sender_id
+                ),
+
+              username:
+                row.sender_username || "",
+
+              email:
+                row.sender_email || "",
+
+              profile_photo:
+                row.sender_profile_photo ||
+                null
+
+            }
+
+          }));
+
+
+        const totalUnread =
+          inbox.reduce(
+            (total, item) =>
+              total +
+              Number(
+                item.unread_count || 0
+              ),
+            0
+          );
+
+
+        return json({
+
+          success: true,
+
+          total_unread:
+            totalUnread,
+
+          inbox
+
+        });
+
+      }
+
+
+      /* ======================================================
+         MARK PRIVATE MESSAGES AS READ
+         
+         POST /api/inbox/read
+
+         Body:
+         {
+           "user_id": 123,
+           "message_id": 456
+         }
+
+         message_id is optional.
+         If omitted, the latest received message from
+         that user will be used.
+      ====================================================== */
+
+      if (
+        path === "/api/inbox/read" &&
+        method === "POST"
+      ) {
+
+        const currentUser =
+          await getUserFromRequest(
+            request,
+            env.DB
+          );
+
+
+        if (!currentUser) {
+
+          return json(
+            {
+              success: false,
+              error:
+                "Unauthorized."
+            },
+            401
+          );
+
+        }
+
+
+        let body;
+
+
+        try {
+
+          body =
+            await request.json();
+
+        } catch {
+
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid JSON."
+            },
+            400
+          );
+
+        }
+
+
+        const otherUserId =
+          Number(
+            body.user_id
+          );
+
+
+        let messageId =
+          Number(
+            body.message_id || 0
+          );
+
+
+        if (
+          !Number.isInteger(
+            otherUserId
+          ) ||
+          otherUserId <= 0
+        ) {
+
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid user_id."
+            },
+            400
+          );
+
+        }
+
+
+        if (
+          otherUserId ===
+          currentUser.id
+        ) {
+
+          return json(
+            {
+              success: false,
+              error:
+                "Invalid user_id."
+            },
+            400
+          );
+
+        }
+
+
+        const otherUser =
+          await env.DB.prepare(`
+            SELECT id
+
+            FROM users
+
+            WHERE id = ?
+
+            LIMIT 1
+          `)
+            .bind(
+              otherUserId
+            )
+            .first();
+
+
+        if (!otherUser) {
+
+          return json(
+            {
+              success: false,
+              error:
+                "User not found."
+            },
+            404
+          );
+
+        }
+
+
+        /* ----------------------------------------------------
+           If message_id wasn't supplied,
+           use latest received message.
+        ---------------------------------------------------- */
+
+        if (
+          !Number.isInteger(
+            messageId
+          ) ||
+          messageId <= 0
+        ) {
+
+          const latest =
+            await env.DB.prepare(`
+              SELECT id
+
+              FROM messages
+
+              WHERE sender_id = ?
+
+                AND receiver_id = ?
+
+              ORDER BY id DESC
+
+              LIMIT 1
+            `)
+              .bind(
+                otherUserId,
+                currentUser.id
+              )
+              .first();
+
+
+          if (latest) {
+
+            messageId =
+              Number(
+                latest.id
+              );
+
+          } else {
+
+            messageId = 0;
+
+          }
+
+        }
+
+
+        /* ----------------------------------------------------
+           Validate supplied message_id.
+        ---------------------------------------------------- */
+
+        if (
+          messageId > 0
+        ) {
+
+          const targetMessage =
+            await env.DB.prepare(`
+              SELECT id
+
+              FROM messages
+
+              WHERE id = ?
+
+                AND sender_id = ?
+
+                AND receiver_id = ?
+
+              LIMIT 1
+            `)
+              .bind(
+                messageId,
+                otherUserId,
+                currentUser.id
+              )
+              .first();
+
+
+          if (!targetMessage) {
+
+            return json(
+              {
+                success: false,
+                error:
+                  "Message not found."
+              },
+              404
+            );
+
+          }
+
+        }
+
+
+        /* ----------------------------------------------------
+           Save / update read state.
+        ---------------------------------------------------- */
+
+        await env.DB.prepare(`
+          INSERT INTO private_message_reads
+          (
+            user_id,
+            other_user_id,
+            last_read_message_id
+          )
+
+          VALUES (?, ?, ?)
+
+          ON CONFLICT(user_id, other_user_id)
+
+          DO UPDATE SET
+            last_read_message_id =
+              CASE
+
+                WHEN excluded.last_read_message_id >
+                     private_message_reads.last_read_message_id
+
+                THEN excluded.last_read_message_id
+
+                ELSE private_message_reads.last_read_message_id
+
+              END
+        `)
+          .bind(
+            currentUser.id,
+            otherUserId,
+            messageId
+          )
+          .run();
+
+
+        return json({
+
+          success: true,
+
+          user_id:
+            currentUser.id,
+
+          other_user_id:
+            otherUserId,
+
+          last_read_message_id:
+            messageId
 
         });
 
