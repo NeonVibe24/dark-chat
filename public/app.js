@@ -6,6 +6,17 @@ let selectedUser = null;
 let groupMessageTimer = null;
 let privateMessageTimer = null;
 
+/* ============================================================
+   NOTIFICATION / PRIVATE INBOX STATE
+============================================================ */
+
+let privateInboxTimer = null;
+let privateInboxLoading = false;
+
+let privateInboxUsers = [];
+
+const PRIVATE_INBOX_REFRESH_TIME = 3000;
+
 
 /* ============================================================
    ELEMENTS
@@ -151,6 +162,15 @@ const profileAvatar =
   document.getElementById(
     "profileAvatar"
   );
+
+
+/* ============================================================
+   PROFILE NOTIFICATION ELEMENTS
+   These are created automatically for now.
+============================================================ */
+
+let profileUnreadBadge = null;
+let privateInboxContainer = null;
 
 
 /* ============================================================
@@ -842,12 +862,6 @@ function openRegisterForm(event) {
   }
 
 
-  /*
-   * IMPORTANT:
-   * registerBox ကို ဖော်ရမယ်။
-   * registerForm တစ်ခုတည်းကို ဖော်တာမလုံလောက်ပါ။
-   */
-
   if (loginBox) {
 
     loginBox.classList.add(
@@ -917,11 +931,6 @@ function openLoginForm(event) {
     event.stopPropagation();
   }
 
-
-  /*
-   * IMPORTANT:
-   * loginBox ကို ဖော်ရမယ်။
-   */
 
   if (registerBox) {
 
@@ -1011,10 +1020,6 @@ if (showLogin) {
   );
 }
 
-
-/*
- * Extra delegated protection
- */
 
 document.addEventListener(
   "click",
@@ -1197,12 +1202,6 @@ if (registerForm) {
 
 
         registerForm.reset();
-
-
-        /*
-         * Register ပြီးရင်
-         * Login Box ပြန်ဖော်မယ်။
-         */
 
         openLoginForm();
 
@@ -1391,7 +1390,6 @@ if (loginForm) {
 
         loginForm.reset();
 
-
         await openChatApp();
 
 
@@ -1510,9 +1508,14 @@ function showAuth() {
 
   stopPrivateMessageRefresh();
 
+  stopPrivateInboxRefresh();
+
 
   selectedUser =
     null;
+
+  privateInboxUsers =
+    [];
 
 
   if (authScreen) {
@@ -1530,10 +1533,6 @@ function showAuth() {
     );
   }
 
-
-  /*
-   * Login ကို default ပြန်ထားမယ်။
-   */
 
   if (registerBox) {
 
@@ -1555,6 +1554,9 @@ function showAuth() {
     loginBox.style.display =
       "block";
   }
+
+
+  updateProfileUnreadBadge(0);
 }
 
 
@@ -1603,6 +1605,18 @@ async function openChatApp() {
 
 
   updateProfilePanel();
+
+
+  /*
+   * Private inbox notification
+   * background refresh starts here.
+   */
+
+  ensurePrivateInboxUI();
+
+  await loadPrivateInbox();
+
+  startPrivateInboxRefresh();
 
 
   await openGroupChat();
@@ -1789,7 +1803,6 @@ function renderGroupMessages(
     groupMessages.appendChild(
       empty
     );
-
 
     ensureGroupComposer();
 
@@ -2273,6 +2286,22 @@ async function openPrivateChatFromGroup(
   };
 
 
+  /*
+   * Opening this chat means the user is
+   * viewing the messages.
+   */
+
+  await markPrivateMessagesRead(
+    id
+  );
+
+
+  updatePrivateInboxItem(
+    id,
+    0
+  );
+
+
   stopGroupMessageRefresh();
 
 
@@ -2300,6 +2329,13 @@ async function openPrivateChatFromGroup(
 
 
   await loadMessages();
+
+
+  /*
+   * Refresh inbox after opening chat.
+   */
+
+  loadPrivateInbox();
 
 
   startPrivateMessageRefresh();
@@ -2600,6 +2636,13 @@ if (messageForm) {
         await loadMessages();
 
 
+        /*
+         * Refresh inbox after sending.
+         */
+
+        await loadPrivateInbox();
+
+
       } catch (error) {
 
         showToast(
@@ -2654,6 +2697,13 @@ function startPrivateMessageRefresh() {
 
         await loadMessages();
 
+        /*
+         * Keep notification list updated
+         * while private chat is open.
+         */
+
+        await loadPrivateInbox();
+
       },
       3000
     );
@@ -2693,127 +2743,914 @@ if (reloadMessages) {
 
 
 /* ============================================================
-   LOGOUT
+   PRIVATE INBOX UI
 ============================================================ */
 
-if (logoutBtn) {
+function ensurePrivateInboxUI() {
 
-  logoutBtn.addEventListener(
-    "click",
-    async event => {
-
-      event.preventDefault();
+  if (!profilePanel) {
+    return;
+  }
 
 
-      try {
+  /*
+   * Find an existing container first.
+   * Later HTML/CSS can provide its own container.
+   */
 
-        await api(
-          "/logout",
-          {
-            method: "POST"
-          }
+  privateInboxContainer =
+    profilePanel.querySelector(
+      "#privateInbox"
+    );
+
+
+  /*
+   * If HTML does not have it yet,
+   * create it automatically.
+   */
+
+  if (!privateInboxContainer) {
+
+    privateInboxContainer =
+      document.createElement(
+        "div"
+      );
+
+    privateInboxContainer.id =
+      "privateInbox";
+
+    privateInboxContainer.className =
+      "private-inbox";
+
+
+    const title =
+      document.createElement(
+        "div"
+      );
+
+    title.className =
+      "private-inbox-title";
+
+    title.textContent =
+      "Private Messages";
+
+
+    privateInboxContainer.appendChild(
+      title
+    );
+
+
+    /*
+     * Edit Profile controls should stay above
+     * this inbox. We append the inbox after
+     * the current profile content.
+     */
+
+    profilePanel.appendChild(
+      privateInboxContainer
+    );
+  }
+
+
+  /*
+   * Profile unread badge
+   */
+
+  profileUnreadBadge =
+    document.getElementById(
+      "profileUnreadBadge"
+    );
+
+
+  if (
+    !profileUnreadBadge &&
+    myAvatarBtn
+  ) {
+
+    profileUnreadBadge =
+      document.createElement(
+        "span"
+      );
+
+    profileUnreadBadge.id =
+      "profileUnreadBadge";
+
+    profileUnreadBadge.className =
+      "profile-unread-badge hidden";
+
+    myAvatarBtn.appendChild(
+      profileUnreadBadge
+    );
+  }
+
+
+  if (
+    !profileUnreadBadge &&
+    profileUsername
+  ) {
+
+    profileUnreadBadge =
+      document.createElement(
+        "span"
+      );
+
+    profileUnreadBadge.id =
+      "profileUnreadBadge";
+
+    profileUnreadBadge.className =
+      "profile-unread-badge hidden";
+
+    profileUsername.appendChild(
+      profileUnreadBadge
+    );
+  }
+}
+
+
+/* ============================================================
+   PRIVATE INBOX DATA
+============================================================ */
+
+/*
+ * Worker.js နောက်တစ်ဆင့်မှာ ဒီ endpoint ကို
+ * ထည့်ပေးမယ်။
+ *
+ * Expected response:
+ *
+ * {
+ *   "users": [
+ *     {
+ *       "id": 2,
+ *       "username": "MgMg",
+ *       "profile_photo": "...",
+ *       "last_message": "Hello",
+ *       "last_message_at": "...",
+ *       "unread_count": 3
+ *     }
+ *   ],
+ *   "total_unread": 3
+ * }
+ */
+
+async function loadPrivateInbox() {
+
+  if (!currentUser) {
+    return;
+  }
+
+
+  if (privateInboxLoading) {
+    return;
+  }
+
+
+  privateInboxLoading =
+    true;
+
+
+  try {
+
+    const data =
+      await api(
+        "/messages/inbox"
+      );
+
+
+    const users =
+      Array.isArray(
+        data.users
+      )
+        ? data.users
+        : Array.isArray(
+            data.conversations
+          )
+          ? data.conversations
+          : Array.isArray(data)
+            ? data
+            : [];
+
+
+    privateInboxUsers =
+      users;
+
+
+    let totalUnread =
+      Number(
+        data.total_unread ??
+        data.unread_count ??
+        0
+      );
+
+
+    /*
+     * If worker doesn't send total_unread,
+     * calculate it from user list.
+     */
+
+    if (
+      !Number.isFinite(
+        totalUnread
+      ) ||
+      totalUnread < 0
+    ) {
+
+      totalUnread =
+        0;
+    }
+
+
+    if (
+      totalUnread === 0 &&
+      users.length
+    ) {
+
+      totalUnread =
+        users.reduce(
+          (
+            total,
+            user
+          ) => {
+
+            const count =
+              Number(
+                user.unread_count ??
+                user.unread ??
+                0
+              );
+
+            return (
+              total +
+              (
+                Number.isFinite(count) &&
+                count > 0
+                  ? count
+                  : 0
+              )
+            );
+          },
+          0
+        );
+    }
+
+
+    renderPrivateInbox(
+      users
+    );
+
+
+    updateProfileUnreadBadge(
+      totalUnread
+    );
+
+
+  } catch (error) {
+
+    /*
+     * Before worker.js is updated,
+     * this endpoint may not exist.
+     *
+     * Do not show an error toast because
+     * it would appear every 3 seconds.
+     */
+
+    privateInboxUsers =
+      [];
+
+
+    updateProfileUnreadBadge(
+      0
+    );
+
+  } finally {
+
+    privateInboxLoading =
+      false;
+  }
+}
+
+
+/* ============================================================
+   RENDER PRIVATE INBOX
+============================================================ */
+
+function renderPrivateInbox(
+  users
+) {
+
+  ensurePrivateInboxUI();
+
+
+  if (!privateInboxContainer) {
+    return;
+  }
+
+
+  /*
+   * Keep title.
+   */
+
+  privateInboxContainer.innerHTML =
+    "";
+
+
+  const title =
+    document.createElement(
+      "div"
+    );
+
+
+  title.className =
+    "private-inbox-title";
+
+
+  title.textContent =
+    "Private Messages";
+
+
+  privateInboxContainer.appendChild(
+    title
+  );
+
+
+  if (
+    !Array.isArray(users) ||
+    !users.length
+  ) {
+
+    const empty =
+      document.createElement(
+        "div"
+      );
+
+
+    empty.className =
+      "private-inbox-empty";
+
+
+    empty.textContent =
+      "No private messages yet";
+
+
+    privateInboxContainer.appendChild(
+      empty
+    );
+
+
+    return;
+  }
+
+
+  users.forEach(
+    user => {
+
+      const id =
+        Number(
+          user.id ??
+          user.user_id ??
+          user.sender_id
         );
 
-      } catch {}
-
-
-      stopGroupMessageRefresh();
-
-      stopPrivateMessageRefresh();
-
-
-      removeToken();
-
-
-      currentUser =
-        null;
-
-
-      selectedUser =
-        null;
-
-
-      closeProfile();
-
-
-      showAuth();
-    }
-  );
-}
-
-
-/* ============================================================
-   RETURN TO GROUP CHAT
-============================================================ */
-
-function returnToGroupChat() {
-
-  selectedUser =
-    null;
-
-
-  stopPrivateMessageRefresh();
-
-
-  showGroupView();
-
-
-  ensureGroupComposer();
-
-
-  loadGroupMessages();
-
-
-  startGroupMessageRefresh();
-
-
-  setTimeout(
-    () => {
-
-      groupMessageInput?.focus();
-
-    },
-    100
-  );
-}
-
-
-/* ============================================================
-   MOBILE PRIVATE HEADER
-============================================================ */
-
-if (chatScreen) {
-
-  chatScreen.addEventListener(
-    "click",
-    event => {
 
       if (
-        window.innerWidth > 700
+        !Number.isFinite(id) ||
+        id <= 0
       ) {
 
         return;
       }
 
 
-      const clickedHeader =
-        event.target.closest(
-          "#privateChat .chat-header"
+      if (
+        currentUser &&
+        id ===
+          Number(
+            currentUser.id
+          )
+      ) {
+
+        return;
+      }
+
+
+      const username =
+        user.username ??
+        user.sender_username ??
+        user.name ??
+        "User";
+
+
+      const photo =
+        user.profile_photo ??
+        user.sender_profile_photo ??
+        null;
+
+
+      const lastMessage =
+        user.last_message ??
+        user.message ??
+        user.preview ??
+        "";
+
+
+      const unreadCount =
+        Number(
+          user.unread_count ??
+          user.unread ??
+          0
         );
 
 
+      const item =
+        document.createElement(
+          "button"
+        );
+
+
+      item.type =
+        "button";
+
+
+      item.className =
+        "private-inbox-item";
+
+
+      item.dataset.userId =
+        String(id);
+
+
+      /*
+       * Avatar
+       */
+
+      const avatar =
+        document.createElement(
+          "div"
+        );
+
+
+      avatar.className =
+        "private-inbox-avatar";
+
+
+      setAvatarData(
+        avatar,
+        username,
+        photo
+      );
+
+
+      /*
+       * Middle area
+       */
+
+      const info =
+        document.createElement(
+          "div"
+        );
+
+
+      info.className =
+        "private-inbox-info";
+
+
+      const name =
+        document.createElement(
+          "div"
+        );
+
+
+      name.className =
+        "private-inbox-username";
+
+
+      name.textContent =
+        username;
+
+
+      const preview =
+        document.createElement(
+          "div"
+        );
+
+
+      preview.className =
+        "private-inbox-preview";
+
+
+      preview.textContent =
+        lastMessage ||
+        "Private message";
+
+
+      info.appendChild(
+        name
+      );
+
+
+      info.appendChild(
+        preview
+      );
+
+
+      /*
+       * Right side
+       */
+
+      const right =
+        document.createElement(
+          "div"
+        );
+
+
+      right.className =
+        "private-inbox-right";
+
+
       if (
-        clickedHeader &&
-        privateChat &&
-        !privateChat.classList.contains(
-          "hidden"
-        )
+        Number.isFinite(
+          unreadCount
+        ) &&
+        unreadCount > 0
       ) {
 
-        returnToGroupChat();
+        const badge =
+          document.createElement(
+            "span"
+          );
+
+
+        badge.className =
+          "private-inbox-badge";
+
+
+        badge.textContent =
+          String(
+            unreadCount
+          );
+
+
+        right.appendChild(
+          badge
+        );
       }
+
+
+      /*
+       * Last message time
+       */
+
+      const lastTime =
+        user.last_message_at ??
+        user.created_at ??
+        null;
+
+
+      if (lastTime) {
+
+        const time =
+          document.createElement(
+            "span"
+          );
+
+
+        time.className =
+          "private-inbox-time";
+
+
+        time.textContent =
+          formatTime(
+            lastTime
+          );
+
+
+        right.appendChild(
+          time
+        );
+      }
+
+
+      item.appendChild(
+        avatar
+      );
+
+
+      item.appendChild(
+        info
+      );
+
+
+      item.appendChild(
+        right
+      );
+
+
+      item.addEventListener(
+        "click",
+        async event => {
+
+          event.preventDefault();
+          event.stopPropagation();
+
+
+          await openPrivateChatFromInbox(
+            {
+              id,
+              username,
+              profile_photo:
+                photo
+            }
+          );
+        }
+      );
+
+
+      privateInboxContainer.appendChild(
+        item
+      );
     }
   );
+}
+
+
+/* ============================================================
+   OPEN PRIVATE CHAT FROM INBOX
+============================================================ */
+
+async function openPrivateChatFromInbox(
+  user
+) {
+
+  if (!user) {
+    return;
+  }
+
+
+  const id =
+    Number(
+      user.id
+    );
+
+
+  if (
+    !Number.isFinite(id) ||
+    id <= 0
+  ) {
+
+    return;
+  }
+
+
+  await openPrivateChatFromGroup(
+    id,
+    user.username ||
+      "User",
+    user.profile_photo ||
+      null
+  );
+
+
+  /*
+   * Close profile after selecting a chat.
+   */
+
+  closeProfile();
+}
+
+
+/* ============================================================
+   MARK PRIVATE MESSAGE READ
+============================================================ */
+
+/*
+ * worker.js မှာ ဒီ endpoint ကို ထည့်မယ်။
+ *
+ * POST /messages/read
+ * {
+ *   user_id: 123
+ * }
+ */
+
+async function markPrivateMessagesRead(
+  userId
+) {
+
+  const id =
+    Number(
+      userId
+    );
+
+
+  if (
+    !Number.isFinite(id) ||
+    id <= 0
+  ) {
+
+    return;
+  }
+
+
+  try {
+
+    await api(
+      "/messages/read",
+      {
+        method: "POST",
+
+        body:
+          JSON.stringify({
+            user_id:
+              id
+          })
+      }
+    );
+
+  } catch {
+    /*
+     * Worker endpoint မရှိသေးရင်
+     * chat မပျက်အောင် ignore လုပ်ထားမယ်။
+     */
+  }
+}
+
+
+/* ============================================================
+   PROFILE UNREAD BADGE
+============================================================ */
+
+function updateProfileUnreadBadge(
+  count
+) {
+
+  ensurePrivateInboxUI();
+
+
+  const unread =
+    Math.max(
+      0,
+      Number(count) || 0
+    );
+
+
+  if (!profileUnreadBadge) {
+    return;
+  }
+
+
+  if (unread <= 0) {
+
+    profileUnreadBadge.textContent =
+      "";
+
+    profileUnreadBadge.classList.add(
+      "hidden"
+    );
+
+    return;
+  }
+
+
+  profileUnreadBadge.textContent =
+    unread > 99
+      ? "99+"
+      : String(unread);
+
+
+  profileUnreadBadge.classList.remove(
+    "hidden"
+  );
+}
+
+
+/* ============================================================
+   UPDATE SINGLE INBOX ITEM
+============================================================ */
+
+function updatePrivateInboxItem(
+  userId,
+  unreadCount
+) {
+
+  if (!privateInboxContainer) {
+    return;
+  }
+
+
+  const item =
+    privateInboxContainer.querySelector(
+      `[data-user-id="${CSS.escape(
+        String(userId)
+      )}"]`
+    );
+
+
+  if (!item) {
+    return;
+  }
+
+
+  const right =
+    item.querySelector(
+      ".private-inbox-right"
+    );
+
+
+  if (!right) {
+    return;
+  }
+
+
+  const oldBadge =
+    right.querySelector(
+      ".private-inbox-badge"
+    );
+
+
+  const count =
+    Number(
+      unreadCount
+    ) || 0;
+
+
+  if (count <= 0) {
+
+    oldBadge?.remove();
+
+    return;
+  }
+
+
+  const badge =
+    oldBadge ||
+    document.createElement(
+      "span"
+    );
+
+
+  badge.className =
+    "private-inbox-badge";
+
+
+  badge.textContent =
+    count > 99
+      ? "99+"
+      : String(count);
+
+
+  if (!oldBadge) {
+
+    right.prepend(
+      badge
+    );
+  }
+}
+
+
+/* ============================================================
+   PRIVATE INBOX REFRESH
+============================================================ */
+
+function startPrivateInboxRefresh() {
+
+  stopPrivateInboxRefresh();
+
+
+  privateInboxTimer =
+    setInterval(
+      async () => {
+
+        if (
+          document.visibilityState !==
+          "visible"
+        ) {
+
+          return;
+        }
+
+
+        if (!currentUser) {
+          return;
+        }
+
+
+        await loadPrivateInbox();
+
+      },
+      PRIVATE_INBOX_REFRESH_TIME
+    );
+}
+
+
+function stopPrivateInboxRefresh() {
+
+  if (privateInboxTimer) {
+
+    clearInterval(
+      privateInboxTimer
+    );
+
+    privateInboxTimer =
+      null;
+  }
 }
 
 
@@ -2854,6 +3691,13 @@ function updateProfilePanel() {
     profileAvatar,
     currentUser
   );
+
+
+  /*
+   * Make sure private inbox UI exists.
+   */
+
+  ensurePrivateInboxUI();
 }
 
 
@@ -2868,6 +3712,13 @@ function openProfile() {
       "hidden"
     );
   }
+
+
+  /*
+   * Immediately refresh when profile opens.
+   */
+
+  loadPrivateInbox();
 }
 
 
