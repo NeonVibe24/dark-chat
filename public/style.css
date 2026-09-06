@@ -1,7 +1,7 @@
 /* =========================================================
-   PRIVATE CHAT
-   PUBLIC GROUP + PRIVATE CHAT
-   FULL STYLE
+   PRIVATE CHAT - FULL STYLE.CSS
+   Text Chat Only
+   Public Group Chat + Private Chat
 ========================================================= */
 
 :root {
@@ -12,7 +12,7 @@
   --bg-hover: #202c3a;
 
   --border: #253140;
-  --border-light: #2e3b4b;
+  --border-light: #344255;
 
   --text-main: #f5f7fa;
   --text-secondary: #aeb8c5;
@@ -22,13 +22,12 @@
   --accent-hover: #5558e8;
   --accent-light: #818cf8;
 
-  --danger: #ef4444;
   --success: #22c55e;
+  --danger: #ef4444;
 
   --message-me: #4f46e5;
   --message-other: #1b2633;
 
-  --radius: 12px;
   --header-height: 64px;
 
   --app-height: 100dvh;
@@ -45,21 +44,18 @@
   padding: 0;
 }
 
-html {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: var(--bg-main);
-}
-
+html,
 body {
   width: 100%;
   height: 100%;
+
   overflow: hidden;
 
   background: var(--bg-main);
   color: var(--text-main);
+}
 
+body {
   font-family:
     Inter,
     -apple-system,
@@ -108,7 +104,7 @@ img {
 #app {
   width: 100%;
   height: var(--app-height);
-  min-height: var(--app-height);
+  min-height: 0;
 
   overflow: hidden;
 }
@@ -122,7 +118,7 @@ img {
 .auth-screen {
   width: 100%;
   height: var(--app-height);
-  min-height: var(--app-height);
+  min-height: 0;
 
   display: flex;
   align-items: center;
@@ -130,16 +126,21 @@ img {
 
   padding: 20px;
 
+  overflow-y: auto;
+
   background:
     radial-gradient(
       circle at top,
-      rgba(99, 102, 241, 0.12),
-      transparent 40%
+      rgba(99, 102, 241, 0.13),
+      transparent 42%
     ),
     var(--bg-main);
-
-  overflow-y: auto;
 }
+
+
+/* =========================================================
+   AUTH CARD
+========================================================= */
 
 .auth-card {
   width: 100%;
@@ -159,16 +160,20 @@ img {
 .auth-card h1,
 .auth-card h2 {
   color: var(--text-main);
-  margin-bottom: 8px;
 }
 
 .auth-card p {
   color: var(--text-secondary);
 }
 
+
+/* =========================================================
+   AUTH FORM
+========================================================= */
+
 .auth-form {
   width: 100%;
-  margin-top: 24px;
+  margin-top: 22px;
 }
 
 .auth-form label {
@@ -183,9 +188,12 @@ img {
 }
 
 .auth-form input {
+  display: block;
+
   width: 100%;
   height: 48px;
 
+  margin-bottom: 15px;
   padding: 0 14px;
 
   color: var(--text-main);
@@ -194,11 +202,12 @@ img {
   border: 1px solid var(--border);
   border-radius: 10px;
 
-  margin-bottom: 16px;
+  -webkit-appearance: none;
+  appearance: none;
 
   transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .auth-form input::placeholder {
@@ -209,18 +218,23 @@ img {
   border-color: var(--accent);
 
   box-shadow:
-    0 0 0 3px rgba(99, 102, 241, 0.14);
+    0 0 0 3px rgba(99, 102, 241, 0.13);
 }
+
+
+/* =========================================================
+   AUTH SUBMIT
+========================================================= */
 
 .auth-form button[type="submit"] {
   width: 100%;
   height: 48px;
 
-  margin-top: 4px;
+  margin-top: 3px;
 
   border-radius: 10px;
 
-  color: white;
+  color: #ffffff;
   background: var(--accent);
 
   font-weight: 700;
@@ -228,8 +242,8 @@ img {
   cursor: pointer;
 
   transition:
-    background 0.2s,
-    transform 0.15s;
+    background 0.2s ease,
+    transform 0.15s ease;
 }
 
 .auth-form button[type="submit"]:hover {
@@ -240,12 +254,23 @@ img {
   transform: scale(0.98);
 }
 
+.auth-form button[type="submit"]:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   AUTH SWITCH
+========================================================= */
+
 .auth-switch {
   margin-top: 20px;
 
   text-align: center;
 
   color: var(--text-secondary);
+
   font-size: 14px;
 }
 
@@ -256,10 +281,19 @@ img {
   cursor: pointer;
 }
 
+.auth-switch button:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   AUTH ERROR
+========================================================= */
+
 .auth-error {
   min-height: 18px;
 
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 
   color: #f87171;
 
@@ -275,6 +309,7 @@ img {
 .chat-screen {
   width: 100%;
   height: var(--app-height);
+
   min-height: 0;
 
   display: flex;
@@ -293,7 +328,8 @@ img {
   position: relative;
 
   width: 100%;
-  height: var(--app-height);
+  height: 100%;
+
   min-height: 0;
 
   display: flex;
@@ -312,6 +348,7 @@ img {
 .active-chat {
   width: 100%;
   height: 100%;
+
   min-height: 0;
 
   display: flex;
@@ -329,11 +366,12 @@ img {
 
 .chat-header {
   position: relative;
-  z-index: 30;
+  z-index: 20;
 
   width: 100%;
-  min-height: var(--header-height);
+
   height: var(--header-height);
+  min-height: var(--header-height);
 
   flex: 0 0 var(--header-height);
 
@@ -351,15 +389,20 @@ img {
   justify-content: space-between;
 }
 
+
+/* =========================================================
+   CHAT USER
+========================================================= */
+
 .chat-user {
   min-width: 0;
+
+  flex: 1;
 
   display: flex;
   align-items: center;
 
-  gap: 11px;
-
-  flex: 1;
+  gap: 10px;
 }
 
 .chat-user-info {
@@ -374,6 +417,8 @@ img {
 .chat-username,
 #chatUsername,
 #groupChatName {
+  display: block;
+
   color: var(--text-main);
 
   font-size: 15px;
@@ -387,6 +432,8 @@ img {
 .chat-status,
 #chatStatus,
 #groupChatStatus {
+  display: block;
+
   margin-top: 2px;
 
   color: var(--text-muted);
@@ -407,7 +454,7 @@ img {
   display: flex;
   align-items: center;
 
-  gap: 7px;
+  gap: 6px;
 
   flex-shrink: 0;
 }
@@ -416,7 +463,7 @@ img {
   display: flex;
   align-items: center;
 
-  gap: 6px;
+  gap: 5px;
 
   flex-shrink: 0;
 }
@@ -430,11 +477,9 @@ img {
   display: flex;
   align-items: center;
 
-  gap: 8px;
+  gap: 7px;
 
   min-width: 0;
-
-  margin-right: 3px;
 }
 
 .my-profile-info {
@@ -454,17 +499,19 @@ img {
   width: 38px;
   height: 38px;
 
-  flex: 0 0 38px;
-
-  border-radius: 50%;
-
-  overflow: hidden;
+  min-width: 38px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  color: white;
+  overflow: hidden;
+
+  padding: 0;
+
+  border-radius: 50%;
+
+  color: #ffffff;
   background: var(--accent);
 
   border: 1px solid var(--border-light);
@@ -472,7 +519,8 @@ img {
   cursor: pointer;
 }
 
-.my-avatar img {
+.my-avatar img,
+#myAvatar {
   width: 100%;
   height: 100%;
 
@@ -498,12 +546,12 @@ img {
 
   border-radius: 50%;
 
-  color: white;
+  color: #ffffff;
   background: var(--accent);
 
   border: 1px solid var(--border-light);
 
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -514,21 +562,25 @@ img {
   object-fit: cover;
 }
 
-#chatAvatar,
-#myAvatarBtn {
+#chatAvatar {
+  width: 40px;
+  height: 40px;
+
+  min-width: 40px;
+
   padding: 0;
 
-  background: transparent;
+  border-radius: 50%;
+
+  color: #ffffff;
+  background: var(--accent);
+
+  overflow: hidden;
 
   cursor: pointer;
 }
 
-#chatAvatar {
-  border-radius: 50%;
-}
-
-#chatAvatarImage,
-#myAvatar {
+#chatAvatarImage {
   width: 100%;
   height: 100%;
 
@@ -538,12 +590,12 @@ img {
 #chatAvatarFallback,
 #myAvatarFallback,
 #profileAvatarFallback {
+  width: 100%;
+  height: 100%;
+
   display: flex;
   align-items: center;
   justify-content: center;
-
-  width: 100%;
-  height: 100%;
 }
 
 
@@ -554,6 +606,8 @@ img {
 .icon-btn {
   width: 38px;
   height: 38px;
+
+  min-width: 38px;
 
   display: inline-flex;
   align-items: center;
@@ -568,12 +622,12 @@ img {
 
   cursor: pointer;
 
-  font-size: 17px;
+  font-size: 16px;
 
   transition:
-    background 0.2s,
-    color 0.2s,
-    transform 0.15s;
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.15s ease;
 }
 
 .icon-btn:hover {
@@ -587,7 +641,7 @@ img {
 
 
 /* =========================================================
-   MESSAGES AREA
+   MESSAGES
 ========================================================= */
 
 .messages {
@@ -602,17 +656,13 @@ img {
 
   padding: 16px;
 
-  scroll-behavior: smooth;
-
-  overscroll-behavior: contain;
+  background: var(--bg-main);
 
   -webkit-overflow-scrolling: touch;
 
-  background: var(--bg-main);
+  overscroll-behavior: contain;
 }
 
-/* IMPORTANT:
-   Public Group Chat and Private Chat message containers */
 #groupMessages,
 #messagesBox,
 #messages {
@@ -628,7 +678,7 @@ img {
 
 
 /* =========================================================
-   SCROLLBAR
+   MESSAGE SCROLLBAR
 ========================================================= */
 
 .messages::-webkit-scrollbar,
@@ -680,10 +730,18 @@ img {
 
   min-width: 36px;
 
-  font-size: 13px;
+  font-size: 12px;
+}
+
+.message-content {
+  min-width: 0;
+
+  max-width: calc(100% - 46px);
 }
 
 .message-sender {
+  display: block;
+
   margin-bottom: 4px;
 
   color: var(--accent-light);
@@ -694,10 +752,14 @@ img {
   cursor: pointer;
 }
 
-.message-content {
-  min-width: 0;
-  max-width: calc(100% - 48px);
+.message-sender:hover {
+  text-decoration: underline;
 }
+
+
+/* =========================================================
+   MESSAGE BUBBLE
+========================================================= */
 
 .message-bubble {
   display: inline-block;
@@ -707,11 +769,9 @@ img {
   padding: 9px 12px;
 
   color: var(--text-main);
-
   background: var(--message-other);
 
   border: 1px solid var(--border);
-
   border-radius: 12px;
 
   font-size: 14px;
@@ -719,6 +779,26 @@ img {
 
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.message-text {
+  white-space: pre-wrap;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+
+/* =========================================================
+   MESSAGE TIME
+========================================================= */
+
+.message-time {
+  margin-top: 4px;
+
+  color: var(--text-muted);
+
+  font-size: 10px;
 }
 
 
@@ -744,14 +824,14 @@ img {
 
 .private-message .message-bubble {
   max-width: min(650px, 78%);
-
-  border: 0;
 }
 
 .private-message.mine .message-bubble {
-  color: white;
+  color: #ffffff;
 
   background: var(--message-me);
+
+  border: 0;
 
   border-bottom-right-radius: 4px;
 }
@@ -768,31 +848,11 @@ img {
 
 
 /* =========================================================
-   MESSAGE TEXT
-========================================================= */
-
-.message-text {
-  white-space: pre-wrap;
-
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.message-time {
-  margin-top: 4px;
-
-  color: var(--text-muted);
-
-  font-size: 10px;
-}
-
-
-/* =========================================================
    EMPTY CHAT
 ========================================================= */
 
 .empty-chat {
-  flex: 1;
+  flex: 1 1 auto;
 
   min-height: 0;
 
@@ -818,26 +878,27 @@ img {
 }
 
 .empty-chat p {
+  color: var(--text-muted);
+
   font-size: 13px;
 }
 
 
 /* =========================================================
    =========================================================
-   PUBLIC GROUP MESSAGE FORM
-   IMPORTANT
+   PUBLIC GROUP CHAT COMPOSER
    =========================================================
 ========================================================= */
 
 #groupMessageForm {
   position: relative;
-  z-index: 40;
+  z-index: 50;
 
   width: 100%;
 
   flex: 0 0 auto;
 
-  display: flex;
+  display: flex !important;
   align-items: center;
 
   gap: 8px;
@@ -848,14 +909,64 @@ img {
 
   border-top: 1px solid var(--border);
 
-  /* Android safe area */
+  visibility: visible;
+  opacity: 1;
+
   padding-bottom:
     max(
       10px,
       env(safe-area-inset-bottom)
     );
+}
 
-  isolation: isolate;
+
+/* =========================================================
+   PUBLIC GROUP INPUT
+========================================================= */
+
+#groupMessageInput {
+  display: block !important;
+
+  flex: 1 1 auto;
+
+  width: 100%;
+  min-width: 0;
+
+  height: 44px;
+
+  padding: 0 14px;
+
+  color: var(--text-main);
+
+  background: var(--bg-main);
+
+  border: 1px solid var(--border);
+  border-radius: 11px;
+
+  font-size: 14px;
+
+  visibility: visible;
+  opacity: 1;
+
+  pointer-events: auto;
+
+  -webkit-appearance: none;
+  appearance: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#groupMessageInput::placeholder {
+  color: var(--text-muted);
+}
+
+#groupMessageInput:focus {
+  border-color: var(--accent);
+
+  box-shadow:
+    0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 
@@ -865,13 +976,13 @@ img {
 
 #messageForm {
   position: relative;
-  z-index: 40;
+  z-index: 50;
 
   width: 100%;
 
   flex: 0 0 auto;
 
-  display: flex;
+  display: flex !important;
   align-items: center;
 
   gap: 8px;
@@ -882,39 +993,93 @@ img {
 
   border-top: 1px solid var(--border);
 
+  visibility: visible;
+  opacity: 1;
+
   padding-bottom:
     max(
       10px,
       env(safe-area-inset-bottom)
     );
-
-  isolation: isolate;
 }
 
 
 /* =========================================================
-   BOTH MESSAGE FORMS
+   PRIVATE MESSAGE INPUT
+========================================================= */
+
+#messageInput {
+  display: block !important;
+
+  flex: 1 1 auto;
+
+  width: 100%;
+  min-width: 0;
+
+  height: 44px;
+
+  padding: 0 14px;
+
+  color: var(--text-main);
+
+  background: var(--bg-main);
+
+  border: 1px solid var(--border);
+  border-radius: 11px;
+
+  font-size: 14px;
+
+  visibility: visible;
+  opacity: 1;
+
+  pointer-events: auto;
+
+  -webkit-appearance: none;
+  appearance: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#messageInput::placeholder {
+  color: var(--text-muted);
+}
+
+#messageInput:focus {
+  border-color: var(--accent);
+
+  box-shadow:
+    0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+
+/* =========================================================
+   GENERIC MESSAGE FORM
 ========================================================= */
 
 .message-form,
 .private-message-form {
   position: relative;
-  z-index: 40;
+  z-index: 50;
 
   width: 100%;
 
   flex: 0 0 auto;
 
-  display: flex;
+  display: flex !important;
   align-items: center;
 
   gap: 8px;
+
+  padding: 10px 12px;
 
   background: var(--bg-surface);
 
   border-top: 1px solid var(--border);
 
-  padding: 10px 12px;
+  visibility: visible;
+  opacity: 1;
 
   padding-bottom:
     max(
@@ -925,7 +1090,7 @@ img {
 
 
 /* =========================================================
-   MESSAGE INPUT
+   GENERIC MESSAGE INPUT
 ========================================================= */
 
 .message-input {
@@ -943,17 +1108,12 @@ img {
   background: var(--bg-main);
 
   border: 1px solid var(--border);
-
   border-radius: 11px;
 
   font-size: 14px;
 
   -webkit-appearance: none;
   appearance: none;
-
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
 }
 
 .message-input::placeholder {
@@ -965,81 +1125,6 @@ img {
 
   box-shadow:
     0 0 0 3px rgba(99, 102, 241, 0.12);
-}
-
-
-/* =========================================================
-   EXACT PUBLIC GROUP INPUT
-========================================================= */
-
-#groupMessageInput {
-  display: block;
-
-  flex: 1 1 auto;
-
-  min-width: 0;
-
-  width: 100%;
-  height: 44px;
-
-  padding: 0 14px;
-
-  color: var(--text-main);
-
-  background: var(--bg-main);
-
-  border: 1px solid var(--border);
-
-  border-radius: 11px;
-
-  font-size: 14px;
-
-  -webkit-appearance: none;
-  appearance: none;
-
-  opacity: 1;
-
-  visibility: visible;
-
-  pointer-events: auto;
-}
-
-#groupMessageInput:focus {
-  border-color: var(--accent);
-
-  box-shadow:
-    0 0 0 3px rgba(99, 102, 241, 0.12);
-}
-
-
-/* =========================================================
-   EXACT PRIVATE INPUT
-========================================================= */
-
-#messageInput {
-  display: block;
-
-  flex: 1 1 auto;
-
-  min-width: 0;
-
-  width: 100%;
-  height: 44px;
-
-  padding: 0 14px;
-
-  color: var(--text-main);
-
-  background: var(--bg-main);
-
-  border: 1px solid var(--border);
-
-  border-radius: 11px;
-
-  font-size: 14px;
-
-  -webkit-appearance: none;
-  appearance: none;
 }
 
 
@@ -1059,9 +1144,11 @@ img {
   align-items: center;
   justify-content: center;
 
+  padding: 0;
+
   border-radius: 11px;
 
-  color: white;
+  color: #ffffff;
   background: var(--accent);
 
   cursor: pointer;
@@ -1070,8 +1157,9 @@ img {
   font-weight: 700;
 
   transition:
-    background 0.2s,
-    transform 0.15s;
+    background 0.2s ease,
+    transform 0.15s ease,
+    opacity 0.2s ease;
 }
 
 .send-btn:hover {
@@ -1095,7 +1183,6 @@ img {
 
 .profile-panel {
   position: absolute;
-
   z-index: 100;
 
   top: 12px;
@@ -1112,12 +1199,16 @@ img {
   background: var(--bg-surface);
 
   border: 1px solid var(--border);
-
   border-radius: 16px;
 
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.55);
 }
+
+
+/* =========================================================
+   PROFILE AVATAR
+========================================================= */
 
 #profileAvatar {
   width: 92px;
@@ -1133,7 +1224,7 @@ img {
 
   border-radius: 50%;
 
-  color: white;
+  color: #ffffff;
   background: var(--accent);
 
   border: 2px solid var(--border-light);
@@ -1159,10 +1250,12 @@ img {
 
 
 /* =========================================================
-   PROFILE INPUT
+   PROFILE PHOTO
 ========================================================= */
 
 #profilePhotoInput {
+  display: block;
+
   width: 100%;
 
   margin-bottom: 10px;
@@ -1184,6 +1277,10 @@ img {
   cursor: pointer;
 }
 
+#removeProfilePhoto:hover {
+  background: rgba(239, 68, 68, 0.18);
+}
+
 
 /* =========================================================
    PRIVATE INBOX
@@ -1193,7 +1290,6 @@ img {
   width: 100%;
 
   margin-top: 20px;
-
   padding-top: 16px;
 
   border-top: 1px solid var(--border);
@@ -1225,7 +1321,6 @@ img {
   border-radius: 10px;
 
   color: var(--text-main);
-
   background: transparent;
 
   cursor: pointer;
@@ -1233,7 +1328,7 @@ img {
   text-align: left;
 
   transition:
-    background 0.2s;
+    background 0.2s ease;
 }
 
 .private-inbox-item:hover {
@@ -1254,6 +1349,7 @@ img {
 
   border-radius: 50%;
 
+  color: #ffffff;
   background: var(--accent);
 }
 
@@ -1305,7 +1401,7 @@ img {
 
   border-radius: 20px;
 
-  color: white;
+  color: #ffffff;
   background: var(--accent);
 
   font-size: 10px;
@@ -1319,7 +1415,6 @@ img {
 
 #toast {
   position: fixed;
-
   z-index: 1000;
 
   left: 50%;
@@ -1333,7 +1428,7 @@ img {
 
   border-radius: 10px;
 
-  color: white;
+  color: #ffffff;
   background: #202936;
 
   border: 1px solid var(--border);
@@ -1348,7 +1443,7 @@ img {
 
 
 /* =========================================================
-   CALL UI COMPLETELY HIDDEN
+   CALL UI REMOVED / HIDDEN
 ========================================================= */
 
 #callPanel,
@@ -1361,7 +1456,10 @@ img {
 .call-modal,
 .call-controls,
 .video-call,
-.voice-call {
+.voice-call,
+.call-button,
+.video-call-button,
+.voice-call-button {
   display: none !important;
 }
 
@@ -1407,34 +1505,57 @@ img {
 
   html,
   body {
-    overflow: hidden;
-
     width: 100%;
     height: 100%;
+
+    overflow: hidden;
   }
 
   #app {
+    width: 100%;
     height: var(--app-height);
-    min-height: var(--app-height);
+
+    min-height: 0;
 
     overflow: hidden;
   }
 
   #chatScreen,
   .chat-screen {
+    width: 100%;
     height: var(--app-height);
+
     min-height: 0;
+
+    overflow: hidden;
   }
 
-  .chat-area,
-  .active-chat {
-    height: var(--app-height);
+  .chat-area {
+    width: 100%;
+    height: 100%;
+
     min-height: 0;
+
+    overflow: hidden;
   }
+
+  .active-chat {
+    width: 100%;
+    height: 100%;
+
+    min-height: 0;
+
+    overflow: hidden;
+  }
+
+
+  /* -------------------------------------------------------
+     HEADER
+  ------------------------------------------------------- */
 
   .chat-header {
-    min-height: 58px;
     height: 58px;
+    min-height: 58px;
 
     flex-basis: 58px;
 
@@ -1460,6 +1581,13 @@ img {
     min-width: 36px;
   }
 
+  #chatAvatar {
+    width: 36px;
+    height: 36px;
+
+    min-width: 36px;
+  }
+
   .my-avatar {
     width: 36px;
     height: 36px;
@@ -1470,7 +1598,14 @@ img {
   .icon-btn {
     width: 36px;
     height: 36px;
+
+    min-width: 36px;
   }
+
+
+  /* -------------------------------------------------------
+     MESSAGE AREA
+  ------------------------------------------------------- */
 
   .messages {
     padding: 11px 10px;
@@ -1503,18 +1638,21 @@ img {
 
 
   /* -------------------------------------------------------
-     PUBLIC GROUP COMPOSER — ALWAYS VISIBLE
+     PUBLIC GROUP COMPOSER
+     NEVER HIDE
   ------------------------------------------------------- */
 
   #groupMessageForm {
+    position: relative;
+
+    z-index: 100;
+
     display: flex !important;
 
     visibility: visible !important;
     opacity: 1 !important;
 
-    position: relative;
-
-    flex-shrink: 0;
+    flex: 0 0 auto;
 
     width: 100%;
 
@@ -1541,6 +1679,8 @@ img {
     min-width: 0;
 
     height: 44px;
+
+    pointer-events: auto;
   }
 
 
@@ -1549,12 +1689,16 @@ img {
   ------------------------------------------------------- */
 
   #messageForm {
+    position: relative;
+
+    z-index: 100;
+
     display: flex !important;
 
     visibility: visible !important;
     opacity: 1 !important;
 
-    flex-shrink: 0;
+    flex: 0 0 auto;
 
     width: 100%;
 
@@ -1570,17 +1714,29 @@ img {
   }
 
   #messageInput {
+    display: block !important;
+
+    visibility: visible !important;
+    opacity: 1 !important;
+
     height: 44px;
+
+    pointer-events: auto;
   }
 
+
+  /* -------------------------------------------------------
+     GENERIC FORM
+  ------------------------------------------------------- */
 
   .message-form,
   .private-message-form {
     display: flex !important;
 
     visibility: visible !important;
+    opacity: 1 !important;
 
-    flex-shrink: 0;
+    flex: 0 0 auto;
 
     width: 100%;
 
@@ -1595,12 +1751,22 @@ img {
       );
   }
 
+
+  /* -------------------------------------------------------
+     SEND
+  ------------------------------------------------------- */
+
   .send-btn {
     width: 44px;
     height: 44px;
 
     min-width: 44px;
   }
+
+
+  /* -------------------------------------------------------
+     PROFILE
+  ------------------------------------------------------- */
 
   .profile-panel {
     top: 8px;
@@ -1635,10 +1801,19 @@ img {
     width: 34px;
     height: 34px;
 
+    min-width: 34px;
+
     font-size: 15px;
   }
 
   .my-avatar {
+    width: 34px;
+    height: 34px;
+
+    min-width: 34px;
+  }
+
+  #chatAvatar {
     width: 34px;
     height: 34px;
 
@@ -1659,6 +1834,7 @@ img {
     max-width: 88%;
   }
 
+
   #groupMessageForm,
   #messageForm,
   .message-form,
@@ -1668,6 +1844,7 @@ img {
     padding-left: 7px;
     padding-right: 7px;
   }
+
 
   #groupMessageInput,
   #messageInput,
@@ -1690,7 +1867,7 @@ img {
 
 
 /* =========================================================
-   VERY SMALL SCREEN
+   VERY SMALL MOBILE
 ========================================================= */
 
 @media (max-width: 360px) {
@@ -1711,9 +1888,18 @@ img {
   .icon-btn {
     width: 32px;
     height: 32px;
+
+    min-width: 32px;
   }
 
   .my-avatar {
+    width: 32px;
+    height: 32px;
+
+    min-width: 32px;
+  }
+
+  #chatAvatar {
     width: 32px;
     height: 32px;
 
@@ -1749,41 +1935,44 @@ img {
 
 
 /* =========================================================
-   ANDROID WEBVIEW KEYBOARD FIX
+   ANDROID WEBVIEW / KEYBOARD
 ========================================================= */
 
 /*
-   Do NOT use position: fixed for the message composer.
-   Flex layout keeps the composer above the keyboard when
-   the WebView viewport becomes smaller.
+   Composer ကို position:fixed မသုံးထားပါ။
+   Flex layout ထဲမှာရှိတာကြောင့် WebView viewport
+   ကျသွားတဲ့အခါ input အောက်ကနေ ပျောက်မသွားအောင်
+   message area ကို flex:1 နဲ့ ခွဲထားပါတယ်။
 */
 
 @supports (height: 100dvh) {
 
-  #app,
+  #app {
+    max-height: var(--app-height);
+  }
+
   #chatScreen,
-  .chat-screen,
-  .chat-area,
-  .active-chat {
+  .chat-screen {
     max-height: var(--app-height);
   }
 }
 
 
 /* =========================================================
-   FOCUS / KEYBOARD STATE
+   INPUT / BUTTON TOUCH
 ========================================================= */
 
-input:focus {
-  outline: none;
+input,
+button {
+  -webkit-tap-highlight-color: transparent;
 }
 
 input {
-  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 button {
-  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 
@@ -1792,18 +1981,8 @@ button {
 ========================================================= */
 
 ::selection {
-  color: white;
+  color: #ffffff;
   background: rgba(99, 102, 241, 0.55);
-}
-
-
-/* =========================================================
-   DISABLED
-========================================================= */
-
-button:disabled,
-input:disabled {
-  cursor: not-allowed;
 }
 
 
