@@ -10,1434 +10,17 @@
     content="width=device-width, initial-scale=1.0"
   >
 
+  <meta
+    name="theme-color"
+    content="#0b1016"
+  >
+
   <title>Private Chat</title>
 
   <link
     rel="stylesheet"
     href="/style.css"
   >
-
-  <style>
-
-    /* =========================================================
-       RESET
-    ========================================================= */
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-    }
-
-    body {
-      background: #0b1016;
-      color: #ffffff;
-      font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
-      overflow: hidden;
-    }
-
-    button,
-    input {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    img {
-      display: block;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-
-    /* =========================================================
-       APP
-    ========================================================= */
-
-    #app {
-      width: 100%;
-      height: 100%;
-      min-height: 100vh;
-    }
-
-
-    /* =========================================================
-       AUTH
-    ========================================================= */
-
-    #authScreen {
-      width: 100%;
-      height: 100%;
-      min-height: 100vh;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      padding: 20px;
-
-      background:
-        radial-gradient(
-          circle at top,
-          #17222f 0%,
-          #0b1016 45%,
-          #080c11 100%
-        );
-    }
-
-    .auth-box {
-      width: 100%;
-      max-width: 390px;
-
-      background: #111821;
-
-      border: 1px solid #263341;
-      border-radius: 20px;
-
-      padding: 28px;
-
-      box-shadow:
-        0 20px 60px rgba(0, 0, 0, .45);
-    }
-
-    .auth-title {
-      text-align: center;
-      font-size: 26px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .auth-subtitle {
-      text-align: center;
-      color: #8793a1;
-      font-size: 14px;
-      margin-bottom: 24px;
-    }
-
-    .auth-form {
-      display: flex;
-      flex-direction: column;
-      gap: 13px;
-    }
-
-    .auth-input {
-      width: 100%;
-      height: 48px;
-
-      border: 1px solid #2b3948;
-      border-radius: 12px;
-
-      background: #0c131b;
-      color: #ffffff;
-
-      padding: 0 14px;
-
-      outline: none;
-    }
-
-    .auth-input:focus {
-      border-color: #4b627a;
-    }
-
-    .auth-button {
-      width: 100%;
-      height: 48px;
-
-      border: 0;
-      border-radius: 12px;
-
-      background: #ffffff;
-      color: #0b1016;
-
-      font-weight: 700;
-
-      margin-top: 4px;
-    }
-
-    .auth-switch {
-      border: 0;
-      background: transparent;
-
-      color: #9caaba;
-
-      margin-top: 18px;
-      width: 100%;
-
-      font-size: 14px;
-    }
-
-    .auth-switch:hover {
-      color: #ffffff;
-    }
-
-
-    /* =========================================================
-       CHAT SCREEN
-    ========================================================= */
-
-    #chatScreen {
-      width: 100%;
-      height: 100%;
-      min-height: 100vh;
-
-      display: flex;
-      flex-direction: column;
-
-      background: #0b1016;
-    }
-
-    .chat-area {
-      width: 100%;
-      height: 100%;
-      min-height: 0;
-
-      display: flex;
-      flex-direction: column;
-    }
-
-
-    /* =========================================================
-       CHAT VIEW
-    ========================================================= */
-
-    #groupChat,
-    #privateChat {
-      width: 100%;
-      height: 100%;
-      min-height: 0;
-
-      display: flex;
-      flex-direction: column;
-    }
-
-
-    /* =========================================================
-       CHAT HEADER
-    ========================================================= */
-
-    .chat-header {
-      width: 100%;
-      min-height: 70px;
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      gap: 12px;
-
-      padding: 10px 14px;
-
-      background: #111821;
-
-      border-bottom: 1px solid #25313e;
-
-      flex-shrink: 0;
-    }
-
-    .chat-user {
-      min-width: 0;
-
-      display: flex;
-      align-items: center;
-
-      gap: 10px;
-    }
-
-    .chat-user-info {
-      min-width: 0;
-    }
-
-    .chat-username {
-      font-size: 16px;
-      font-weight: 700;
-
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .chat-status {
-      margin-top: 3px;
-
-      color: #7f8b99;
-
-      font-size: 12px;
-    }
-
-
-    /* =========================================================
-       GROUP HEADER
-    ========================================================= */
-
-    .group-header {
-      min-height: 70px;
-    }
-
-    .group-info {
-      min-width: 0;
-
-      display: flex;
-      align-items: center;
-
-      gap: 10px;
-    }
-
-    .group-info-text {
-      min-width: 0;
-    }
-
-    .group-name {
-      font-size: 16px;
-      font-weight: 700;
-
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .group-status {
-      margin-top: 3px;
-
-      color: #7f8b99;
-
-      font-size: 12px;
-    }
-
-
-    /* =========================================================
-       AVATARS
-    ========================================================= */
-
-    .avatar-button {
-      width: 44px;
-      height: 44px;
-
-      min-width: 44px;
-
-      border: 0;
-      border-radius: 50%;
-
-      overflow: hidden;
-
-      background: #202c39;
-
-      color: #ffffff;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .avatar-button img {
-      width: 100%;
-      height: 100%;
-
-      object-fit: cover;
-    }
-
-    .avatar-fallback {
-      width: 100%;
-      height: 100%;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      font-size: 16px;
-      font-weight: 700;
-
-      color: #ffffff;
-    }
-
-    .group-avatar {
-      width: 44px;
-      height: 44px;
-
-      min-width: 44px;
-
-      border-radius: 50%;
-
-      background: #202c39;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      overflow: hidden;
-    }
-
-    .group-avatar img {
-      width: 100%;
-      height: 100%;
-
-      object-fit: cover;
-    }
-
-
-    /* =========================================================
-       HEADER ACTIONS
-    ========================================================= */
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-
-      gap: 7px;
-
-      flex-shrink: 0;
-    }
-
-    .icon-btn {
-      width: 40px;
-      height: 40px;
-
-      min-width: 40px;
-
-      border: 1px solid #2a3745;
-      border-radius: 11px;
-
-      background: #151e28;
-      color: #ffffff;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      font-size: 17px;
-    }
-
-    .icon-btn:hover {
-      background: #1d2936;
-      border-color: #3a4b5d;
-    }
-
-    .private-back-btn {
-      width: 40px;
-      height: 40px;
-
-      min-width: 40px;
-
-      border-radius: 11px;
-
-      font-size: 23px;
-      font-weight: 400;
-
-      line-height: 1;
-    }
-
-
-    /* =========================================================
-       MY PROFILE HEADER
-    ========================================================= */
-
-    .my-profile {
-      display: flex;
-      align-items: center;
-
-      gap: 8px;
-
-      min-width: 0;
-    }
-
-    .my-profile-info {
-      min-width: 0;
-
-      max-width: 130px;
-    }
-
-    .my-username {
-      font-size: 13px;
-      font-weight: 700;
-
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .profile-avatar-wrap {
-      position: relative;
-
-      width: 42px;
-      height: 42px;
-
-      min-width: 42px;
-    }
-
-    #myAvatarBtn {
-      width: 42px;
-      height: 42px;
-
-      min-width: 42px;
-    }
-
-    #profileNotificationBadge {
-      position: absolute;
-
-      right: -3px;
-      top: -4px;
-
-      min-width: 19px;
-      height: 19px;
-
-      padding: 0 5px;
-
-      border-radius: 10px;
-
-      background: #e5484d;
-      color: #ffffff;
-
-      border: 2px solid #111821;
-
-      display: none;
-
-      align-items: center;
-      justify-content: center;
-
-      font-size: 10px;
-      font-weight: 700;
-
-      line-height: 1;
-    }
-
-
-    /* =========================================================
-       MESSAGES
-    ========================================================= */
-
-    .messages {
-      flex: 1;
-
-      min-height: 0;
-
-      overflow-y: auto;
-
-      padding: 18px;
-
-      display: flex;
-      flex-direction: column;
-
-      gap: 8px;
-
-      background: #0b1016;
-    }
-
-    .messages::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .messages::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .messages::-webkit-scrollbar-thumb {
-      background: #263340;
-      border-radius: 10px;
-    }
-
-
-    /* =========================================================
-       GROUP MESSAGE
-    ========================================================= */
-
-    .group-message {
-      width: 100%;
-
-      display: flex;
-      align-items: flex-start;
-
-      gap: 9px;
-
-      padding: 8px 6px;
-
-      border-radius: 12px;
-    }
-
-    .group-message:hover {
-      background: rgba(255,255,255,.025);
-    }
-
-    .group-message-avatar {
-      width: 38px;
-      height: 38px;
-
-      min-width: 38px;
-
-      border-radius: 50%;
-
-      overflow: hidden;
-
-      background: #202c39;
-
-      border: 0;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      color: #ffffff;
-    }
-
-    .group-message-avatar img {
-      width: 100%;
-      height: 100%;
-
-      object-fit: cover;
-    }
-
-    .group-message-content {
-      min-width: 0;
-      flex: 1;
-    }
-
-    .group-message-top {
-      display: flex;
-      align-items: center;
-
-      gap: 8px;
-
-      margin-bottom: 3px;
-    }
-
-    .group-message-name {
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .group-message-time {
-      color: #687584;
-      font-size: 10px;
-    }
-
-    .group-message-text {
-      color: #d9e0e7;
-
-      font-size: 14px;
-      line-height: 1.5;
-
-      word-break: break-word;
-      white-space: pre-wrap;
-    }
-
-
-    /* =========================================================
-       PRIVATE MESSAGE
-    ========================================================= */
-
-    .private-message {
-      width: 100%;
-
-      display: flex;
-
-      margin: 2px 0;
-    }
-
-    .private-message.mine {
-      justify-content: flex-end;
-    }
-
-    .private-message.theirs {
-      justify-content: flex-start;
-    }
-
-    .message-bubble {
-      max-width: min(75%, 620px);
-
-      padding: 10px 13px;
-
-      border-radius: 15px;
-
-      font-size: 14px;
-      line-height: 1.45;
-
-      word-break: break-word;
-      white-space: pre-wrap;
-    }
-
-    .private-message.mine .message-bubble {
-      background: #ffffff;
-      color: #0b1016;
-
-      border-bottom-right-radius: 5px;
-    }
-
-    .private-message.theirs .message-bubble {
-      background: #17212c;
-      color: #e3e8ed;
-
-      border: 1px solid #263442;
-
-      border-bottom-left-radius: 5px;
-    }
-
-    .message-time {
-      display: block;
-
-      margin-top: 4px;
-
-      font-size: 9px;
-
-      opacity: .55;
-
-      text-align: right;
-    }
-
-
-    /* =========================================================
-       MESSAGE FORM
-    ========================================================= */
-
-    .message-form {
-      width: 100%;
-
-      display: flex;
-      align-items: center;
-
-      gap: 8px;
-
-      padding: 10px 12px;
-
-      background: #111821;
-
-      border-top: 1px solid #25313e;
-
-      flex-shrink: 0;
-    }
-
-    .message-input {
-      flex: 1;
-
-      min-width: 0;
-
-      height: 46px;
-
-      border: 1px solid #2a3745;
-      border-radius: 13px;
-
-      background: #0b1219;
-      color: #ffffff;
-
-      padding: 0 14px;
-
-      outline: none;
-    }
-
-    .message-input:focus {
-      border-color: #465b70;
-    }
-
-    .message-input::placeholder {
-      color: #687584;
-    }
-
-    .send-button {
-      width: 46px;
-      height: 46px;
-
-      min-width: 46px;
-
-      border: 0;
-      border-radius: 13px;
-
-      background: #ffffff;
-      color: #0b1016;
-
-      font-size: 18px;
-      font-weight: 700;
-    }
-
-
-    /* =========================================================
-       EMPTY CHAT
-    ========================================================= */
-
-    #emptyChat {
-      width: 100%;
-      height: 100%;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      background: #0b1016;
-    }
-
-    .empty-chat-content {
-      text-align: center;
-
-      padding: 30px;
-    }
-
-    .empty-chat-title {
-      font-size: 20px;
-      font-weight: 700;
-
-      margin-bottom: 7px;
-    }
-
-    .empty-chat-text {
-      color: #778493;
-
-      font-size: 13px;
-    }
-
-
-    /* =========================================================
-       PROFILE PANEL
-    ========================================================= */
-
-    .profile-panel {
-      position: fixed;
-
-      top: 76px;
-      right: 14px;
-
-      width: 360px;
-      max-width: calc(100vw - 28px);
-
-      max-height: calc(100vh - 90px);
-
-      overflow-y: auto;
-
-      background: #111821;
-
-      border: 1px solid #293744;
-      border-radius: 18px;
-
-      padding: 16px;
-
-      box-shadow:
-        0 24px 70px rgba(0,0,0,.55);
-
-      z-index: 100;
-    }
-
-    .profile-panel::-webkit-scrollbar {
-      width: 5px;
-    }
-
-    .profile-panel::-webkit-scrollbar-thumb {
-      background: #293744;
-      border-radius: 10px;
-    }
-
-
-    /* =========================================================
-       PROFILE HEADER
-    ========================================================= */
-
-    .profile-panel-header {
-      display: flex;
-      align-items: center;
-
-      gap: 12px;
-
-      padding-bottom: 14px;
-
-      border-bottom: 1px solid #26323e;
-    }
-
-    .profile-large-avatar {
-      width: 58px;
-      height: 58px;
-
-      min-width: 58px;
-
-      border-radius: 50%;
-
-      overflow: hidden;
-
-      background: #202c39;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .profile-large-avatar img {
-      width: 100%;
-      height: 100%;
-
-      object-fit: cover;
-    }
-
-    .profile-large-avatar-fallback {
-      width: 100%;
-      height: 100%;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      font-size: 20px;
-      font-weight: 700;
-    }
-
-    .profile-name-area {
-      min-width: 0;
-      flex: 1;
-    }
-
-    .profile-name {
-      font-size: 17px;
-      font-weight: 700;
-
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .profile-label {
-      margin-top: 4px;
-
-      color: #73808e;
-
-      font-size: 12px;
-    }
-
-
-    /* =========================================================
-       EDIT PROFILE
-    ========================================================= */
-
-    #editProfileBtn {
-      width: 100%;
-      height: 42px;
-
-      margin-top: 14px;
-
-      border: 1px solid #2b3947;
-      border-radius: 11px;
-
-      background: #151e28;
-      color: #ffffff;
-
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    #editProfileBtn:hover {
-      background: #1c2834;
-    }
-
-
-    /* =========================================================
-       PRIVATE INBOX
-    ========================================================= */
-
-    .private-inbox {
-      margin-top: 18px;
-    }
-
-    .private-inbox-title {
-      width: 100%;
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      gap: 10px;
-
-      margin-bottom: 9px;
-    }
-
-    .private-inbox-title-text {
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    #privateInboxCount {
-      min-width: 22px;
-      height: 20px;
-
-      padding: 0 7px;
-
-      border-radius: 10px;
-
-      background: #263442;
-      color: #dce4eb;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      font-size: 10px;
-      font-weight: 700;
-    }
-
-
-    /* =========================================================
-       PRIVATE USER LIST
-    ========================================================= */
-
-    .private-user-list {
-      width: 100%;
-
-      display: flex;
-      flex-direction: column;
-
-      gap: 7px;
-
-      max-height: 390px;
-
-      overflow-y: auto;
-
-      padding-right: 2px;
-    }
-
-    .private-user-list::-webkit-scrollbar {
-      width: 5px;
-    }
-
-    .private-user-list::-webkit-scrollbar-thumb {
-      background: #293744;
-      border-radius: 10px;
-    }
-
-    .private-user-item {
-      width: 100%;
-      min-height: 68px;
-
-      display: flex;
-      align-items: center;
-
-      gap: 11px;
-
-      padding: 9px 10px;
-
-      border: 1px solid #202d39;
-      border-radius: 13px;
-
-      background: #151e28;
-
-      color: #ffffff;
-
-      text-align: left;
-
-      appearance: none;
-      outline: none;
-
-      transition:
-        background .15s ease,
-        border-color .15s ease;
-    }
-
-    .private-user-item:hover {
-      background: #1a2631;
-      border-color: #304150;
-    }
-
-    .private-user-item:active {
-      background: #1d2a36;
-    }
-
-
-    /* =========================================================
-       INBOX AVATAR
-    ========================================================= */
-
-    .private-user-avatar {
-      width: 45px;
-      height: 45px;
-
-      min-width: 45px;
-
-      border-radius: 50%;
-
-      overflow: hidden;
-
-      background: #202c39;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .private-user-avatar img {
-      width: 100%;
-      height: 100%;
-
-      object-fit: cover;
-    }
-
-    .private-user-avatar-fallback {
-      width: 100%;
-      height: 100%;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-
-    /* =========================================================
-       INBOX USER INFO
-    ========================================================= */
-
-    .private-user-info {
-      min-width: 0;
-      flex: 1;
-
-      display: flex;
-      flex-direction: column;
-
-      gap: 4px;
-    }
-
-    .private-user-name-row {
-      width: 100%;
-
-      display: flex;
-      align-items: center;
-
-      gap: 7px;
-    }
-
-    .private-user-name {
-      min-width: 0;
-
-      flex: 1;
-
-      font-size: 13px;
-      font-weight: 700;
-
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .private-user-time {
-      color: #6d7a88;
-
-      font-size: 9px;
-
-      flex-shrink: 0;
-    }
-
-    .private-user-preview {
-      min-width: 0;
-
-      color: #7f8b98;
-
-      font-size: 11px;
-
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-
-    /* =========================================================
-       UNREAD BADGE
-    ========================================================= */
-
-    .private-unread-badge {
-      min-width: 21px;
-      height: 21px;
-
-      padding: 0 6px;
-
-      border-radius: 11px;
-
-      background: #e5484d;
-      color: #ffffff;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      font-size: 10px;
-      font-weight: 700;
-
-      flex-shrink: 0;
-    }
-
-
-    /* =========================================================
-       EMPTY INBOX
-    ========================================================= */
-
-    #privateInboxEmpty {
-      padding: 18px 10px;
-
-      text-align: center;
-
-      color: #6f7c89;
-
-      font-size: 12px;
-
-      border: 1px dashed #283541;
-      border-radius: 12px;
-
-      background: #0e151d;
-    }
-
-
-    /* =========================================================
-       PROFILE ACTIONS
-    ========================================================= */
-
-    .profile-panel-actions {
-      display: flex;
-
-      gap: 8px;
-
-      margin-top: 14px;
-
-      padding-top: 14px;
-
-      border-top: 1px solid #26323e;
-    }
-
-    .profile-action-button {
-      flex: 1;
-
-      min-width: 0;
-
-      height: 40px;
-
-      border: 1px solid #2b3947;
-      border-radius: 10px;
-
-      background: #151e28;
-      color: #ffffff;
-
-      font-size: 12px;
-    }
-
-    .profile-action-button:hover {
-      background: #1c2834;
-    }
-
-    #removePhotoBtn {
-      color: #e5a1a4;
-    }
-
-    #profilePhotoInput {
-      display: none;
-    }
-
-
-    /* =========================================================
-       MOBILE
-    ========================================================= */
-
-    @media (max-width: 700px) {
-
-      body {
-        overflow: hidden;
-      }
-
-      .chat-header {
-        min-height: 64px;
-
-        padding: 8px 9px;
-
-        gap: 7px;
-      }
-
-      .group-header {
-        min-height: 64px;
-      }
-
-      .avatar-button,
-      .group-avatar {
-        width: 40px;
-        height: 40px;
-
-        min-width: 40px;
-      }
-
-      .profile-avatar-wrap,
-      #myAvatarBtn {
-        width: 39px;
-        height: 39px;
-
-        min-width: 39px;
-      }
-
-      .chat-user {
-        gap: 7px;
-      }
-
-      .chat-username,
-      .group-name {
-        font-size: 14px;
-      }
-
-      .chat-status,
-      .group-status {
-        font-size: 10px;
-      }
-
-      .header-actions {
-        gap: 5px;
-      }
-
-      .icon-btn {
-        width: 36px;
-        height: 36px;
-
-        min-width: 36px;
-
-        border-radius: 10px;
-      }
-
-      .private-back-btn {
-        width: 36px;
-        height: 36px;
-
-        min-width: 36px;
-
-        font-size: 21px;
-      }
-
-      .my-profile-info {
-        display: none;
-      }
-
-      .messages {
-        padding: 12px 9px;
-      }
-
-      .group-message {
-        padding: 7px 3px;
-      }
-
-      .group-message-avatar {
-        width: 34px;
-        height: 34px;
-
-        min-width: 34px;
-      }
-
-      .group-message-text {
-        font-size: 13px;
-      }
-
-      .message-bubble {
-        max-width: 82%;
-
-        font-size: 13px;
-      }
-
-      .message-form {
-        padding: 8px;
-      }
-
-      .message-input {
-        height: 44px;
-      }
-
-      .send-button {
-        width: 44px;
-        height: 44px;
-
-        min-width: 44px;
-      }
-
-
-      /* ---------------------------------------------
-         PROFILE MOBILE
-      --------------------------------------------- */
-
-      .profile-panel {
-        top: 64px;
-        right: 8px;
-        left: 8px;
-
-        width: auto;
-        max-width: none;
-
-        max-height: calc(100vh - 72px);
-
-        padding: 14px;
-
-        border-radius: 17px;
-      }
-
-      .private-user-list {
-        max-height: calc(100vh - 360px);
-      }
-
-      .private-user-item {
-        min-height: 66px;
-
-        padding: 8px;
-      }
-
-      .private-user-avatar {
-        width: 43px;
-        height: 43px;
-
-        min-width: 43px;
-      }
-
-      .profile-large-avatar {
-        width: 54px;
-        height: 54px;
-
-        min-width: 54px;
-      }
-
-    }
-
-
-    /* =========================================================
-       VERY SMALL SCREENS
-    ========================================================= */
-
-    @media (max-width: 380px) {
-
-      .chat-header {
-        padding-left: 7px;
-        padding-right: 7px;
-      }
-
-      .header-actions {
-        gap: 3px;
-      }
-
-      .icon-btn {
-        width: 34px;
-        height: 34px;
-
-        min-width: 34px;
-      }
-
-      .private-back-btn {
-        width: 34px;
-        height: 34px;
-
-        min-width: 34px;
-      }
-
-      .avatar-button,
-      .group-avatar {
-        width: 38px;
-        height: 38px;
-
-        min-width: 38px;
-      }
-
-    }
-
-  </style>
 
 </head>
 
@@ -1447,26 +30,33 @@
 <div id="app">
 
 
-  <!-- =========================================================
+  <!-- =====================================================
        AUTH SCREEN
-  ========================================================= -->
+  ====================================================== -->
 
-  <section id="authScreen">
+  <section
+    id="authScreen"
+    class="auth-screen"
+  >
 
-    <!-- LOGIN -->
+
+    <!-- ===================================================
+         LOGIN
+    ==================================================== -->
 
     <div
       id="loginBox"
-      class="auth-box"
+      class="auth-card"
     >
 
-      <div class="auth-title">
+      <h1>
         Private Chat
-      </div>
+      </h1>
 
-      <div class="auth-subtitle">
+      <p>
         Sign in to continue
-      </div>
+      </p>
+
 
       <form
         id="loginForm"
@@ -1475,7 +65,6 @@
 
         <input
           id="loginUsername"
-          class="auth-input"
           type="text"
           placeholder="Username"
           autocomplete="username"
@@ -1484,47 +73,62 @@
 
         <input
           id="loginPassword"
-          class="auth-input"
           type="password"
           placeholder="Password"
           autocomplete="current-password"
           required
         >
 
+
+        <p
+          id="loginError"
+          class="auth-error hidden"
+        ></p>
+
+
         <button
           type="submit"
-          class="auth-button"
         >
           Login
         </button>
 
       </form>
 
-      <button
-        id="showRegisterBtn"
-        class="auth-switch"
-        type="button"
-      >
-        Create an account
-      </button>
+
+      <p class="auth-switch">
+
+        Don't have an account?
+
+        <button
+          id="showRegister"
+          type="button"
+        >
+          Register
+        </button>
+
+      </p>
 
     </div>
 
 
-    <!-- REGISTER -->
+
+    <!-- ===================================================
+         REGISTER
+    ==================================================== -->
 
     <div
       id="registerBox"
-      class="auth-box hidden"
+      class="auth-card hidden"
     >
 
-      <div class="auth-title">
+      <h1>
         Create Account
-      </div>
+      </h1>
 
-      <div class="auth-subtitle">
+      <p>
         Register a new account
-      </div>
+      </p>
+
 
       <form
         id="registerForm"
@@ -1533,38 +137,61 @@
 
         <input
           id="registerUsername"
-          class="auth-input"
           type="text"
           placeholder="Username"
           autocomplete="username"
+          minlength="3"
           required
         >
+
 
         <input
           id="registerPassword"
-          class="auth-input"
           type="password"
           placeholder="Password"
           autocomplete="new-password"
+          minlength="4"
           required
         >
 
+
+        <input
+          id="registerPasswordConfirm"
+          type="password"
+          placeholder="Confirm password"
+          autocomplete="new-password"
+          minlength="4"
+          required
+        >
+
+
+        <p
+          id="registerError"
+          class="auth-error hidden"
+        ></p>
+
+
         <button
           type="submit"
-          class="auth-button"
         >
           Register
         </button>
 
       </form>
 
-      <button
-        id="showLoginBtn"
-        class="auth-switch"
-        type="button"
-      >
+
+      <p class="auth-switch">
+
         Already have an account?
-      </button>
+
+        <button
+          id="showLogin"
+          type="button"
+        >
+          Login
+        </button>
+
+      </p>
 
     </div>
 
@@ -1572,119 +199,153 @@
 
 
 
-  <!-- =========================================================
+  <!-- =====================================================
        CHAT SCREEN
-  ========================================================= -->
+  ====================================================== -->
 
   <section
     id="chatScreen"
-    class="hidden"
+    class="chat-screen hidden"
   >
 
-    <main class="chat-area">
+
+    <!-- ===================================================
+         MAIN CHAT AREA
+    ==================================================== -->
+
+    <main
+      class="chat-area"
+    >
 
 
-      <!-- =====================================================
+      <!-- =================================================
            PUBLIC GROUP CHAT
-      ===================================================== -->
+      ================================================== -->
 
       <section
         id="groupChat"
-        class="hidden"
+        class="active-chat"
       >
 
-        <header class="chat-header group-header">
+
+        <!-- ===============================================
+             GROUP HEADER
+        ================================================ -->
+
+        <header
+          class="chat-header group-header"
+        >
 
 
           <!-- GROUP INFO -->
 
-          <div class="group-info">
+          <div
+            class="chat-user"
+          >
+
 
             <div
               id="groupAvatar"
-              class="group-avatar"
+              class="avatar"
+              aria-hidden="true"
             >
-              <span id="groupAvatarFallback">
+
+              <span>
                 G
               </span>
 
-              <img
-                id="groupAvatarImage"
-                class="hidden"
-                alt="Group"
-              >
             </div>
 
-            <div class="group-info-text">
 
-              <div
+            <div
+              class="chat-user-info"
+            >
+
+              <h2
                 id="groupChatName"
-                class="group-name"
               >
                 Public Group Chat
-              </div>
+              </h2>
 
-              <div
+              <p
                 id="groupChatStatus"
-                class="group-status"
               >
-                Public chat
-              </div>
+                Everyone
+              </p>
 
             </div>
 
           </div>
 
 
-          <!-- RIGHT SIDE -->
 
-          <div class="header-actions">
+          <!-- =============================================
+               RIGHT SIDE
+          ============================================== -->
+
+          <div
+            class="group-header-right"
+          >
 
 
-            <!-- OWN PROFILE -->
+            <!-- MY PROFILE -->
 
-            <div class="my-profile">
+            <div
+              id="myProfile"
+              class="my-profile"
+            >
 
-              <div class="my-profile-info">
+              <button
+                id="myAvatarBtn"
+                class="my-avatar"
+                type="button"
+                title="Profile"
+                aria-label="Open Profile"
+              >
 
-                <div
-                  id="myUsername"
-                  class="my-username"
+
+                <img
+                  id="myAvatar"
+                  src=""
+                  alt=""
+                  class="hidden"
                 >
-                  User
-                </div>
 
-              </div>
 
-              <div class="profile-avatar-wrap">
-
-                <button
-                  id="myAvatarBtn"
-                  class="avatar-button"
-                  type="button"
-                  title="My Profile"
-                  aria-label="My Profile"
+                <span
+                  id="myAvatarFallback"
                 >
+                  U
+                </span>
 
-                  <span
-                    id="myAvatarFallback"
-                    class="avatar-fallback"
-                  >
-                    U
-                  </span>
 
-                  <img
-                    id="myAvatar"
-                    class="hidden"
-                    alt="My profile"
-                  >
-
-                </button>
+                <!-- UNREAD NOTIFICATION -->
 
                 <span
                   id="profileNotificationBadge"
+                  class="hidden"
                 >
                   0
+                </span>
+
+              </button>
+
+
+              <div
+                class="my-profile-info"
+              >
+
+                <span
+                  id="myUsername"
+                  class="my-profile-name"
+                >
+                  User
+                </span>
+
+                <span
+                  class="my-profile-label"
+                >
+                  You
                 </span>
 
               </div>
@@ -1692,46 +353,55 @@
             </div>
 
 
-            <!-- REFRESH -->
 
-            <button
-              id="reloadGroupMessages"
-              class="icon-btn"
-              type="button"
-              title="Refresh"
-              aria-label="Refresh"
+            <!-- HEADER ACTIONS -->
+
+            <div
+              class="header-actions"
             >
-              ↻
-            </button>
+
+              <button
+                id="reloadGroupMessages"
+                class="icon-btn"
+                type="button"
+                title="Refresh"
+                aria-label="Refresh Group Chat"
+              >
+                ↻
+              </button>
 
 
-            <!-- LOGOUT -->
+              <button
+                id="logoutBtn"
+                class="icon-btn logout-btn"
+                type="button"
+                title="Logout"
+              >
+                Logout
+              </button>
 
-            <button
-              id="logoutBtn"
-              class="icon-btn"
-              type="button"
-              title="Logout"
-              aria-label="Logout"
-            >
-              ⇥
-            </button>
+            </div>
 
           </div>
 
         </header>
 
 
-        <!-- GROUP MESSAGES -->
+
+        <!-- ===============================================
+             GROUP MESSAGES
+        ================================================ -->
 
         <div
           id="groupMessages"
           class="messages"
-        >
-        </div>
+        ></div>
 
 
-        <!-- GROUP MESSAGE FORM -->
+
+        <!-- ===============================================
+             GROUP MESSAGE FORM
+        ================================================ -->
 
         <form
           id="groupMessageForm"
@@ -1744,15 +414,17 @@
             type="text"
             placeholder="Write a message..."
             autocomplete="off"
-            required
+            maxlength="5000"
           >
 
+
           <button
+            class="send-btn"
             type="submit"
-            class="send-button"
-            aria-label="Send"
+            title="Send"
+            aria-label="Send message"
           >
-            ↑
+            ➤
           </button>
 
         </form>
@@ -1761,28 +433,42 @@
 
 
 
-      <!-- =====================================================
+      <!-- =================================================
            PRIVATE CHAT
-      ===================================================== -->
+      ================================================== -->
 
       <section
         id="privateChat"
-        class="hidden"
+        class="active-chat hidden"
       >
 
-        <header class="chat-header">
+
+        <!-- ===============================================
+             PRIVATE CHAT HEADER
+        ================================================ -->
+
+        <header
+          class="chat-header private-chat-header"
+        >
 
 
-          <!-- PRIVATE USER -->
+          <!-- =============================================
+               LEFT SIDE
+               BACK + USER
+          ============================================== -->
 
-          <div class="chat-user">
+          <div
+            class="chat-user private-chat-user"
+          >
 
 
-            <!-- BACK TO GROUP -->
+            <!-- =========================================
+                 BACK TO PUBLIC GROUP CHAT
+            ========================================== -->
 
             <button
               id="privateBackBtn"
-              class="icon-btn private-back-btn"
+              class="private-back-btn"
               type="button"
               title="Back to Public Group Chat"
               aria-label="Back to Public Group Chat"
@@ -1795,22 +481,24 @@
 
             <button
               id="chatAvatar"
-              class="avatar-button"
+              class="avatar"
               type="button"
+              title="Profile"
               aria-label="User profile"
             >
 
               <span
                 id="chatAvatarFallback"
-                class="avatar-fallback"
               >
                 U
               </span>
 
+
               <img
                 id="chatAvatarImage"
                 class="hidden"
-                alt="User"
+                src=""
+                alt=""
               >
 
             </button>
@@ -1818,37 +506,42 @@
 
             <!-- USER INFO -->
 
-            <div class="chat-user-info">
+            <div
+              class="chat-user-info"
+            >
 
-              <div
+              <h2
                 id="chatUsername"
-                class="chat-username"
               >
                 User
-              </div>
+              </h2>
 
-              <div
+              <p
                 id="chatStatus"
-                class="chat-status"
               >
-                Private chat
-              </div>
+                Private Chat
+              </p>
 
             </div>
 
           </div>
 
 
-          <!-- PRIVATE ACTIONS -->
 
-          <div class="header-actions">
+          <!-- =============================================
+               PRIVATE HEADER ACTIONS
+          ============================================== -->
+
+          <div
+            class="header-actions"
+          >
 
             <button
               id="reloadMessages"
               class="icon-btn"
               type="button"
               title="Refresh"
-              aria-label="Refresh"
+              aria-label="Refresh Private Chat"
             >
               ↻
             </button>
@@ -1858,16 +551,21 @@
         </header>
 
 
-        <!-- PRIVATE MESSAGES -->
+
+        <!-- ===============================================
+             PRIVATE MESSAGES
+        ================================================ -->
 
         <div
           id="messagesBox"
           class="messages"
-        >
-        </div>
+        ></div>
 
 
-        <!-- PRIVATE MESSAGE FORM -->
+
+        <!-- ===============================================
+             PRIVATE MESSAGE FORM
+        ================================================ -->
 
         <form
           id="messageForm"
@@ -1880,15 +578,17 @@
             type="text"
             placeholder="Write a message..."
             autocomplete="off"
-            required
+            maxlength="5000"
           >
 
+
           <button
+            class="send-btn"
             type="submit"
-            class="send-button"
-            aria-label="Send"
+            title="Send"
+            aria-label="Send private message"
           >
-            ↑
+            ➤
           </button>
 
         </form>
@@ -1897,24 +597,26 @@
 
 
 
-      <!-- =====================================================
+      <!-- =================================================
            EMPTY CHAT
-      ===================================================== -->
+      ================================================== -->
 
       <section
         id="emptyChat"
-        class="hidden"
+        class="empty-chat hidden"
       >
 
-        <div class="empty-chat-content">
+        <div
+          class="empty-chat-inner"
+        >
 
-          <div class="empty-chat-title">
+          <h2>
             Private Chat
-          </div>
+          </h2>
 
-          <div class="empty-chat-text">
-            Select a user to start chatting.
-          </div>
+          <p>
+            Select a user from Public Group Chat
+          </p>
 
         </div>
 
@@ -1924,9 +626,9 @@
 
 
 
-    <!-- =======================================================
+    <!-- ===================================================
          PROFILE PANEL
-    ======================================================= -->
+    ==================================================== -->
 
     <aside
       id="profilePanel"
@@ -1934,75 +636,103 @@
     >
 
 
-      <!-- PROFILE HEADER -->
+      <!-- ===============================================
+           PROFILE HEADER
+      ================================================ -->
 
-      <div class="profile-panel-header">
+      <div
+        class="profile-panel-header"
+      >
+
 
         <div
           id="profileAvatar"
-          class="profile-large-avatar"
+          class="profile-avatar"
         >
+
+          <img
+            id="profileAvatarImage"
+            src=""
+            alt=""
+            class="hidden"
+          >
 
           <span
             id="profileAvatarFallback"
-            class="profile-large-avatar-fallback"
           >
             U
           </span>
 
-          <img
-            id="profileAvatarImage"
-            class="hidden"
-            alt="Profile"
-          >
-
         </div>
 
-        <div class="profile-name-area">
 
-          <div
+        <div
+          class="profile-panel-info"
+        >
+
+          <h3
             id="profileUsername"
-            class="profile-name"
           >
             User
-          </div>
+          </h3>
 
-          <div class="profile-label">
-            My Profile
-          </div>
+          <p>
+            Your profile
+          </p>
 
         </div>
 
       </div>
 
 
-      <!-- EDIT PROFILE -->
+
+      <!-- ===============================================
+           EDIT PROFILE
+           FIRST
+      ================================================ -->
 
       <button
         id="editProfileBtn"
+        class="edit-profile-btn"
         type="button"
       >
-        Edit Profile
+
+        <span>
+          ✎
+        </span>
+
+        <span>
+          Edit Profile
+        </span>
+
       </button>
 
 
-      <!-- =====================================================
-           PRIVATE INBOX
-      ===================================================== -->
 
-      <section
+      <!-- ===============================================
+           PRIVATE INBOX
+      ================================================ -->
+
+      <div
         id="privateInbox"
         class="private-inbox"
       >
 
-        <div class="private-inbox-title">
 
-          <div class="private-inbox-title-text">
+        <!-- SECTION TITLE -->
+
+        <div
+          class="private-inbox-title"
+        >
+
+          <h4>
             Private Messages
-          </div>
+          </h4>
+
 
           <span
             id="privateInboxCount"
+            class="private-inbox-count hidden"
           >
             0
           </span>
@@ -2010,58 +740,75 @@
         </div>
 
 
-        <!-- USER LIST -->
+
+        <!-- =============================================
+             USER LIST
+
+             app.js will populate this area.
+
+             Each user item should contain:
+             Avatar
+             Username
+             Last message
+             Unread count
+        ============================================== -->
 
         <div
           id="privateUserList"
           class="private-user-list"
         >
+
+
+          <!-- EMPTY STATE -->
+
+          <div
+            id="privateInboxEmpty"
+            class="private-inbox-empty"
+          >
+            No private messages yet.
+          </div>
+
         </div>
 
-
-        <!-- EMPTY -->
-
-        <div
-          id="privateInboxEmpty"
-          class="hidden"
-        >
-          No private messages yet.
-        </div>
-
-      </section>
+      </div>
 
 
-      <!-- =====================================================
+
+      <!-- ===============================================
            PROFILE PHOTO ACTIONS
-      ===================================================== -->
+      ================================================ -->
 
-      <div class="profile-panel-actions">
+      <div
+        class="profile-panel-actions"
+      >
+
+
+        <!-- CHANGE PHOTO -->
 
         <label
           for="profilePhotoInput"
-          class="profile-action-button"
-          style="
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            cursor:pointer;
-          "
+          class="profile-photo-button"
         >
-          Change Photo
+          Change Profile Photo
         </label>
+
 
         <input
           id="profilePhotoInput"
           type="file"
           accept="image/*"
+          class="hidden"
         >
 
+
+        <!-- REMOVE PHOTO -->
+
         <button
-          id="removePhotoBtn"
-          class="profile-action-button"
+          id="removeProfilePhoto"
           type="button"
+          class="danger"
         >
-          Remove
+          Remove Profile Photo
         </button>
 
       </div>
@@ -2070,25 +817,41 @@
 
   </section>
 
+
+
+  <!-- =====================================================
+       TOAST
+  ====================================================== -->
+
+  <div
+    id="toast"
+    class="hidden"
+  ></div>
+
+
 </div>
 
 
 
-<!-- =========================================================
+<!-- =======================================================
      APP JAVASCRIPT
-========================================================= -->
+======================================================== -->
 
-<script src="/app.js"></script>
+<script
+  src="/app.js"
+></script>
 
 
 
-<!-- =========================================================
+<!-- =======================================================
      AUTH SWITCH
-========================================================= -->
+======================================================== -->
 
 <script>
 
-  (function () {
+(function () {
+
+  function showLoginBox() {
 
     const loginBox =
       document.getElementById("loginBox");
@@ -2096,120 +859,203 @@
     const registerBox =
       document.getElementById("registerBox");
 
-    const showRegisterBtn =
-      document.getElementById("showRegisterBtn");
+    const loginError =
+      document.getElementById("loginError");
 
-    const showLoginBtn =
-      document.getElementById("showLoginBtn");
+    const registerError =
+      document.getElementById("registerError");
 
 
-    if (showRegisterBtn) {
+    if (loginBox) {
 
-      showRegisterBtn.addEventListener(
-        "click",
-        function () {
-
-          loginBox.classList.add("hidden");
-
-          registerBox.classList.remove("hidden");
-
-        }
+      loginBox.classList.remove(
+        "hidden"
       );
 
     }
 
 
-    if (showLoginBtn) {
+    if (registerBox) {
 
-      showLoginBtn.addEventListener(
-        "click",
-        function () {
-
-          registerBox.classList.add("hidden");
-
-          loginBox.classList.remove("hidden");
-
-        }
+      registerBox.classList.add(
+        "hidden"
       );
 
     }
 
-  })();
 
-</script>
+    if (loginError) {
 
+      loginError.classList.add(
+        "hidden"
+      );
 
+      loginError.textContent = "";
 
-<!-- =========================================================
-     PRIVATE CHAT BACK BUTTON
-========================================================= -->
-
-<script>
-
-  (function () {
-
-    const backButton =
-      document.getElementById("privateBackBtn");
-
-    if (!backButton) {
-      return;
     }
 
 
-    backButton.addEventListener(
-      "click",
-      function () {
+    if (registerError) {
+
+      registerError.classList.add(
+        "hidden"
+      );
+
+      registerError.textContent = "";
+
+    }
 
 
-        /*
-          If app.js already provides a public
-          showGroupChat() function, use it.
-        */
-
-        if (
-          typeof window.showGroupChat === "function"
-        ) {
-
-          window.showGroupChat();
-
-          return;
-
-        }
+    const username =
+      document.getElementById(
+        "loginUsername"
+      );
 
 
-        /*
-          Fallback DOM switching.
-        */
+    if (username) {
 
-        const privateChat =
-          document.getElementById("privateChat");
+      setTimeout(
+        function () {
 
-        const groupChat =
-          document.getElementById("groupChat");
+          username.focus();
 
-        const emptyChat =
-          document.getElementById("emptyChat");
+        },
+        50
+      );
+
+    }
+
+  }
 
 
-        if (privateChat) {
-          privateChat.classList.add("hidden");
-        }
 
-        if (emptyChat) {
-          emptyChat.classList.add("hidden");
-        }
+  function showRegisterBox() {
 
-        if (groupChat) {
-          groupChat.classList.remove("hidden");
-        }
+    const loginBox =
+      document.getElementById("loginBox");
+
+    const registerBox =
+      document.getElementById("registerBox");
+
+    const loginError =
+      document.getElementById("loginError");
+
+    const registerError =
+      document.getElementById("registerError");
+
+
+    if (loginBox) {
+
+      loginBox.classList.add(
+        "hidden"
+      );
+
+    }
+
+
+    if (registerBox) {
+
+      registerBox.classList.remove(
+        "hidden"
+      );
+
+    }
+
+
+    if (loginError) {
+
+      loginError.classList.add(
+        "hidden"
+      );
+
+      loginError.textContent = "";
+
+    }
+
+
+    if (registerError) {
+
+      registerError.classList.add(
+        "hidden"
+      );
+
+      registerError.textContent = "";
+
+    }
+
+
+    const username =
+      document.getElementById(
+        "registerUsername"
+      );
+
+
+    if (username) {
+
+      setTimeout(
+        function () {
+
+          username.focus();
+
+        },
+        50
+      );
+
+    }
+
+  }
+
+
+
+  document.addEventListener(
+    "click",
+    function (event) {
+
+
+      const registerButton =
+        event.target.closest(
+          "#showRegister"
+        );
+
+
+      if (registerButton) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        showRegisterBox();
+
+        return;
 
       }
-    );
 
-  })();
+
+
+      const loginButton =
+        event.target.closest(
+          "#showLogin"
+        );
+
+
+      if (loginButton) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        showLoginBox();
+
+        return;
+
+      }
+
+    },
+    true
+  );
+
+})();
 
 </script>
 
-</body>
 
+</body>
 </html>
