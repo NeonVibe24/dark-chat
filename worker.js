@@ -244,6 +244,11 @@ async function initializeDatabase(db) {
 
   /* ----------------------------------------------------------
      PRIVATE MESSAGES
+
+     created_at was added for:
+     - inbox last message time
+     - message time
+     - sorting
   ---------------------------------------------------------- */
 
   await db.prepare(`
@@ -257,6 +262,8 @@ async function initializeDatabase(db) {
       receiver_id INTEGER NOT NULL,
 
       message TEXT NOT NULL,
+
+      created_at INTEGER NOT NULL,
 
       FOREIGN KEY(conversation_id)
         REFERENCES conversations(id)
@@ -274,15 +281,71 @@ async function initializeDatabase(db) {
 
 
   /* ----------------------------------------------------------
+     PRIVATE MESSAGE created_at MIGRATION
+
+     Existing database may already have messages table
+     without created_at.
+
+     SQLite allows adding a nullable column.
+  ---------------------------------------------------------- */
+
+  const messageColumns =
+    await db
+      .prepare(`
+        PRAGMA table_info(messages)
+      `)
+      .all();
+
+  const messageColumnList =
+    messageColumns.results || [];
+
+  const hasMessageCreatedAt =
+    messageColumnList.some(
+      column =>
+        column.name === "created_at"
+    );
+
+
+  if (!hasMessageCreatedAt) {
+
+    await db.prepare(`
+      ALTER TABLE messages
+      ADD COLUMN created_at INTEGER
+    `).run();
+
+  }
+
+
+  /*
+   * Old messages have no created_at.
+   * Use 0 instead of leaving NULL.
+   */
+
+  try {
+
+    await db.prepare(`
+      UPDATE messages
+
+      SET created_at = 0
+
+      WHERE created_at IS NULL
+    `).run();
+
+  } catch (error) {
+
+    console.error(
+      "MESSAGE CREATED_AT MIGRATION ERROR:",
+      error
+    );
+
+  }
+
+
+  /* ----------------------------------------------------------
      PRIVATE MESSAGE READ STATE
-     
+
      Stores the last private message ID that a user
      has read from another user.
-
-     This is used for:
-     - Inbox
-     - unread count
-     - profile notification badge
   ---------------------------------------------------------- */
 
   await db.prepare(`
@@ -409,6 +472,24 @@ async function initializeDatabase(db) {
 
     await db.prepare(`
       CREATE INDEX IF NOT EXISTS
+      idx_messages_created
+      ON messages(created_at)
+    `).run();
+
+  } catch (error) {
+
+    console.error(
+      "MESSAGE CREATED INDEX ERROR:",
+      error
+    );
+
+  }
+
+
+  try {
+
+    await db.prepare(`
+      CREATE INDEX IF NOT EXISTS
       idx_private_reads_user
       ON private_message_reads(user_id, other_user_id)
     `).run();
@@ -467,6 +548,102 @@ function formatUser(row) {
     profile_photo:
       row.profile_photo ||
       null
+
+  };
+}
+
+
+/* ============================================================
+   PRIVATE MESSAGE TIME
+============================================================ */
+
+function formatPrivateMessage(row) {
+
+  if (!row) {
+    return null;
+  }
+
+
+  const rawCreatedAt =
+    row.created_at;
+
+
+  let createdAt = null;
+
+
+  if (
+    rawCreatedAt !== null &&
+    rawCreatedAt !== undefined &&
+    rawCreatedAt !== ""
+  ) {
+
+    const number =
+      Number(
+        rawCreatedAt
+      );
+
+
+    if (
+      Number.isFinite(number) &&
+      number > 0
+    ) {
+
+      createdAt =
+        new Date(
+          number
+        ).toISOString();
+
+    }
+
+  }
+
+
+  return {
+
+    id:
+      Number(row.id),
+
+    conversation_id:
+      Number(row.conversation_id),
+
+    sender_id:
+      Number(row.sender_id),
+
+    receiver_id:
+      Number(row.receiver_id),
+
+    message:
+      row.message || "",
+
+    created_at:
+      createdAt,
+
+    sender_username:
+      row.sender_username || "",
+
+    sender_email:
+      row.sender_email || "",
+
+    sender_profile_photo:
+      row.sender_profile_photo ||
+      null,
+
+    sender: {
+
+      id:
+        Number(row.sender_id),
+
+      username:
+        row.sender_username || "",
+
+      email:
+        row.sender_email || "",
+
+      profile_photo:
+        row.sender_profile_photo ||
+        null
+
+    }
 
   };
 }
@@ -644,9 +821,10 @@ function formatGroupMessage(row) {
 
 
   const isoDate =
-    Number.isFinite(createdAt)
+    Number.isFinite(createdAt) &&
+    createdAt > 0
       ? new Date(createdAt).toISOString()
-      : row.created_at;
+      : null;
 
 
   return {
@@ -2074,7 +2252,20 @@ export default {
                 ORDER BY m.id DESC
 
                 LIMIT 1
-              ) AS last_message_id
+              ) AS last_message_id,
+
+
+              (
+                SELECT m.created_at
+
+                FROM messages m
+
+                WHERE m.conversation_id = c.id
+
+                ORDER BY m.id DESC
+
+                LIMIT 1
+              ) AS last_message_at
 
 
             FROM conversations c
@@ -2173,6 +2364,15 @@ export default {
                 ? Number(
                     row.last_message_id
                   )
+                : null,
+
+            last_message_at:
+              row.last_message_at
+                ? new Date(
+                    Number(
+                      row.last_message_at
+                    )
+                  ).toISOString()
                 : null
 
           }));
@@ -2191,19 +2391,28 @@ export default {
 
       /* ======================================================
          PRIVATE INBOX
-         
-         Returns users who have sent private messages
-         to the current user.
 
-         Also returns:
+         IMPORTANT:
+         The frontend app.js calls:
+
+           GET /api/messages/inbox
+
+         We also support:
+
+           GET /api/inbox
+
+         Returns:
+         - users
+         - inbox
+         - total_unread
          - unread_count
-         - latest message
-         - latest message id
-         - sender information
       ====================================================== */
 
       if (
-        path === "/api/inbox" &&
+        (
+          path === "/api/messages/inbox" ||
+          path === "/api/inbox"
+        ) &&
         method === "GET"
       ) {
 
@@ -2228,6 +2437,15 @@ export default {
         }
 
 
+        /*
+         * Find the latest incoming message
+         * from each user.
+         *
+         * This makes the profile inbox show
+         * users who have actually sent a
+         * private message to the current user.
+         */
+
         const result =
           await env.DB.prepare(`
             SELECT
@@ -2250,6 +2468,9 @@ export default {
 
               latest.id
                 AS last_message_id,
+
+              latest.created_at
+                AS last_message_at,
 
               latest.conversation_id
                 AS conversation_id,
@@ -2296,6 +2517,8 @@ export default {
                 m.id,
 
                 m.message,
+
+                m.created_at,
 
                 m.conversation_id
 
@@ -2351,66 +2574,150 @@ export default {
         const inbox =
           (
             result.results || []
-          ).map(row => ({
+          ).map(row => {
 
-            sender_id:
+            const createdAt =
               Number(
-                row.sender_id
-              ),
+                row.last_message_at
+              );
 
-            sender_username:
-              row.sender_username || "",
 
-            sender_email:
-              row.sender_email || "",
+            const lastMessageAt =
+              Number.isFinite(
+                createdAt
+              ) &&
+              createdAt > 0
+                ? new Date(
+                    createdAt
+                  ).toISOString()
+                : null;
 
-            sender_profile_photo:
-              row.sender_profile_photo ||
-              null,
 
-            last_message:
-              row.last_message || "",
-
-            last_message_id:
-              Number(
-                row.last_message_id
-              ),
-
-            conversation_id:
-              Number(
-                row.conversation_id
-              ),
-
-            unread_count:
+            const unreadCount =
               Number(
                 row.unread_count || 0
-              ),
+              );
 
-            sender: {
+
+            return {
+
+              /*
+               * app.js supports id
+               */
 
               id:
                 Number(
                   row.sender_id
                 ),
 
+
+              user_id:
+                Number(
+                  row.sender_id
+                ),
+
+
+              sender_id:
+                Number(
+                  row.sender_id
+                ),
+
+
               username:
-                row.sender_username || "",
+                row.sender_username ||
+                "",
+
+
+              sender_username:
+                row.sender_username ||
+                "",
+
 
               email:
-                row.sender_email || "",
+                row.sender_email ||
+                "",
+
+
+              sender_email:
+                row.sender_email ||
+                "",
+
 
               profile_photo:
                 row.sender_profile_photo ||
-                null
+                null,
 
-            }
 
-          }));
+              sender_profile_photo:
+                row.sender_profile_photo ||
+                null,
+
+
+              last_message:
+                row.last_message ||
+                "",
+
+
+              last_message_id:
+                Number(
+                  row.last_message_id
+                ),
+
+
+              last_message_at:
+                lastMessageAt,
+
+
+              created_at:
+                lastMessageAt,
+
+
+              conversation_id:
+                Number(
+                  row.conversation_id
+                ),
+
+
+              unread_count:
+                unreadCount,
+
+
+              unread:
+                unreadCount,
+
+
+              sender: {
+
+                id:
+                  Number(
+                    row.sender_id
+                  ),
+
+                username:
+                  row.sender_username ||
+                  "",
+
+                email:
+                  row.sender_email ||
+                  "",
+
+                profile_photo:
+                  row.sender_profile_photo ||
+                  null
+
+              }
+
+            };
+
+          });
 
 
         const totalUnread =
           inbox.reduce(
-            (total, item) =>
+            (
+              total,
+              item
+            ) =>
               total +
               Number(
                 item.unread_count || 0
@@ -2426,7 +2733,14 @@ export default {
           total_unread:
             totalUnread,
 
-          inbox
+          unread_count:
+            totalUnread,
+
+          users:
+            inbox,
+
+          inbox:
+            inbox
 
         });
 
@@ -2435,8 +2749,14 @@ export default {
 
       /* ======================================================
          MARK PRIVATE MESSAGES AS READ
-         
-         POST /api/inbox/read
+
+         Frontend app.js calls:
+
+           POST /api/messages/read
+
+         We also support:
+
+           POST /api/inbox/read
 
          Body:
          {
@@ -2445,12 +2765,13 @@ export default {
          }
 
          message_id is optional.
-         If omitted, the latest received message from
-         that user will be used.
       ====================================================== */
 
       if (
-        path === "/api/inbox/read" &&
+        (
+          path === "/api/messages/read" ||
+          path === "/api/inbox/read"
+        ) &&
         method === "POST"
       ) {
 
@@ -2908,6 +3229,10 @@ export default {
         }
 
 
+        const createdAt =
+          Date.now();
+
+
         const result =
           await env.DB.prepare(`
             INSERT INTO messages
@@ -2915,16 +3240,18 @@ export default {
               conversation_id,
               sender_id,
               receiver_id,
-              message
+              message,
+              created_at
             )
 
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
           `)
             .bind(
               conversation.id,
               currentUser.id,
               receiverId,
-              message
+              message,
+              createdAt
             )
             .run();
 
@@ -2948,6 +3275,8 @@ export default {
               m.receiver_id,
 
               m.message,
+
+              m.created_at,
 
               u.username
                 AS sender_username,
@@ -2978,7 +3307,9 @@ export default {
           success: true,
 
           message:
-            savedMessage
+            formatPrivateMessage(
+              savedMessage
+            )
 
         }, 201);
 
@@ -3093,6 +3424,8 @@ export default {
 
               m.message,
 
+              m.created_at,
+
               u.username
                 AS sender_username,
 
@@ -3121,12 +3454,19 @@ export default {
             .all();
 
 
+        const messages =
+          (
+            result.results || []
+          ).map(
+            formatPrivateMessage
+          );
+
+
         return json({
 
           success: true,
 
-          messages:
-            result.results || []
+          messages
 
         });
 
