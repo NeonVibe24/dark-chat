@@ -10,11 +10,6 @@
     content="width=device-width, initial-scale=1.0"
   >
 
-  <meta
-    name="theme-color"
-    content="#0b1016"
-  >
-
   <title>Private Chat</title>
 
   <link
@@ -34,142 +29,103 @@
        AUTH SCREEN
   ====================================================== -->
 
-  <section
-    id="authScreen"
-    class="auth-screen"
-  >
+  <section id="authScreen">
 
 
-    <!-- ===================================================
-         LOGIN
-    ==================================================== -->
+    <!-- ================= LOGIN ================= -->
 
-    <div
-      id="loginBox"
-      class="auth-card"
-    >
+    <div id="loginBox">
 
-      <h1>
-        Private Chat
-      </h1>
+      <h1>Private Chat</h1>
 
-      <p>
-        Sign in to continue
-      </p>
-
-
-      <form
-        id="loginForm"
-        class="auth-form"
-      >
+      <form id="loginForm">
 
         <input
-          id="loginUsername"
           type="text"
+          id="loginUsername"
+          name="username"
           placeholder="Username"
           autocomplete="username"
           required
         >
 
         <input
-          id="loginPassword"
           type="password"
+          id="loginPassword"
+          name="password"
           placeholder="Password"
           autocomplete="current-password"
           required
         >
 
-
-        <p
-          id="loginError"
-          class="auth-error hidden"
-        ></p>
-
-
         <button
           type="submit"
         >
           Login
         </button>
 
+        <div
+          id="loginError"
+          class="error"
+        ></div>
+
       </form>
 
 
-      <p class="auth-switch">
+      <div class="auth-switch">
 
         Don't have an account?
 
         <button
-          id="showRegister"
           type="button"
+          id="showRegisterBtn"
         >
           Register
         </button>
 
-      </p>
+      </div>
 
     </div>
 
 
 
-    <!-- ===================================================
-         REGISTER
-    ==================================================== -->
+    <!-- ================= REGISTER ================= -->
 
     <div
       id="registerBox"
-      class="auth-card hidden"
+      class="hidden"
     >
 
-      <h1>
-        Create Account
-      </h1>
+      <h1>Create Account</h1>
 
-      <p>
-        Register a new account
-      </p>
-
-
-      <form
-        id="registerForm"
-        class="auth-form"
-      >
+      <form id="registerForm">
 
         <input
-          id="registerUsername"
           type="text"
+          id="registerUsername"
+          name="username"
           placeholder="Username"
           autocomplete="username"
-          minlength="3"
           required
         >
 
-
         <input
-          id="registerPassword"
           type="password"
+          id="registerPassword"
+          name="password"
           placeholder="Password"
           autocomplete="new-password"
-          minlength="4"
           required
         >
-
 
         <input
-          id="registerPasswordConfirm"
           type="password"
-          placeholder="Confirm password"
+          id="registerPasswordConfirm"
+          name="passwordConfirm"
+          placeholder="Confirm Password"
           autocomplete="new-password"
-          minlength="4"
           required
         >
-
-
-        <p
-          id="registerError"
-          class="auth-error hidden"
-        ></p>
-
 
         <button
           type="submit"
@@ -177,21 +133,26 @@
           Register
         </button>
 
+        <div
+          id="registerError"
+          class="error"
+        ></div>
+
       </form>
 
 
-      <p class="auth-switch">
+      <div class="auth-switch">
 
         Already have an account?
 
         <button
-          id="showLogin"
           type="button"
+          id="showLoginBtn"
         >
           Login
         </button>
 
-      </p>
+      </div>
 
     </div>
 
@@ -205,104 +166,86 @@
 
   <section
     id="chatScreen"
-    class="chat-screen hidden"
+    class="hidden"
   >
 
 
     <!-- ===================================================
-         MAIN CHAT AREA
+         PUBLIC GROUP CHAT
     ==================================================== -->
 
     <main
-      class="chat-area"
+      id="groupChat"
+      class="active-chat"
     >
 
 
-      <!-- =================================================
-           PUBLIC GROUP CHAT
-      ================================================== -->
+      <!-- ================= GROUP HEADER ================= -->
 
-      <section
-        id="groupChat"
-        class="active-chat"
+      <header
+        class="chat-header group-header"
       >
 
 
-        <!-- ===============================================
-             GROUP HEADER
-        ================================================ -->
+        <!-- GROUP USER -->
 
-        <header
-          class="chat-header group-header"
-        >
+        <div class="chat-user">
 
 
-          <!-- GROUP INFO -->
+          <!-- GROUP AVATAR -->
 
           <div
-            class="chat-user"
+            id="groupAvatar"
+            class="avatar"
           >
 
-
-            <div
-              id="groupAvatar"
-              class="avatar"
-              aria-hidden="true"
-            >
-
-              <span>
-                G
-              </span>
-
-            </div>
-
-
-            <div
-              class="chat-user-info"
-            >
-
-              <h2
-                id="groupChatName"
-              >
-                Public Group Chat
-              </h2>
-
-              <p
-                id="groupChatStatus"
-              >
-                Everyone
-              </p>
-
-            </div>
+            <span>
+              G
+            </span>
 
           </div>
 
 
+          <!-- GROUP INFO -->
 
-          <!-- =============================================
-               RIGHT SIDE
-          ============================================== -->
+          <div class="chat-user-info">
 
-          <div
-            class="group-header-right"
-          >
+            <span
+              id="groupChatName"
+              class="chat-username"
+            >
+              Public Group
+            </span>
+
+            <span
+              id="groupChatStatus"
+              class="chat-status"
+            >
+              Group Chat
+            </span>
+
+          </div>
+
+        </div>
 
 
-            <!-- MY PROFILE -->
 
-            <div
-              id="myProfile"
-              class="my-profile"
+        <!-- ================= HEADER ACTIONS ================= -->
+
+        <div class="header-actions">
+
+
+          <!-- MY PROFILE -->
+
+          <div class="my-profile">
+
+            <button
+              type="button"
+              id="myAvatarBtn"
+              title="Profile"
             >
 
-              <button
-                id="myAvatarBtn"
-                class="my-avatar"
-                type="button"
-                title="Profile"
-                aria-label="Open Profile"
-              >
-
+              <div class="avatar">
 
                 <img
                   id="myAvatar"
@@ -311,511 +254,456 @@
                   class="hidden"
                 >
 
-
                 <span
                   id="myAvatarFallback"
                 >
                   U
                 </span>
 
-
-                <!-- UNREAD NOTIFICATION -->
-
-                <span
-                  id="profileNotificationBadge"
-                  class="hidden"
-                >
-                  0
-                </span>
-
-              </button>
-
-
-              <div
-                class="my-profile-info"
-              >
-
-                <span
-                  id="myUsername"
-                  class="my-profile-name"
-                >
-                  User
-                </span>
-
-                <span
-                  class="my-profile-label"
-                >
-                  You
-                </span>
-
               </div>
 
-            </div>
 
-
-
-            <!-- HEADER ACTIONS -->
-
-            <div
-              class="header-actions"
-            >
-
-              <button
-                id="reloadGroupMessages"
-                class="icon-btn"
-                type="button"
-                title="Refresh"
-                aria-label="Refresh Group Chat"
-              >
-                ↻
-              </button>
-
-
-              <button
-                id="logoutBtn"
-                class="icon-btn logout-btn"
-                type="button"
-                title="Logout"
-              >
-                Logout
-              </button>
-
-            </div>
-
-          </div>
-
-        </header>
-
-
-
-        <!-- ===============================================
-             GROUP MESSAGES
-        ================================================ -->
-
-        <div
-          id="groupMessages"
-          class="messages"
-        ></div>
-
-
-
-        <!-- ===============================================
-             GROUP MESSAGE FORM
-        ================================================ -->
-
-        <form
-          id="groupMessageForm"
-          class="message-form"
-        >
-
-          <input
-            id="groupMessageInput"
-            class="message-input"
-            type="text"
-            placeholder="Write a message..."
-            autocomplete="off"
-            maxlength="5000"
-          >
-
-
-          <button
-            class="send-btn"
-            type="submit"
-            title="Send"
-            aria-label="Send message"
-          >
-            ➤
-          </button>
-
-        </form>
-
-      </section>
-
-
-
-      <!-- =================================================
-           PRIVATE CHAT
-      ================================================== -->
-
-      <section
-        id="privateChat"
-        class="active-chat hidden"
-      >
-
-
-        <!-- ===============================================
-             PRIVATE CHAT HEADER
-        ================================================ -->
-
-        <header
-          class="chat-header private-chat-header"
-        >
-
-
-          <!-- =============================================
-               LEFT SIDE
-               BACK + USER
-          ============================================== -->
-
-          <div
-            class="chat-user private-chat-user"
-          >
-
-
-            <!-- =========================================
-                 BACK TO PUBLIC GROUP CHAT
-            ========================================== -->
-
-            <button
-              id="privateBackBtn"
-              class="private-back-btn"
-              type="button"
-              title="Back to Public Group Chat"
-              aria-label="Back to Public Group Chat"
-            >
-              ←
-            </button>
-
-
-            <!-- USER AVATAR -->
-
-            <button
-              id="chatAvatar"
-              class="avatar"
-              type="button"
-              title="Profile"
-              aria-label="User profile"
-            >
+              <!-- UNREAD BADGE -->
 
               <span
-                id="chatAvatarFallback"
-              >
-                U
-              </span>
-
-
-              <img
-                id="chatAvatarImage"
-                class="hidden"
-                src=""
-                alt=""
-              >
+                id="profileNotificationBadge"
+              ></span>
 
             </button>
 
 
-            <!-- USER INFO -->
-
-            <div
-              class="chat-user-info"
-            >
-
-              <h2
-                id="chatUsername"
-              >
-                User
-              </h2>
-
-              <p
-                id="chatStatus"
-              >
-                Private Chat
-              </p>
-
-            </div>
+            <span
+              id="myUsername"
+              class="hidden"
+            ></span>
 
           </div>
 
 
 
-          <!-- =============================================
-               PRIVATE HEADER ACTIONS
-          ============================================== -->
-
-          <div
-            class="header-actions"
-          >
-
-            <button
-              id="reloadMessages"
-              class="icon-btn"
-              type="button"
-              title="Refresh"
-              aria-label="Refresh Private Chat"
-            >
-              ↻
-            </button>
-
-          </div>
-
-        </header>
-
-
-
-        <!-- ===============================================
-             PRIVATE MESSAGES
-        ================================================ -->
-
-        <div
-          id="messagesBox"
-          class="messages"
-        ></div>
-
-
-
-        <!-- ===============================================
-             PRIVATE MESSAGE FORM
-        ================================================ -->
-
-        <form
-          id="messageForm"
-          class="message-form"
-        >
-
-          <input
-            id="messageInput"
-            class="message-input"
-            type="text"
-            placeholder="Write a message..."
-            autocomplete="off"
-            maxlength="5000"
-          >
-
+          <!-- REFRESH GROUP -->
 
           <button
-            class="send-btn"
-            type="submit"
-            title="Send"
-            aria-label="Send private message"
+            type="button"
+            id="reloadGroupMessages"
+            title="Refresh"
+            aria-label="Refresh group messages"
           >
-            ➤
+            ↻
           </button>
 
-        </form>
-
-      </section>
 
 
+          <!-- LOGOUT -->
 
-      <!-- =================================================
-           EMPTY CHAT
-      ================================================== -->
-
-      <section
-        id="emptyChat"
-        class="empty-chat hidden"
-      >
-
-        <div
-          class="empty-chat-inner"
-        >
-
-          <h2>
-            Private Chat
-          </h2>
-
-          <p>
-            Select a user from Public Group Chat
-          </p>
+          <button
+            type="button"
+            id="logoutBtn"
+            title="Logout"
+            aria-label="Logout"
+          >
+            ⎋
+          </button>
 
         </div>
 
-      </section>
+      </header>
+
+
+
+      <!-- ================= GROUP MESSAGES ================= -->
+
+      <div
+        id="groupMessages"
+      ></div>
+
+
+
+      <!-- ================= GROUP MESSAGE FORM ================= -->
+
+      <form
+        id="groupMessageForm"
+        class="message-form"
+      >
+
+        <input
+          type="text"
+          id="groupMessageInput"
+          name="message"
+          placeholder="Write a message..."
+          autocomplete="off"
+          maxlength="2000"
+          required
+        >
+
+        <button
+          type="submit"
+          title="Send"
+          aria-label="Send message"
+        >
+          ➤
+        </button>
+
+      </form>
 
     </main>
 
 
 
     <!-- ===================================================
-         PROFILE PANEL
+         PRIVATE CHAT
     ==================================================== -->
 
-    <aside
-      id="profilePanel"
-      class="profile-panel hidden"
+    <main
+      id="privateChat"
+      class="active-chat hidden"
     >
 
 
-      <!-- ===============================================
-           PROFILE HEADER
-      ================================================ -->
+      <!-- ================= PRIVATE HEADER ================= -->
 
-      <div
-        class="profile-panel-header"
+      <header
+        class="chat-header private-chat-header"
       >
 
 
-        <div
-          id="profileAvatar"
-          class="profile-avatar"
-        >
-
-          <img
-            id="profileAvatarImage"
-            src=""
-            alt=""
-            class="hidden"
-          >
-
-          <span
-            id="profileAvatarFallback"
-          >
-            U
-          </span>
-
-        </div>
-
+        <!-- ================= LEFT SIDE ================= -->
 
         <div
-          class="profile-panel-info"
-        >
-
-          <h3
-            id="profileUsername"
-          >
-            User
-          </h3>
-
-          <p>
-            Your profile
-          </p>
-
-        </div>
-
-      </div>
-
-
-
-      <!-- ===============================================
-           EDIT PROFILE
-           FIRST
-      ================================================ -->
-
-      <button
-        id="editProfileBtn"
-        class="edit-profile-btn"
-        type="button"
-      >
-
-        <span>
-          ✎
-        </span>
-
-        <span>
-          Edit Profile
-        </span>
-
-      </button>
-
-
-
-      <!-- ===============================================
-           PRIVATE INBOX
-      ================================================ -->
-
-      <div
-        id="privateInbox"
-        class="private-inbox"
-      >
-
-
-        <!-- SECTION TITLE -->
-
-        <div
-          class="private-inbox-title"
-        >
-
-          <h4>
-            Private Messages
-          </h4>
-
-
-          <span
-            id="privateInboxCount"
-            class="private-inbox-count hidden"
-          >
-            0
-          </span>
-
-        </div>
-
-
-
-        <!-- =============================================
-             USER LIST
-
-             app.js will populate this area.
-
-             Each user item should contain:
-             Avatar
-             Username
-             Last message
-             Unread count
-        ============================================== -->
-
-        <div
-          id="privateUserList"
-          class="private-user-list"
+          class="chat-user private-chat-user"
         >
 
 
-          <!-- EMPTY STATE -->
+          <!-- BACK TO GROUP -->
+
+          <button
+            type="button"
+            id="privateBackBtn"
+            class="private-back-btn"
+            title="Back to Group Chat"
+            aria-label="Back to Group Chat"
+          >
+            ←
+          </button>
+
+
+
+          <!-- PRIVATE AVATAR -->
 
           <div
-            id="privateInboxEmpty"
-            class="private-inbox-empty"
+            id="chatAvatar"
+            class="avatar"
           >
-            No private messages yet.
+
+            <img
+              id="chatAvatarImage"
+              src=""
+              alt=""
+              class="hidden"
+            >
+
+            <span
+              id="chatAvatarFallback"
+            >
+              U
+            </span>
+
+          </div>
+
+
+
+          <!-- PRIVATE USER INFO -->
+
+          <div class="chat-user-info">
+
+            <span
+              id="chatUsername"
+              class="chat-username"
+            >
+              User
+            </span>
+
+            <span
+              id="chatStatus"
+              class="chat-status"
+            >
+              Private Chat
+            </span>
+
           </div>
 
         </div>
 
-      </div>
+
+
+        <!-- ================= RIGHT SIDE ================= -->
+
+        <div class="header-actions">
+
+
+          <!-- REFRESH PRIVATE CHAT -->
+
+          <button
+            type="button"
+            id="reloadMessages"
+            title="Refresh"
+            aria-label="Refresh messages"
+          >
+            ↻
+          </button>
+
+        </div>
+
+      </header>
 
 
 
-      <!-- ===============================================
-           PROFILE PHOTO ACTIONS
-      ================================================ -->
+      <!-- ================= PRIVATE MESSAGES ================= -->
 
       <div
-        class="profile-panel-actions"
+        id="messagesBox"
+      ></div>
+
+
+
+      <!-- ================= PRIVATE MESSAGE FORM ================= -->
+
+      <form
+        id="messageForm"
+        class="private-message-form"
       >
 
-
-        <!-- CHANGE PHOTO -->
-
-        <label
-          for="profilePhotoInput"
-          class="profile-photo-button"
-        >
-          Change Profile Photo
-        </label>
-
-
         <input
-          id="profilePhotoInput"
-          type="file"
-          accept="image/*"
+          type="text"
+          id="messageInput"
+          name="message"
+          placeholder="Write a message..."
+          autocomplete="off"
+          maxlength="2000"
+          required
+        >
+
+        <button
+          type="submit"
+          title="Send"
+          aria-label="Send message"
+        >
+          ➤
+        </button>
+
+      </form>
+
+    </main>
+
+
+
+    <!-- ===================================================
+         EMPTY CHAT
+    ==================================================== -->
+
+    <section
+      id="emptyChat"
+      class="hidden"
+    >
+
+      <div>
+        Select a user to start a private chat.
+      </div>
+
+    </section>
+
+  </section>
+
+
+
+  <!-- =====================================================
+       PROFILE PANEL
+  ====================================================== -->
+
+  <aside
+    id="profilePanel"
+    class="profile-panel hidden"
+  >
+
+
+    <!-- ================= PROFILE HEADER ================= -->
+
+    <header
+      class="profile-panel-header"
+    >
+
+      <h3>
+        Profile
+      </h3>
+
+      <button
+        type="button"
+        id="closeProfileBtn"
+        class="icon-btn"
+        title="Close"
+        aria-label="Close profile"
+      >
+        ×
+      </button>
+
+    </header>
+
+
+
+    <!-- ================= PROFILE INFO ================= -->
+
+    <div
+      class="profile-panel-info"
+    >
+
+
+      <!-- PROFILE AVATAR -->
+
+      <div
+        id="profileAvatar"
+      >
+
+        <img
+          id="profileAvatarImage"
+          src=""
+          alt=""
           class="hidden"
         >
 
-
-        <!-- REMOVE PHOTO -->
-
-        <button
-          id="removeProfilePhoto"
-          type="button"
-          class="danger"
+        <span
+          id="profileAvatarFallback"
         >
-          Remove Profile Photo
-        </button>
+          U
+        </span>
 
       </div>
 
-    </aside>
 
-  </section>
+
+      <!-- USERNAME -->
+
+      <div
+        id="profileUsername"
+      >
+        User
+      </div>
+
+    </div>
+
+
+
+    <!-- ================= EDIT PROFILE ================= -->
+
+    <button
+      type="button"
+      id="editProfileBtn"
+      class="edit-profile-btn"
+    >
+      Edit Profile
+    </button>
+
+
+
+    <!-- ===================================================
+         PRIVATE INBOX
+    ==================================================== -->
+
+    <section
+      id="privateInbox"
+      class="private-inbox"
+    >
+
+
+      <!-- ================= INBOX TITLE ================= -->
+
+      <div
+        class="private-inbox-title"
+      >
+
+        <span>
+          Messages
+        </span>
+
+        <span
+          id="privateInboxCount"
+          class="private-inbox-count"
+        >
+          0
+        </span>
+
+      </div>
+
+
+
+      <!-- ================= USER LIST ================= -->
+
+      <div
+        id="privateUserList"
+        class="private-user-list"
+      ></div>
+
+
+
+      <!-- ================= EMPTY INBOX ================= -->
+
+      <div
+        id="privateInboxEmpty"
+        class="private-inbox-empty hidden"
+      >
+        No messages yet.
+      </div>
+
+    </section>
+
+
+
+    <!-- ===================================================
+         PROFILE PHOTO CONTROLS
+    ==================================================== -->
+
+    <div
+      class="profile-photo-actions"
+    >
+
+
+      <!-- CHANGE PHOTO -->
+
+      <label
+        for="profilePhotoInput"
+        class="profile-photo-button"
+      >
+        Change Photo
+
+        <input
+          type="file"
+          id="profilePhotoInput"
+          accept="image/*"
+        >
+
+      </label>
+
+
+
+      <!-- REMOVE PHOTO -->
+
+      <button
+        type="button"
+        id="removeProfilePhoto"
+      >
+        Remove
+      </button>
+
+    </div>
+
+
+
+    <!-- ================= PROFILE ACTIONS ================= -->
+
+    <div
+      class="profile-panel-actions"
+    ></div>
+
+  </aside>
 
 
 
@@ -829,17 +717,14 @@
   ></div>
 
 
+
+  <!-- =====================================================
+       CALL UI
+       Intentionally not included
+  ====================================================== -->
+
+
 </div>
-
-
-
-<!-- =======================================================
-     APP JAVASCRIPT
-======================================================== -->
-
-<script
-  src="/app.js"
-></script>
 
 
 
@@ -849,213 +734,63 @@
 
 <script>
 
-(function () {
+  const loginBox =
+    document.getElementById("loginBox");
 
-  function showLoginBox() {
+  const registerBox =
+    document.getElementById("registerBox");
 
-    const loginBox =
-      document.getElementById("loginBox");
+  const showRegisterBtn =
+    document.getElementById("showRegisterBtn");
 
-    const registerBox =
-      document.getElementById("registerBox");
-
-    const loginError =
-      document.getElementById("loginError");
-
-    const registerError =
-      document.getElementById("registerError");
+  const showLoginBtn =
+    document.getElementById("showLoginBtn");
 
 
-    if (loginBox) {
+  if (showRegisterBtn) {
 
-      loginBox.classList.remove(
-        "hidden"
-      );
+    showRegisterBtn.addEventListener(
+      "click",
+      () => {
 
-    }
+        loginBox.classList.add("hidden");
 
+        registerBox.classList.remove("hidden");
 
-    if (registerBox) {
-
-      registerBox.classList.add(
-        "hidden"
-      );
-
-    }
-
-
-    if (loginError) {
-
-      loginError.classList.add(
-        "hidden"
-      );
-
-      loginError.textContent = "";
-
-    }
-
-
-    if (registerError) {
-
-      registerError.classList.add(
-        "hidden"
-      );
-
-      registerError.textContent = "";
-
-    }
-
-
-    const username =
-      document.getElementById(
-        "loginUsername"
-      );
-
-
-    if (username) {
-
-      setTimeout(
-        function () {
-
-          username.focus();
-
-        },
-        50
-      );
-
-    }
+      }
+    );
 
   }
 
 
+  if (showLoginBtn) {
 
-  function showRegisterBox() {
+    showLoginBtn.addEventListener(
+      "click",
+      () => {
 
-    const loginBox =
-      document.getElementById("loginBox");
+        registerBox.classList.add("hidden");
 
-    const registerBox =
-      document.getElementById("registerBox");
+        loginBox.classList.remove("hidden");
 
-    const loginError =
-      document.getElementById("loginError");
-
-    const registerError =
-      document.getElementById("registerError");
-
-
-    if (loginBox) {
-
-      loginBox.classList.add(
-        "hidden"
-      );
-
-    }
-
-
-    if (registerBox) {
-
-      registerBox.classList.remove(
-        "hidden"
-      );
-
-    }
-
-
-    if (loginError) {
-
-      loginError.classList.add(
-        "hidden"
-      );
-
-      loginError.textContent = "";
-
-    }
-
-
-    if (registerError) {
-
-      registerError.classList.add(
-        "hidden"
-      );
-
-      registerError.textContent = "";
-
-    }
-
-
-    const username =
-      document.getElementById(
-        "registerUsername"
-      );
-
-
-    if (username) {
-
-      setTimeout(
-        function () {
-
-          username.focus();
-
-        },
-        50
-      );
-
-    }
+      }
+    );
 
   }
-
-
-
-  document.addEventListener(
-    "click",
-    function (event) {
-
-
-      const registerButton =
-        event.target.closest(
-          "#showRegister"
-        );
-
-
-      if (registerButton) {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        showRegisterBox();
-
-        return;
-
-      }
-
-
-
-      const loginButton =
-        event.target.closest(
-          "#showLogin"
-        );
-
-
-      if (loginButton) {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        showLoginBox();
-
-        return;
-
-      }
-
-    },
-    true
-  );
-
-})();
 
 </script>
 
 
+
+<!-- =======================================================
+     APP JS
+======================================================== -->
+
+<script
+  src="/app.js"
+></script>
+
+
 </body>
+
 </html>
