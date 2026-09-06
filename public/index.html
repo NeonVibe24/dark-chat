@@ -1,23 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en"><head>  <meta charset="UTF-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
 
-<head>
+«»
 
-  <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <title>Private Chat</title>
-
-  <link
+  <title>Private Chat</title>  <link
     rel="stylesheet"
     href="/style.css"
-  >
-
-  <style>
+  >  <style>
 
     * {
       box-sizing: border-box;
@@ -48,6 +38,7 @@
       display: none !important;
     }
 
+
     /* =====================================================
        APP
     ===================================================== */
@@ -58,6 +49,7 @@
       position: relative;
     }
 
+
     /* =====================================================
        AUTH
     ===================================================== */
@@ -65,9 +57,11 @@
     .auth-screen {
       width: 100%;
       height: 100%;
+
       display: flex;
       align-items: center;
       justify-content: center;
+
       padding: 20px;
 
       background:
@@ -84,6 +78,7 @@
       max-width: 420px;
 
       background: #111720;
+
       border: 1px solid #222c38;
       border-radius: 20px;
 
@@ -95,20 +90,26 @@
 
     .auth-card h1 {
       margin: 0 0 8px;
+
       text-align: center;
+
       font-size: 28px;
     }
 
     .auth-card > p {
       margin: 0 0 24px;
+
       text-align: center;
+
       color: #8e9aaa;
+
       font-size: 14px;
     }
 
     .auth-form {
       display: flex;
       flex-direction: column;
+
       gap: 14px;
     }
 
@@ -125,6 +126,7 @@
       color: #fff;
 
       outline: none;
+
       font-size: 15px;
     }
 
@@ -165,6 +167,7 @@
       cursor: pointer;
 
       font-size: 14px;
+
       padding: 0;
     }
 
@@ -174,10 +177,14 @@
 
     .auth-error {
       color: #ff6b6b !important;
+
       margin: 0 !important;
+
       text-align: left !important;
+
       font-size: 13px !important;
     }
+
 
     /* =====================================================
        CHAT SCREEN
@@ -204,6 +211,7 @@
       position: relative;
     }
 
+
     /* =====================================================
        CHAT
     ===================================================== */
@@ -224,6 +232,7 @@
       display: none !important;
     }
 
+
     /* =====================================================
        CHAT HEADER
     ===================================================== */
@@ -241,6 +250,7 @@
       padding: 10px 16px;
 
       background: #111821;
+
       border-bottom: 1px solid #202a35;
     }
 
@@ -278,6 +288,7 @@
       color: #8490a0;
     }
 
+
     /* =====================================================
        AVATAR
     ===================================================== */
@@ -287,9 +298,11 @@
     .my-avatar {
       width: 44px;
       height: 44px;
+
       min-width: 44px;
 
       border-radius: 50%;
+
       overflow: hidden;
 
       background: #202a36;
@@ -304,6 +317,8 @@
       font-size: 16px;
 
       user-select: none;
+
+      position: relative;
     }
 
     .avatar img,
@@ -316,6 +331,7 @@
 
       display: block;
     }
+
 
     /* =====================================================
        GROUP HEADER
@@ -345,10 +361,13 @@
       padding: 4px 8px 4px 5px;
 
       border-radius: 12px;
+
+      position: relative;
     }
 
     .my-profile-info {
       min-width: 0;
+
       max-width: 130px;
     }
 
@@ -378,12 +397,49 @@
     .my-avatar {
       width: 42px;
       height: 42px;
+
       min-width: 42px;
 
       cursor: pointer;
 
       border: 1px solid #344252;
     }
+
+
+    /* =====================================================
+       PROFILE NOTIFICATION BADGE
+    ===================================================== */
+
+    #profileNotificationBadge {
+      position: absolute;
+
+      top: -3px;
+      right: -3px;
+
+      min-width: 19px;
+      height: 19px;
+
+      padding: 0 5px;
+
+      border-radius: 20px;
+
+      background: #ff3b5c;
+      color: #fff;
+
+      border: 2px solid #111821;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      font-size: 10px;
+      font-weight: 700;
+
+      line-height: 1;
+
+      z-index: 5;
+    }
+
 
     /* =====================================================
        HEADER BUTTONS
@@ -434,6 +490,7 @@
       color: #ff8585;
     }
 
+
     /* =====================================================
        MESSAGES
     ===================================================== */
@@ -454,7 +511,10 @@
       gap: 10px;
 
       scrollbar-width: thin;
-      scrollbar-color: #2a3542 transparent;
+
+      scrollbar-color:
+        #2a3542
+        transparent;
     }
 
     .messages::-webkit-scrollbar {
@@ -467,8 +527,10 @@
 
     .messages::-webkit-scrollbar-thumb {
       background: #2a3542;
+
       border-radius: 10px;
     }
+
 
     /* =====================================================
        GROUP MESSAGE
@@ -493,6 +555,7 @@
 
     .message-sender {
       display: flex;
+
       flex-direction: column;
       align-items: center;
 
@@ -504,6 +567,7 @@
     .message-sender .avatar {
       width: 38px;
       height: 38px;
+
       min-width: 38px;
 
       cursor: pointer;
@@ -533,6 +597,7 @@
       max-width: min(75%, 600px);
 
       display: flex;
+
       flex-direction: column;
       align-items: flex-start;
     }
@@ -547,9 +612,11 @@
       color: #e9edf2;
 
       font-size: 14px;
+
       line-height: 1.45;
 
       word-break: break-word;
+
       white-space: pre-wrap;
     }
 
@@ -575,6 +642,7 @@
       font-size: 10px;
     }
 
+
     /* =====================================================
        PRIVATE MESSAGE
     ===================================================== */
@@ -593,6 +661,7 @@
       max-width: min(75%, 600px);
     }
 
+
     /* =====================================================
        EMPTY CHAT
     ===================================================== */
@@ -602,6 +671,7 @@
       height: 100%;
 
       display: flex;
+
       align-items: center;
       justify-content: center;
 
@@ -631,6 +701,7 @@
 
       font-size: 13px;
     }
+
 
     /* =====================================================
        MESSAGE COMPOSER
@@ -667,6 +738,7 @@
       border-radius: 14px;
 
       background: #0b1017;
+
       color: #fff;
 
       outline: none;
@@ -685,6 +757,7 @@
     .send-btn {
       width: 46px;
       height: 46px;
+
       min-width: 46px;
 
       border: 0;
@@ -706,6 +779,7 @@
       transform: scale(0.95);
     }
 
+
     /* =====================================================
        PROFILE PANEL
     ===================================================== */
@@ -716,7 +790,12 @@
       top: 80px;
       right: 16px;
 
-      width: 290px;
+      width: 330px;
+
+      max-height:
+        calc(100vh - 96px);
+
+      overflow-y: auto;
 
       background: #111821;
 
@@ -732,15 +811,26 @@
       z-index: 100;
     }
 
+
+    /* =====================================================
+       PROFILE HEADER
+    ===================================================== */
+
     .profile-panel-header {
       display: flex;
       align-items: center;
 
       gap: 12px;
+
+      padding-bottom: 15px;
+
+      border-bottom: 1px solid #202a35;
     }
 
     .profile-panel-info {
       min-width: 0;
+
+      flex: 1;
     }
 
     .profile-panel-info h3 {
@@ -759,13 +849,319 @@
       font-size: 12px;
     }
 
+
+    /* =====================================================
+       EDIT PROFILE
+    ===================================================== */
+
+    .edit-profile-btn {
+      width: 100%;
+
+      height: 44px;
+
+      margin-top: 14px;
+
+      border: 1px solid #334151;
+
+      border-radius: 11px;
+
+      background:
+        linear-gradient(
+          180deg,
+          #1c2733,
+          #17212b
+        );
+
+      color: #e6edf5;
+
+      cursor: pointer;
+
+      font-size: 13px;
+      font-weight: 600;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      gap: 8px;
+    }
+
+    .edit-profile-btn:hover {
+      background: #22303d;
+
+      border-color: #3a4a5d;
+    }
+
+    .edit-profile-btn:active {
+      transform: scale(0.98);
+    }
+
+
+    /* =====================================================
+       PRIVATE INBOX
+    ===================================================== */
+
+    .private-inbox {
+      margin-top: 18px;
+    }
+
+    .private-inbox-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      margin-bottom: 10px;
+    }
+
+    .private-inbox-title h4 {
+      margin: 0;
+
+      color: #e8edf3;
+
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .private-inbox-count {
+      min-width: 20px;
+      height: 20px;
+
+      padding: 0 6px;
+
+      border-radius: 20px;
+
+      background: #ff3b5c;
+      color: #fff;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+
+    /* =====================================================
+       PRIVATE USER LIST
+    ===================================================== */
+
+    .private-user-list {
+      display: flex;
+      flex-direction: column;
+
+      gap: 6px;
+
+      max-height: 330px;
+
+      overflow-y: auto;
+    }
+
+    .private-user-list::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .private-user-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .private-user-list::-webkit-scrollbar-thumb {
+      background: #2a3542;
+
+      border-radius: 10px;
+    }
+
+
+    /* =====================================================
+       PRIVATE USER ITEM
+    ===================================================== */
+
+    .private-user-item {
+      width: 100%;
+
+      min-height: 58px;
+
+      display: flex;
+      align-items: center;
+
+      gap: 10px;
+
+      padding: 8px;
+
+      border: 1px solid transparent;
+
+      border-radius: 12px;
+
+      background: #151e28;
+
+      color: #fff;
+
+      cursor: pointer;
+
+      text-align: left;
+
+      transition:
+        background 0.15s ease,
+        border-color 0.15s ease;
+    }
+
+    .private-user-item:hover {
+      background: #1b2733;
+
+      border-color: #293846;
+    }
+
+    .private-user-item:active {
+      transform: scale(0.99);
+    }
+
+
+    /* =====================================================
+       PRIVATE USER AVATAR
+    ===================================================== */
+
+    .private-user-avatar {
+      width: 40px;
+      height: 40px;
+
+      min-width: 40px;
+
+      border-radius: 50%;
+
+      overflow: hidden;
+
+      background: #263341;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      color: #fff;
+
+      font-size: 14px;
+      font-weight: 700;
+
+      position: relative;
+    }
+
+    .private-user-avatar img {
+      width: 100%;
+      height: 100%;
+
+      object-fit: cover;
+
+      display: block;
+    }
+
+
+    /* =====================================================
+       PRIVATE USER INFO
+    ===================================================== */
+
+    .private-user-info {
+      min-width: 0;
+
+      flex: 1;
+    }
+
+    .private-user-name-row {
+      display: flex;
+      align-items: center;
+
+      gap: 6px;
+
+      min-width: 0;
+    }
+
+    .private-user-name {
+      min-width: 0;
+
+      color: #e9eef4;
+
+      font-size: 13px;
+      font-weight: 600;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .private-user-preview {
+      margin-top: 3px;
+
+      color: #758292;
+
+      font-size: 11px;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+
+    /* =====================================================
+       UNREAD BADGE
+    ===================================================== */
+
+    .private-unread-badge {
+      min-width: 20px;
+      height: 20px;
+
+      padding: 0 6px;
+
+      border-radius: 20px;
+
+      background: #ff3b5c;
+
+      color: #fff;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      flex-shrink: 0;
+
+      font-size: 10px;
+      font-weight: 700;
+
+      line-height: 1;
+    }
+
+
+    /* =====================================================
+       INBOX EMPTY
+    ===================================================== */
+
+    .private-inbox-empty {
+      padding: 20px 10px;
+
+      text-align: center;
+
+      color: #697687;
+
+      font-size: 12px;
+
+      border: 1px dashed #293541;
+
+      border-radius: 11px;
+    }
+
+
+    /* =====================================================
+       PROFILE ACTIONS
+    ===================================================== */
+
     .profile-panel-actions {
       display: flex;
       flex-direction: column;
 
       gap: 8px;
 
-      margin-top: 18px;
+      margin-top: 16px;
+
+      padding-top: 14px;
+
+      border-top: 1px solid #202a35;
     }
 
     .profile-panel-actions button {
@@ -791,6 +1187,7 @@
     .profile-panel-actions .danger {
       color: #ff7777;
     }
+
 
     /* =====================================================
        TOAST
@@ -824,6 +1221,7 @@
       z-index: 9999;
     }
 
+
     /* =====================================================
        MOBILE
     ===================================================== */
@@ -832,6 +1230,7 @@
 
       .chat-header {
         min-height: 64px;
+
         padding: 8px 10px;
       }
 
@@ -846,6 +1245,7 @@
       .avatar {
         width: 40px;
         height: 40px;
+
         min-width: 40px;
       }
 
@@ -868,7 +1268,13 @@
       .my-avatar {
         width: 38px;
         height: 38px;
+
         min-width: 38px;
+      }
+
+      #profileNotificationBadge {
+        top: -4px;
+        right: -4px;
       }
 
       .header-actions {
@@ -892,6 +1298,7 @@
 
       .logout-btn::after {
         content: "↪";
+
         font-size: 18px;
       }
 
@@ -907,6 +1314,7 @@
       .message-sender .avatar {
         width: 34px;
         height: 34px;
+
         min-width: 34px;
       }
 
@@ -916,6 +1324,7 @@
 
       .message-bubble {
         font-size: 13px;
+
         padding: 9px 11px;
       }
 
@@ -930,6 +1339,7 @@
       .send-btn {
         width: 44px;
         height: 44px;
+
         min-width: 44px;
       }
 
@@ -938,6 +1348,15 @@
         right: 10px;
 
         width: calc(100% - 20px);
+
+        max-height:
+          calc(100vh - 80px);
+
+        padding: 15px;
+      }
+
+      .private-user-list {
+        max-height: 270px;
       }
 
       .auth-card {
@@ -945,6 +1364,7 @@
       }
 
     }
+
 
     @media (max-width: 380px) {
 
@@ -960,660 +1380,713 @@
       .my-avatar {
         width: 35px;
         height: 35px;
+
         min-width: 35px;
       }
 
     }
 
-  </style>
-
-</head>
-
-
-<body>
-
-<div id="app">
-
-
-  <!-- =====================================================
+  </style></head><body><div id="app">  <!-- =====================================================
        AUTH
-  ===================================================== -->
-
-  <section
+  ===================================================== -->  <section
     id="authScreen"
     class="auth-screen"
+  ><!-- ===================================================
+     LOGIN BOX
+=================================================== -->
+
+<div
+  id="loginBox"
+  class="auth-card"
+>
+
+  <h1>Private Chat</h1>
+
+  <p>
+    Sign in to continue
+  </p>
+
+
+  <form
+    id="loginForm"
+    class="auth-form"
   >
 
-
-    <!-- ===================================================
-         LOGIN BOX
-    =================================================== -->
-
-    <div
-      id="loginBox"
-      class="auth-card"
+    <input
+      id="loginUsername"
+      type="text"
+      placeholder="Username"
+      autocomplete="username"
+      required
     >
 
-      <h1>Private Chat</h1>
-
-      <p>
-        Sign in to continue
-      </p>
-
-
-      <form
-        id="loginForm"
-        class="auth-form"
-      >
-
-        <input
-          id="loginUsername"
-          type="text"
-          placeholder="Username"
-          autocomplete="username"
-          required
-        >
-
-        <input
-          id="loginPassword"
-          type="password"
-          placeholder="Password"
-          autocomplete="current-password"
-          required
-        >
-
-        <p
-          id="loginError"
-          class="auth-error hidden"
-        ></p>
-
-        <button
-          type="submit"
-        >
-          Login
-        </button>
-
-      </form>
-
-
-      <p class="auth-switch">
-
-        Don't have an account?
-
-        <button
-          id="showRegister"
-          type="button"
-        >
-          Register
-        </button>
-
-      </p>
-
-    </div>
-
-
-
-    <!-- ===================================================
-         REGISTER BOX
-    =================================================== -->
-
-    <div
-      id="registerBox"
-      class="auth-card hidden"
+    <input
+      id="loginPassword"
+      type="password"
+      placeholder="Password"
+      autocomplete="current-password"
+      required
     >
 
-      <h1>
-        Create Account
-      </h1>
-
-      <p>
-        Register a new account
-      </p>
-
-
-      <form
-        id="registerForm"
-        class="auth-form"
-      >
-
-        <input
-          id="registerUsername"
-          type="text"
-          placeholder="Username"
-          autocomplete="username"
-          minlength="3"
-          required
-        >
-
-        <input
-          id="registerPassword"
-          type="password"
-          placeholder="Password"
-          autocomplete="new-password"
-          minlength="4"
-          required
-        >
-
-        <input
-          id="registerPasswordConfirm"
-          type="password"
-          placeholder="Confirm password"
-          autocomplete="new-password"
-          minlength="4"
-          required
-        >
-
-        <p
-          id="registerError"
-          class="auth-error hidden"
-        ></p>
-
-
-        <button
-          type="submit"
-        >
-          Register
-        </button>
-
-      </form>
-
-
-      <p class="auth-switch">
-
-        Already have an account?
-
-        <button
-          id="showLogin"
-          type="button"
-        >
-          Login
-        </button>
-
-      </p>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =====================================================
-       CHAT SCREEN
-    ===================================================== -->
-
-  <section
-    id="chatScreen"
-    class="chat-screen hidden"
-  >
-
-
-    <!-- ===================================================
-         MAIN CHAT AREA
-    =================================================== -->
-
-    <main class="chat-area">
-
-
-      <!-- =================================================
-           PUBLIC GROUP CHAT
-      ================================================= -->
-
-      <section
-        id="groupChat"
-        class="active-chat"
-      >
-
-
-        <!-- GROUP HEADER -->
-
-        <header
-          class="chat-header group-header"
-        >
-
-
-          <!-- LEFT : GROUP -->
-
-          <div class="chat-user">
-
-            <div
-              id="groupAvatar"
-              class="avatar"
-            >
-
-              <span>
-                G
-              </span>
-
-            </div>
-
-
-            <div class="chat-user-info">
-
-              <h2 id="groupChatName">
-                Public Group Chat
-              </h2>
-
-              <p id="groupChatStatus">
-                Everyone
-              </p>
-
-            </div>
-
-          </div>
-
-
-
-          <!-- RIGHT : MY PROFILE -->
-
-          <div
-            class="group-header-right"
-          >
-
-
-            <!-- MY PROFILE -->
-
-            <div
-              id="myProfile"
-              class="my-profile"
-            >
-
-
-              <button
-                id="myAvatarBtn"
-                class="my-avatar"
-                type="button"
-                title="Profile"
-              >
-
-                <img
-                  id="myAvatar"
-                  src=""
-                  alt=""
-                  class="hidden"
-                >
-
-                <span
-                  id="myAvatarFallback"
-                >
-                  U
-                </span>
-
-              </button>
-
-
-              <div
-                class="my-profile-info"
-              >
-
-                <span
-                  id="myUsername"
-                  class="my-profile-name"
-                >
-                  User
-                </span>
-
-                <span
-                  class="my-profile-label"
-                >
-                  You
-                </span>
-
-              </div>
-
-            </div>
-
-
-
-            <!-- HEADER ACTIONS -->
-
-            <div
-              class="header-actions"
-            >
-
-              <button
-                id="reloadGroupMessages"
-                class="icon-btn"
-                type="button"
-                title="Refresh"
-              >
-                ↻
-              </button>
-
-
-              <button
-                id="logoutBtn"
-                class="icon-btn logout-btn"
-                type="button"
-                title="Logout"
-              >
-                Logout
-              </button>
-
-            </div>
-
-          </div>
-
-        </header>
-
-
-
-        <!-- GROUP MESSAGES -->
-
-        <div
-          id="groupMessages"
-          class="messages"
-        ></div>
-
-
-
-        <!-- GROUP MESSAGE FORM -->
-
-        <form
-          id="groupMessageForm"
-          class="message-form"
-        >
-
-          <input
-            id="groupMessageInput"
-            class="message-input"
-            type="text"
-            placeholder="Write a message..."
-            autocomplete="off"
-          >
-
-          <button
-            class="send-btn"
-            type="submit"
-            title="Send"
-          >
-            ➤
-          </button>
-
-        </form>
-
-      </section>
-
-
-
-      <!-- =================================================
-           PRIVATE CHAT
-      ================================================= -->
-
-      <section
-        id="privateChat"
-        class="active-chat hidden"
-      >
-
-
-        <!-- PRIVATE HEADER -->
-
-        <header
-          class="chat-header"
-        >
-
-          <div
-            class="chat-user"
-          >
-
-            <button
-              id="chatAvatar"
-              class="avatar"
-              type="button"
-            >
-
-              <span
-                id="chatAvatarFallback"
-              >
-                U
-              </span>
-
-              <img
-                id="chatAvatarImage"
-                class="hidden"
-                src=""
-                alt=""
-              >
-
-            </button>
-
-
-            <div
-              class="chat-user-info"
-            >
-
-              <h2
-                id="chatUsername"
-              >
-                User
-              </h2>
-
-              <p
-                id="chatStatus"
-              >
-                Private Chat
-              </p>
-
-            </div>
-
-          </div>
-
-
-          <div
-            class="header-actions"
-          >
-
-            <button
-              id="reloadMessages"
-              class="icon-btn"
-              type="button"
-              title="Refresh"
-            >
-              ↻
-            </button>
-
-          </div>
-
-        </header>
-
-
-
-        <!-- PRIVATE MESSAGES -->
-
-        <div
-          id="messagesBox"
-          class="messages"
-        ></div>
-
-
-
-        <!-- PRIVATE MESSAGE FORM -->
-
-        <form
-          id="messageForm"
-          class="message-form"
-        >
-
-          <input
-            id="messageInput"
-            class="message-input"
-            type="text"
-            placeholder="Write a message..."
-            autocomplete="off"
-          >
-
-          <button
-            class="send-btn"
-            type="submit"
-            title="Send"
-          >
-            ➤
-          </button>
-
-        </form>
-
-      </section>
-
-
-
-      <!-- =================================================
-           EMPTY CHAT
-      ================================================= -->
-
-      <section
-        id="emptyChat"
-        class="empty-chat hidden"
-      >
-
-        <div
-          class="empty-chat-inner"
-        >
-
-          <h2>
-            Private Chat
-          </h2>
-
-          <p>
-            Select a user from Public Group Chat
-          </p>
-
-        </div>
-
-      </section>
-
-    </main>
-
-
-
-    <!-- ===================================================
-         PROFILE PANEL
-    =================================================== -->
-
-    <div
-      id="profilePanel"
-      class="profile-panel hidden"
+    <p
+      id="loginError"
+      class="auth-error hidden"
+    ></p>
+
+    <button
+      type="submit"
     >
+      Login
+    </button>
+
+  </form>
 
 
-      <div
-        class="profile-panel-header"
-      >
+  <p class="auth-switch">
 
-        <div
-          id="profileAvatar"
-          class="profile-avatar"
-        >
+    Don't have an account?
 
-          <img
-            id="profileAvatarImage"
-            src=""
-            alt=""
-            class="hidden"
-          >
+    <button
+      id="showRegister"
+      type="button"
+    >
+      Register
+    </button>
 
-          <span
-            id="profileAvatarFallback"
-          >
-            U
-          </span>
-
-        </div>
-
-
-        <div
-          class="profile-panel-info"
-        >
-
-          <h3
-            id="profileUsername"
-          >
-            User
-          </h3>
-
-          <p>
-            Your profile
-          </p>
-
-        </div>
-
-      </div>
-
-
-
-      <div
-        class="profile-panel-actions"
-      >
-
-        <label
-          for="profilePhotoInput"
-          style="
-            height:42px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            border:1px solid #293541;
-            border-radius:10px;
-            background:#18212b;
-            color:#dce3ec;
-            cursor:pointer;
-            font-size:13px;
-          "
-        >
-          Change Profile Photo
-        </label>
-
-
-        <input
-          id="profilePhotoInput"
-          type="file"
-          accept="image/*"
-          class="hidden"
-        >
-
-
-        <button
-          id="removeProfilePhoto"
-          type="button"
-          class="danger"
-        >
-          Remove Profile Photo
-        </button>
-
-      </div>
-
-    </div>
-
-  </section>
-
-
-
-  <!-- =====================================================
-       TOAST
-  ===================================================== -->
-
-  <div
-    id="toast"
-    class="hidden"
-  ></div>
-
+  </p>
 
 </div>
 
 
 
-<!-- =======================================================
+<!-- ===================================================
+     REGISTER BOX
+=================================================== -->
+
+<div
+  id="registerBox"
+  class="auth-card hidden"
+>
+
+  <h1>
+    Create Account
+  </h1>
+
+  <p>
+    Register a new account
+  </p>
+
+
+  <form
+    id="registerForm"
+    class="auth-form"
+  >
+
+    <input
+      id="registerUsername"
+      type="text"
+      placeholder="Username"
+      autocomplete="username"
+      minlength="3"
+      required
+    >
+
+    <input
+      id="registerPassword"
+      type="password"
+      placeholder="Password"
+      autocomplete="new-password"
+      minlength="4"
+      required
+    >
+
+    <input
+      id="registerPasswordConfirm"
+      type="password"
+      placeholder="Confirm password"
+      autocomplete="new-password"
+      minlength="4"
+      required
+    >
+
+    <p
+      id="registerError"
+      class="auth-error hidden"
+    ></p>
+
+
+    <button
+      type="submit"
+    >
+      Register
+    </button>
+
+  </form>
+
+
+  <p class="auth-switch">
+
+    Already have an account?
+
+    <button
+      id="showLogin"
+      type="button"
+    >
+      Login
+    </button>
+
+  </p>
+
+</div>
+
+  </section>  <!-- =====================================================
+       CHAT SCREEN
+  ===================================================== -->  <section
+    id="chatScreen"
+    class="chat-screen hidden"
+  ><!-- ===================================================
+     MAIN CHAT AREA
+=================================================== -->
+
+<main class="chat-area">
+
+
+  <!-- =================================================
+       PUBLIC GROUP CHAT
+  ================================================= -->
+
+  <section
+    id="groupChat"
+    class="active-chat"
+  >
+
+
+    <!-- GROUP HEADER -->
+
+    <header
+      class="chat-header group-header"
+    >
+
+
+      <!-- LEFT : GROUP -->
+
+      <div class="chat-user">
+
+        <div
+          id="groupAvatar"
+          class="avatar"
+        >
+
+          <span>
+            G
+          </span>
+
+        </div>
+
+
+        <div class="chat-user-info">
+
+          <h2 id="groupChatName">
+            Public Group Chat
+          </h2>
+
+          <p id="groupChatStatus">
+            Everyone
+          </p>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- RIGHT : MY PROFILE -->
+
+      <div
+        class="group-header-right"
+      >
+
+
+        <!-- MY PROFILE -->
+
+        <div
+          id="myProfile"
+          class="my-profile"
+        >
+
+
+          <button
+            id="myAvatarBtn"
+            class="my-avatar"
+            type="button"
+            title="Profile"
+          >
+
+            <img
+              id="myAvatar"
+              src=""
+              alt=""
+              class="hidden"
+            >
+
+            <span
+              id="myAvatarFallback"
+            >
+              U
+            </span>
+
+
+            <!-- =====================================
+                 PROFILE NOTIFICATION
+            ====================================== -->
+
+            <span
+              id="profileNotificationBadge"
+              class="hidden"
+            >
+              0
+            </span>
+
+          </button>
+
+
+          <div
+            class="my-profile-info"
+          >
+
+            <span
+              id="myUsername"
+              class="my-profile-name"
+            >
+              User
+            </span>
+
+            <span
+              class="my-profile-label"
+            >
+              You
+            </span>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- HEADER ACTIONS -->
+
+        <div
+          class="header-actions"
+        >
+
+          <button
+            id="reloadGroupMessages"
+            class="icon-btn"
+            type="button"
+            title="Refresh"
+          >
+            ↻
+          </button>
+
+
+          <button
+            id="logoutBtn"
+            class="icon-btn logout-btn"
+            type="button"
+            title="Logout"
+          >
+            Logout
+          </button>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+
+    <!-- GROUP MESSAGES -->
+
+    <div
+      id="groupMessages"
+      class="messages"
+    ></div>
+
+
+
+    <!-- GROUP MESSAGE FORM -->
+
+    <form
+      id="groupMessageForm"
+      class="message-form"
+    >
+
+      <input
+        id="groupMessageInput"
+        class="message-input"
+        type="text"
+        placeholder="Write a message..."
+        autocomplete="off"
+      >
+
+      <button
+        class="send-btn"
+        type="submit"
+        title="Send"
+      >
+        ➤
+      </button>
+
+    </form>
+
+  </section>
+
+
+
+  <!-- =================================================
+       PRIVATE CHAT
+  ================================================= -->
+
+  <section
+    id="privateChat"
+    class="active-chat hidden"
+  >
+
+
+    <!-- PRIVATE HEADER -->
+
+    <header
+      class="chat-header"
+    >
+
+      <div
+        class="chat-user"
+      >
+
+        <button
+          id="chatAvatar"
+          class="avatar"
+          type="button"
+        >
+
+          <span
+            id="chatAvatarFallback"
+          >
+            U
+          </span>
+
+          <img
+            id="chatAvatarImage"
+            class="hidden"
+            src=""
+            alt=""
+          >
+
+        </button>
+
+
+        <div
+          class="chat-user-info"
+        >
+
+          <h2
+            id="chatUsername"
+          >
+            User
+          </h2>
+
+          <p
+            id="chatStatus"
+          >
+            Private Chat
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div
+        class="header-actions"
+      >
+
+        <button
+          id="reloadMessages"
+          class="icon-btn"
+          type="button"
+          title="Refresh"
+        >
+          ↻
+        </button>
+
+      </div>
+
+    </header>
+
+
+
+    <!-- PRIVATE MESSAGES -->
+
+    <div
+      id="messagesBox"
+      class="messages"
+    ></div>
+
+
+
+    <!-- PRIVATE MESSAGE FORM -->
+
+    <form
+      id="messageForm"
+      class="message-form"
+    >
+
+      <input
+        id="messageInput"
+        class="message-input"
+        type="text"
+        placeholder="Write a message..."
+        autocomplete="off"
+      >
+
+      <button
+        class="send-btn"
+        type="submit"
+        title="Send"
+      >
+        ➤
+      </button>
+
+    </form>
+
+  </section>
+
+
+
+  <!-- =================================================
+       EMPTY CHAT
+  ================================================= -->
+
+  <section
+    id="emptyChat"
+    class="empty-chat hidden"
+  >
+
+    <div
+      class="empty-chat-inner"
+    >
+
+      <h2>
+        Private Chat
+      </h2>
+
+      <p>
+        Select a user from Public Group Chat
+      </p>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+
+<!-- ===================================================
+     PROFILE PANEL
+=================================================== -->
+
+<div
+  id="profilePanel"
+  class="profile-panel hidden"
+>
+
+
+  <!-- =================================================
+       PROFILE HEADER
+  ================================================= -->
+
+  <div
+    class="profile-panel-header"
+  >
+
+    <div
+      id="profileAvatar"
+      class="profile-avatar"
+    >
+
+      <img
+        id="profileAvatarImage"
+        src=""
+        alt=""
+        class="hidden"
+      >
+
+      <span
+        id="profileAvatarFallback"
+      >
+        U
+      </span>
+
+    </div>
+
+
+    <div
+      class="profile-panel-info"
+    >
+
+      <h3
+        id="profileUsername"
+      >
+        User
+      </h3>
+
+      <p>
+        Your profile
+      </p>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =================================================
+       EDIT PROFILE
+       TOP OF PROFILE PANEL
+  ================================================= -->
+
+  <button
+    id="editProfileBtn"
+    class="edit-profile-btn"
+    type="button"
+  >
+
+    <span>
+      ✎
+    </span>
+
+    <span>
+      Edit Profile
+    </span>
+
+  </button>
+
+
+
+  <!-- =================================================
+       PRIVATE INBOX
+  ================================================= -->
+
+  <div
+    id="privateInbox"
+    class="private-inbox"
+  >
+
+
+    <div
+      class="private-inbox-title"
+    >
+
+      <h4>
+        Private Messages
+      </h4>
+
+
+      <span
+        id="privateInboxCount"
+        class="private-inbox-count hidden"
+      >
+        0
+      </span>
+
+    </div>
+
+
+
+    <!-- ===============================================
+         USERS WHO SENT PRIVATE MESSAGES
+    ================================================ -->
+
+    <div
+      id="privateUserList"
+      class="private-user-list"
+    >
+
+      <div
+        id="privateInboxEmpty"
+        class="private-inbox-empty"
+      >
+        No private messages yet.
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =================================================
+       PROFILE PHOTO ACTIONS
+  ================================================= -->
+
+  <div
+    class="profile-panel-actions"
+  >
+
+
+    <label
+      for="profilePhotoInput"
+      style="
+        height:42px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        border:1px solid #293541;
+        border-radius:10px;
+        background:#18212b;
+        color:#dce3ec;
+        cursor:pointer;
+        font-size:13px;
+      "
+    >
+      Change Profile Photo
+    </label>
+
+
+    <input
+      id="profilePhotoInput"
+      type="file"
+      accept="image/*"
+      class="hidden"
+    >
+
+
+    <button
+      id="removeProfilePhoto"
+      type="button"
+      class="danger"
+    >
+      Remove Profile Photo
+    </button>
+
+  </div>
+
+</div>
+
+  </section>  <!-- =====================================================
+       TOAST
+  ===================================================== -->  <div
+    id="toast"
+    class="hidden"
+  ></div></div><!-- =======================================================
      APP JAVASCRIPT
-======================================================= -->
-
-<script src="/app.js"></script>
-
-
-<!-- =======================================================
+======================================================= --><script src="/app.js"></script><!-- =======================================================
      AUTH SWITCH FIX
      
      This specifically switches the WHOLE login/register box.
-======================================================= -->
-
-<script>
+======================================================= --><script>
 
 (function () {
 
@@ -1631,31 +2104,61 @@
     const registerError =
       document.getElementById("registerError");
 
+
     if (loginBox) {
-      loginBox.classList.remove("hidden");
+
+      loginBox.classList.remove(
+        "hidden"
+      );
     }
+
 
     if (registerBox) {
-      registerBox.classList.add("hidden");
+
+      registerBox.classList.add(
+        "hidden"
+      );
     }
+
 
     if (loginError) {
-      loginError.classList.add("hidden");
-      loginError.textContent = "";
+
+      loginError.classList.add(
+        "hidden"
+      );
+
+      loginError.textContent =
+        "";
     }
+
 
     if (registerError) {
-      registerError.classList.add("hidden");
-      registerError.textContent = "";
+
+      registerError.classList.add(
+        "hidden"
+      );
+
+      registerError.textContent =
+        "";
     }
 
+
     const username =
-      document.getElementById("loginUsername");
+      document.getElementById(
+        "loginUsername"
+      );
+
 
     if (username) {
-      setTimeout(function () {
-        username.focus();
-      }, 50);
+
+      setTimeout(
+        function () {
+
+          username.focus();
+
+        },
+        50
+      );
     }
 
   }
@@ -1675,31 +2178,61 @@
     const registerError =
       document.getElementById("registerError");
 
+
     if (loginBox) {
-      loginBox.classList.add("hidden");
+
+      loginBox.classList.add(
+        "hidden"
+      );
     }
+
 
     if (registerBox) {
-      registerBox.classList.remove("hidden");
+
+      registerBox.classList.remove(
+        "hidden"
+      );
     }
+
 
     if (loginError) {
-      loginError.classList.add("hidden");
-      loginError.textContent = "";
+
+      loginError.classList.add(
+        "hidden"
+      );
+
+      loginError.textContent =
+        "";
     }
+
 
     if (registerError) {
-      registerError.classList.add("hidden");
-      registerError.textContent = "";
+
+      registerError.classList.add(
+        "hidden"
+      );
+
+      registerError.textContent =
+        "";
     }
 
+
     const username =
-      document.getElementById("registerUsername");
+      document.getElementById(
+        "registerUsername"
+      );
+
 
     if (username) {
-      setTimeout(function () {
-        username.focus();
-      }, 50);
+
+      setTimeout(
+        function () {
+
+          username.focus();
+
+        },
+        50
+      );
     }
 
   }
@@ -1710,7 +2243,10 @@
     function (event) {
 
       const registerButton =
-        event.target.closest("#showRegister");
+        event.target.closest(
+          "#showRegister"
+        );
+
 
       if (registerButton) {
 
@@ -1724,7 +2260,10 @@
 
 
       const loginButton =
-        event.target.closest("#showLogin");
+        event.target.closest(
+          "#showLogin"
+        );
+
 
       if (loginButton) {
 
@@ -1742,9 +2281,4 @@
 
 })();
 
-</script>
-
-
-</body>
-
-</html>
+</script></body></html>
