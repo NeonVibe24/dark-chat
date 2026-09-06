@@ -125,6 +125,45 @@ function randomToken() {
 
 
 /* ============================================================
+   ARRAY BUFFER -> BASE64
+============================================================ */
+
+function arrayBufferToBase64(buffer) {
+
+  const bytes =
+    new Uint8Array(buffer);
+
+  const chunkSize =
+    0x8000;
+
+  let binary = "";
+
+  for (
+    let i = 0;
+    i < bytes.length;
+    i += chunkSize
+  ) {
+
+    const chunk =
+      bytes.subarray(
+        i,
+        Math.min(
+          i + chunkSize,
+          bytes.length
+        )
+      );
+
+    binary += String.fromCharCode(
+      ...chunk
+    );
+
+  }
+
+  return btoa(binary);
+}
+
+
+/* ============================================================
    DATABASE INITIALIZATION
 ============================================================ */
 
@@ -244,11 +283,6 @@ async function initializeDatabase(db) {
 
   /* ----------------------------------------------------------
      PRIVATE MESSAGES
-
-     created_at was added for:
-     - inbox last message time
-     - message time
-     - sorting
   ---------------------------------------------------------- */
 
   await db.prepare(`
@@ -282,11 +316,6 @@ async function initializeDatabase(db) {
 
   /* ----------------------------------------------------------
      PRIVATE MESSAGE created_at MIGRATION
-
-     Existing database may already have messages table
-     without created_at.
-
-     SQLite allows adding a nullable column.
   ---------------------------------------------------------- */
 
   const messageColumns =
@@ -316,11 +345,6 @@ async function initializeDatabase(db) {
   }
 
 
-  /*
-   * Old messages have no created_at.
-   * Use 0 instead of leaving NULL.
-   */
-
   try {
 
     await db.prepare(`
@@ -343,9 +367,6 @@ async function initializeDatabase(db) {
 
   /* ----------------------------------------------------------
      PRIVATE MESSAGE READ STATE
-
-     Stores the last private message ID that a user
-     has read from another user.
   ---------------------------------------------------------- */
 
   await db.prepare(`
@@ -1610,6 +1631,21 @@ export default {
 
       /* ======================================================
          PROFILE PHOTO - UPLOAD
+         
+         Supports BOTH:
+
+         1. multipart/form-data
+            field name: photo
+
+         2. application/json
+            {
+              "profile_photo": "...",
+              "photo": "..."
+            }
+
+         IMPORTANT:
+         Existing JSON support is kept so the
+         rest of the application remains compatible.
       ====================================================== */
 
       if (
@@ -1638,35 +1674,283 @@ export default {
         }
 
 
-        let body;
+        let photo = "";
 
 
-        try {
+        const contentType =
+          request.headers.get(
+            "content-type"
+          ) || "";
 
-          body =
-            await request.json();
 
-        } catch {
+        /* ----------------------------------------------------
+           MULTIPART / FORM DATA
+        ---------------------------------------------------- */
 
-          return json(
-            {
-              success: false,
-              error:
-                "Invalid JSON."
-            },
-            400
-          );
+        if (
+          contentType
+            .toLowerCase()
+            .includes(
+              "multipart/form-data"
+            )
+        ) {
+
+          let formData;
+
+
+          try {
+
+            formData =
+              await request.formData();
+
+          } catch (error) {
+
+            console.error(
+              "PROFILE PHOTO FORMDATA ERROR:",
+              error
+            );
+
+
+            return json(
+              {
+                success: false,
+                error:
+                  "Invalid form data."
+              },
+              400
+            );
+
+          }
+
+
+          const uploadedFile =
+            formData.get(
+              "photo"
+            ) ||
+            formData.get(
+              "profile_photo"
+            );
+
+
+          if (
+            !uploadedFile
+          ) {
+
+            return json(
+              {
+                success: false,
+                error:
+                  "Photo is required."
+              },
+              400
+            );
+
+          }
+
+
+          /*
+           * File upload
+           */
+
+          if (
+            typeof uploadedFile
+              .arrayBuffer !==
+              "function"
+          ) {
+
+            return json(
+              {
+                success: false,
+                error:
+                  "Invalid photo file."
+              },
+              400
+            );
+
+          }
+
+
+          const file =
+            uploadedFile;
+
+
+          const fileType =
+            String(
+              file.type || ""
+            )
+              .toLowerCase();
+
+
+          /*
+           * Allow common image formats only.
+           */
+
+          const allowedTypes = [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/webp",
+            "image/gif"
+          ];
+
+
+          if (
+            fileType &&
+            !allowedTypes.includes(
+              fileType
+            )
+          ) {
+
+            return json(
+              {
+                success: false,
+                error:
+                  "Only JPG, PNG, WEBP or GIF images are allowed."
+              },
+              400
+            );
+
+          }
+
+
+          const fileSize =
+            Number(
+              file.size || 0
+            );
+
+
+          if (
+            fileSize <= 0
+          ) {
+
+            return json(
+              {
+                success: false,
+                error:
+                  "Photo is empty."
+              },
+              400
+            );
+
+          }
+
+
+          /*
+           * Keep the original 5 MB limit.
+           */
+
+          if (
+            fileSize >
+            5_000_000
+          ) {
+
+            return json(
+              {
+                success: false,
+                error:
+                  "Photo is too large."
+              },
+              400
+            );
+
+          }
+
+
+          let buffer;
+
+
+          try {
+
+            buffer =
+              await file.arrayBuffer();
+
+          } catch (error) {
+
+            console.error(
+              "PROFILE PHOTO READ ERROR:",
+              error
+            );
+
+
+            return json(
+              {
+                success: false,
+                error:
+                  "Could not read photo."
+              },
+              400
+            );
+
+          }
+
+
+          /*
+           * Convert uploaded image to Data URL.
+           *
+           * profile_photo is still stored in the
+           * existing TEXT column.
+           */
+
+          const base64 =
+            arrayBufferToBase64(
+              buffer
+            );
+
+
+          const mimeType =
+            fileType ||
+            "image/jpeg";
+
+
+          photo =
+            `data:${mimeType};base64,${base64}`;
 
         }
 
 
-        const photo =
-          String(
-            body.profile_photo ||
-            body.photo ||
-            ""
-          ).trim();
+        /* ----------------------------------------------------
+           JSON
+           
+           Keep compatibility with the previous API.
+        ---------------------------------------------------- */
 
+        else {
+
+          let body;
+
+
+          try {
+
+            body =
+              await request.json();
+
+          } catch {
+
+            return json(
+              {
+                success: false,
+                error:
+                  "Invalid JSON."
+              },
+              400
+            );
+
+          }
+
+
+          photo =
+            String(
+              body.profile_photo ||
+              body.photo ||
+              ""
+            ).trim();
+
+        }
+
+
+        /* ----------------------------------------------------
+           PHOTO VALIDATION
+        ---------------------------------------------------- */
 
         if (!photo) {
 
@@ -1684,7 +1968,7 @@ export default {
 
         if (
           photo.length >
-          5_000_000
+          10_000_000
         ) {
 
           return json(
@@ -1699,6 +1983,10 @@ export default {
         }
 
 
+        /* ----------------------------------------------------
+           SAVE PHOTO
+        ---------------------------------------------------- */
+
         await env.DB.prepare(`
           UPDATE users
 
@@ -1712,6 +2000,10 @@ export default {
           )
           .run();
 
+
+        /* ----------------------------------------------------
+           RETURN UPDATED USER
+        ---------------------------------------------------- */
 
         const updatedUser =
           await env.DB.prepare(`
@@ -2391,21 +2683,6 @@ export default {
 
       /* ======================================================
          PRIVATE INBOX
-
-         IMPORTANT:
-         The frontend app.js calls:
-
-           GET /api/messages/inbox
-
-         We also support:
-
-           GET /api/inbox
-
-         Returns:
-         - users
-         - inbox
-         - total_unread
-         - unread_count
       ====================================================== */
 
       if (
@@ -2436,15 +2713,6 @@ export default {
 
         }
 
-
-        /*
-         * Find the latest incoming message
-         * from each user.
-         *
-         * This makes the profile inbox show
-         * users who have actually sent a
-         * private message to the current user.
-         */
 
         const result =
           await env.DB.prepare(`
@@ -2601,10 +2869,6 @@ export default {
 
             return {
 
-              /*
-               * app.js supports id
-               */
-
               id:
                 Number(
                   row.sender_id
@@ -2749,22 +3013,6 @@ export default {
 
       /* ======================================================
          MARK PRIVATE MESSAGES AS READ
-
-         Frontend app.js calls:
-
-           POST /api/messages/read
-
-         We also support:
-
-           POST /api/inbox/read
-
-         Body:
-         {
-           "user_id": 123,
-           "message_id": 456
-         }
-
-         message_id is optional.
       ====================================================== */
 
       if (
@@ -2896,11 +3144,6 @@ export default {
         }
 
 
-        /* ----------------------------------------------------
-           If message_id wasn't supplied,
-           use latest received message.
-        ---------------------------------------------------- */
-
         if (
           !Number.isInteger(
             messageId
@@ -2945,10 +3188,6 @@ export default {
         }
 
 
-        /* ----------------------------------------------------
-           Validate supplied message_id.
-        ---------------------------------------------------- */
-
         if (
           messageId > 0
         ) {
@@ -2990,10 +3229,6 @@ export default {
 
         }
 
-
-        /* ----------------------------------------------------
-           Save / update read state.
-        ---------------------------------------------------- */
 
         await env.DB.prepare(`
           INSERT INTO private_message_reads
