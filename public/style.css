@@ -1,9 +1,3 @@
-/* =========================================================
-   PRIVATE CHAT - FULL STYLE.CSS
-   Text Chat Only
-   Public Group Chat + Private Chat
-========================================================= */
-
 :root {
   --bg-main: #080c11;
   --bg-surface: #111821;
@@ -29,14 +23,13 @@
   --message-other: #1b2633;
 
   --header-height: 64px;
-
   --app-height: 100dvh;
 }
 
 
-/* =========================================================
+/* ============================================================
    RESET
-========================================================= */
+============================================================ */
 
 * {
   box-sizing: border-box;
@@ -48,48 +41,37 @@ html,
 body {
   width: 100%;
   height: 100%;
-
+  min-height: 100%;
   overflow: hidden;
-
-  background: var(--bg-main);
-  color: var(--text-main);
 }
 
 body {
+  background: var(--bg-main);
+  color: var(--text-main);
   font-family:
-    Inter,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     Roboto,
     Arial,
     sans-serif;
-
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-
-  overscroll-behavior: none;
+  font-size: 14px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button,
-input,
-textarea {
+input {
   font: inherit;
 }
 
 button {
   border: 0;
-  outline: none;
+  outline: 0;
+  cursor: pointer;
 }
 
-input,
-textarea {
-  outline: none;
-}
-
-img {
-  display: block;
-  max-width: 100%;
+input {
+  outline: 0;
 }
 
 .hidden {
@@ -97,327 +79,173 @@ img {
 }
 
 
-/* =========================================================
+/* ============================================================
    APP
-========================================================= */
+============================================================ */
 
 #app {
   width: 100%;
   height: var(--app-height);
   min-height: 0;
-
-  overflow: hidden;
+  background: var(--bg-main);
 }
 
 
-/* =========================================================
-   AUTH SCREEN
-========================================================= */
+/* ============================================================
+   AUTH
+============================================================ */
 
-#authScreen,
 .auth-screen {
   width: 100%;
-  height: var(--app-height);
-  min-height: 0;
+  height: 100%;
+  min-height: 100dvh;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
   padding: 20px;
-
-  overflow-y: auto;
-
-  background:
-    radial-gradient(
-      circle at top,
-      rgba(99, 102, 241, 0.13),
-      transparent 42%
-    ),
-    var(--bg-main);
+  background: var(--bg-main);
 }
-
-
-/* =========================================================
-   AUTH CARD
-========================================================= */
 
 .auth-card {
   width: 100%;
   max-width: 390px;
 
-  padding: 30px;
+  padding: 28px 24px;
 
   background: var(--bg-surface);
-
   border: 1px solid var(--border);
   border-radius: 18px;
 
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
 }
-
-.auth-card h1,
-.auth-card h2 {
-  color: var(--text-main);
-}
-
-.auth-card p {
-  color: var(--text-secondary);
-}
-
-
-/* =========================================================
-   AUTH FORM
-========================================================= */
 
 .auth-form {
-  width: 100%;
-  margin-top: 22px;
-}
-
-.auth-form label {
-  display: block;
-
-  margin-bottom: 7px;
-
-  color: var(--text-secondary);
-
-  font-size: 13px;
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .auth-form input {
-  display: block;
-
   width: 100%;
-  height: 48px;
+  height: 46px;
 
-  margin-bottom: 15px;
   padding: 0 14px;
 
   color: var(--text-main);
-  background: var(--bg-main);
+  background: var(--bg-surface-2);
 
   border: 1px solid var(--border);
   border-radius: 10px;
-
-  -webkit-appearance: none;
-  appearance: none;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.auth-form input::placeholder {
-  color: var(--text-muted);
-}
-
-.auth-form input:focus {
-  border-color: var(--accent);
-
-  box-shadow:
-    0 0 0 3px rgba(99, 102, 241, 0.13);
-}
-
-
-/* =========================================================
-   AUTH SUBMIT
-========================================================= */
-
-.auth-form button[type="submit"] {
-  width: 100%;
-  height: 48px;
-
-  margin-top: 3px;
-
-  border-radius: 10px;
-
-  color: #ffffff;
-  background: var(--accent);
-
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition:
-    background 0.2s ease,
-    transform 0.15s ease;
-}
-
-.auth-form button[type="submit"]:hover {
-  background: var(--accent-hover);
-}
-
-.auth-form button[type="submit"]:active {
-  transform: scale(0.98);
-}
-
-.auth-form button[type="submit"]:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-
-/* =========================================================
-   AUTH SWITCH
-========================================================= */
-
-.auth-switch {
-  margin-top: 20px;
-
-  text-align: center;
-
-  color: var(--text-secondary);
 
   font-size: 14px;
 }
 
-.auth-switch button {
-  color: var(--accent-light);
-  background: transparent;
-
-  cursor: pointer;
+.auth-form input:focus {
+  border-color: var(--accent);
 }
 
-.auth-switch button:hover {
-  text-decoration: underline;
+.auth-form button {
+  min-height: 46px;
+
+  color: #fff;
+  background: var(--accent);
+
+  border-radius: 10px;
+
+  font-weight: 600;
 }
 
-
-/* =========================================================
-   AUTH ERROR
-========================================================= */
+.auth-form button:hover {
+  background: var(--accent-hover);
+}
 
 .auth-error {
   min-height: 18px;
 
-  margin-bottom: 8px;
+  color: var(--danger);
 
-  color: #f87171;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.auth-toggle {
+  margin-top: 16px;
+
+  color: var(--accent-light);
+  background: transparent;
 
   font-size: 13px;
 }
 
 
-/* =========================================================
+/* ============================================================
    CHAT SCREEN
-========================================================= */
+============================================================ */
 
-#chatScreen,
 .chat-screen {
   width: 100%;
-  height: var(--app-height);
-
+  height: 100%;
   min-height: 0;
 
   display: flex;
 
-  overflow: hidden;
-
   background: var(--bg-main);
 }
-
-
-/* =========================================================
-   CHAT AREA
-========================================================= */
 
 .chat-area {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
   position: relative;
-
-  width: 100%;
-  height: 100%;
-
-  min-height: 0;
-
-  display: flex;
-  flex-direction: column;
-
-  overflow: hidden;
-
-  background: var(--bg-main);
 }
 
 
-/* =========================================================
-   ACTIVE CHAT
-========================================================= */
-
-.active-chat {
-  width: 100%;
-  height: 100%;
-
-  min-height: 0;
-
-  display: flex;
-  flex-direction: column;
-
-  overflow: hidden;
-
-  background: var(--bg-main);
-}
-
-
-/* =========================================================
+/* ============================================================
    CHAT HEADER
-========================================================= */
+============================================================ */
 
 .chat-header {
-  position: relative;
-  z-index: 20;
-
   width: 100%;
-
   height: var(--header-height);
   min-height: var(--header-height);
-
-  flex: 0 0 var(--header-height);
 
   display: flex;
   align-items: center;
 
-  padding: 8px 14px;
+  padding: 0 12px;
 
   background: var(--bg-surface);
 
   border-bottom: 1px solid var(--border);
+
+  position: relative;
+  z-index: 20;
 }
 
 .group-header {
-  justify-content: space-between;
-}
-
-
-/* =========================================================
-   CHAT USER
-========================================================= */
-
-.chat-user {
-  min-width: 0;
-
-  flex: 1;
-
-  display: flex;
-  align-items: center;
-
   gap: 10px;
 }
 
-.chat-user-info {
+.chat-header-info {
   min-width: 0;
+  flex: 1;
 
   display: flex;
   flex-direction: column;
-
   justify-content: center;
 }
 
-.chat-username,
-#chatUsername,
-#groupChatName {
-  display: block;
+.chat-header-info h3,
+#groupChatName,
+#chatUsername {
+  overflow: hidden;
 
   color: var(--text-main);
 
@@ -425,117 +253,27 @@ img {
   font-weight: 700;
 
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.chat-status,
-#chatStatus,
-#groupChatStatus {
-  display: block;
-
+.chat-header-info span,
+#groupChatStatus,
+#chatStatus {
   margin-top: 2px;
 
   color: var(--text-muted);
 
-  font-size: 12px;
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 11px;
 }
 
 
-/* =========================================================
-   GROUP HEADER RIGHT
-========================================================= */
-
-.group-header-right {
-  display: flex;
-  align-items: center;
-
-  gap: 6px;
-
-  flex-shrink: 0;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-
-  gap: 5px;
-
-  flex-shrink: 0;
-}
-
-
-/* =========================================================
-   MY PROFILE
-========================================================= */
-
-.my-profile {
-  display: flex;
-  align-items: center;
-
-  gap: 7px;
-
-  min-width: 0;
-}
-
-.my-profile-info {
-  max-width: 100px;
-
-  color: var(--text-secondary);
-
-  font-size: 13px;
-  font-weight: 600;
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.my-avatar {
-  width: 38px;
-  height: 38px;
-
-  min-width: 38px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  overflow: hidden;
-
-  padding: 0;
-
-  border-radius: 50%;
-
-  color: #ffffff;
-  background: var(--accent);
-
-  border: 1px solid var(--border-light);
-
-  cursor: pointer;
-}
-
-.my-avatar img,
-#myAvatar {
-  width: 100%;
-  height: 100%;
-
-  object-fit: cover;
-}
-
-
-/* =========================================================
+/* ============================================================
    AVATAR
-========================================================= */
+============================================================ */
 
 .avatar {
   width: 40px;
   height: 40px;
-
   min-width: 40px;
 
   display: flex;
@@ -544,142 +282,144 @@ img {
 
   overflow: hidden;
 
+  color: #fff;
+  background: var(--bg-surface-3);
+
+  border: 1px solid var(--border);
   border-radius: 50%;
 
-  color: #ffffff;
-  background: var(--accent);
-
-  border: 1px solid var(--border-light);
-
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
+
+  position: relative;
 }
 
-.avatar img {
+.avatar img,
+.avatar-image {
   width: 100%;
   height: 100%;
 
+  display: block;
+
   object-fit: cover;
+
+  border-radius: 50%;
 }
 
+#myAvatarBtn,
 #chatAvatar {
-  width: 40px;
-  height: 40px;
-
-  min-width: 40px;
-
   padding: 0;
 
-  border-radius: 50%;
-
-  color: #ffffff;
-  background: var(--accent);
-
-  overflow: hidden;
-
-  cursor: pointer;
+  background: transparent;
 }
 
-#chatAvatarImage {
+#myAvatar,
+#chatAvatarImage,
+#profileAvatarImage {
   width: 100%;
   height: 100%;
-
   object-fit: cover;
+  border-radius: 50%;
 }
 
-#chatAvatarFallback,
 #myAvatarFallback,
-#profileAvatarFallback {
-  width: 100%;
-  height: 100%;
-
+#chatAvatarFallback,
+#profileAvatarFallback,
+#myAvatarFallback {
   display: flex;
   align-items: center;
   justify-content: center;
+
+  width: 100%;
+  height: 100%;
 }
 
 
-/* =========================================================
-   ICON BUTTON
-========================================================= */
+/* ============================================================
+   ICON BUTTONS
+============================================================ */
 
 .icon-btn {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
 
-  min-width: 38px;
-
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-
-  padding: 0;
-
-  border-radius: 9px;
 
   color: var(--text-secondary);
   background: transparent;
 
-  cursor: pointer;
+  border-radius: 10px;
 
-  font-size: 16px;
-
-  transition:
-    color 0.2s ease,
-    background 0.2s ease,
-    transform 0.15s ease;
+  font-size: 18px;
 }
 
-.icon-btn:hover {
+.icon-btn:hover,
+.icon-btn:active {
   color: var(--text-main);
   background: var(--bg-hover);
 }
 
-.icon-btn:active {
-  transform: scale(0.94);
+
+/* ============================================================
+   MY PROFILE HEADER
+============================================================ */
+
+#myProfile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-left: auto;
+}
+
+#myProfile .avatar {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+}
+
+#myUsername {
+  max-width: 110px;
+
+  overflow: hidden;
+
+  color: var(--text-secondary);
+
+  font-size: 12px;
+  font-weight: 600;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 
-/* =========================================================
-   MESSAGES
-========================================================= */
+/* ============================================================
+   MESSAGES AREA
+============================================================ */
 
-.messages {
+.messages,
+#groupMessages,
+#messagesBox,
+#messages {
   width: 100%;
+  min-width: 0;
+  min-height: 0;
 
   flex: 1 1 auto;
 
-  min-height: 0;
-
-  overflow-y: auto;
   overflow-x: hidden;
+  overflow-y: auto;
 
-  padding: 16px;
+  padding: 16px 14px 12px;
 
   background: var(--bg-main);
 
   -webkit-overflow-scrolling: touch;
-
   overscroll-behavior: contain;
 }
-
-#groupMessages,
-#messagesBox,
-#messages {
-  flex: 1 1 auto;
-
-  min-height: 0;
-
-  overflow-y: auto;
-  overflow-x: hidden;
-
-  -webkit-overflow-scrolling: touch;
-}
-
-
-/* =========================================================
-   MESSAGE SCROLLBAR
-========================================================= */
 
 .messages::-webkit-scrollbar,
 #groupMessages::-webkit-scrollbar,
@@ -699,15 +439,14 @@ img {
 #groupMessages::-webkit-scrollbar-thumb,
 #messagesBox::-webkit-scrollbar-thumb,
 #messages::-webkit-scrollbar-thumb {
-  background: #334155;
-
-  border-radius: 20px;
+  background: var(--border-light);
+  border-radius: 10px;
 }
 
 
-/* =========================================================
+/* ============================================================
    PUBLIC GROUP MESSAGE
-========================================================= */
+============================================================ */
 
 .group-message {
   width: 100%;
@@ -715,38 +454,89 @@ img {
   display: flex;
   align-items: flex-start;
 
-  gap: 10px;
+  gap: 9px;
 
-  margin-bottom: 15px;
-}
-
-.group-message:last-child {
-  margin-bottom: 3px;
+  margin-bottom: 14px;
 }
 
 .group-message .avatar {
   width: 36px;
   height: 36px;
-
   min-width: 36px;
 
-  font-size: 12px;
+  font-size: 11px;
+
+  flex-shrink: 0;
 }
 
-.message-content {
+.group-message .message-content {
   min-width: 0;
-
-  max-width: calc(100% - 46px);
+  max-width: calc(100% - 45px);
 
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
 }
 
 
-/* =========================================================
-   PUBLIC GROUP - OTHER USER
-   Left side
-========================================================= */
+/* USERNAME MUST BE ABOVE MESSAGE */
+
+.group-message .message-sender {
+  display: block;
+
+  margin: 0 0 4px 2px;
+
+  color: var(--accent-light);
+
+  font-size: 12px;
+  font-weight: 700;
+
+  line-height: 1.2;
+
+  cursor: pointer;
+}
+
+.group-message .message-sender:hover {
+  text-decoration: underline;
+}
+
+
+/* MESSAGE */
+
+.group-message .message-bubble {
+  display: inline-block;
+
+  max-width: min(600px, 82vw);
+
+  padding: 9px 12px;
+
+  color: var(--text-main);
+  background: var(--message-other);
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  border-bottom-left-radius: 4px;
+
+  font-size: 14px;
+  line-height: 1.45;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.group-message .message-time {
+  margin-top: 3px;
+  padding: 0 2px;
+
+  color: var(--text-muted);
+
+  font-size: 10px;
+}
+
+
+/* ============================================================
+   OTHER USER - LEFT
+============================================================ */
 
 .group-message.theirs {
   justify-content: flex-start;
@@ -770,20 +560,21 @@ img {
 
 .group-message.theirs .message-bubble {
   color: var(--text-main);
-
   background: var(--message-other);
 
   border: 1px solid var(--border);
-
   border-radius: 12px;
   border-bottom-left-radius: 4px;
 }
 
+.group-message.theirs .message-time {
+  text-align: left;
+}
 
-/* =========================================================
-   PUBLIC GROUP - CURRENT USER
-   Right side
-========================================================= */
+
+/* ============================================================
+   CURRENT USER - RIGHT + BLUE
+============================================================ */
 
 .group-message.mine {
   justify-content: flex-end;
@@ -802,132 +593,56 @@ img {
 }
 
 .group-message.mine .message-sender {
+  margin-left: 0;
+  margin-right: 2px;
+
+  color: var(--accent-light);
+
   text-align: right;
 }
 
 .group-message.mine .message-bubble {
-  color: #ffffff;
-
+  color: #fff;
   background: var(--message-me);
 
   border: 0;
-
   border-radius: 12px;
   border-bottom-right-radius: 4px;
-}
-
-
-/* =========================================================
-   GROUP USERNAME
-   Username is above the message
-========================================================= */
-
-.message-sender {
-  display: block;
-
-  max-width: 100%;
-
-  margin-bottom: 4px;
-
-  padding: 0;
-
-  overflow: hidden;
-
-  color: var(--accent-light);
-  background: transparent;
-
-  font-size: 12px;
-  font-weight: 700;
-
-  line-height: 1.3;
-
-  white-space: nowrap;
-  text-overflow: ellipsis;
-
-  cursor: pointer;
-}
-
-.message-sender:hover {
-  text-decoration: underline;
-}
-
-.group-message.mine .message-sender {
-  color: #8ea2ff;
-
-  text-align: right;
-}
-
-.group-message.theirs .message-sender {
-  color: var(--accent-light);
-
-  text-align: left;
-}
-
-
-/* =========================================================
-   MESSAGE BUBBLE
-========================================================= */
-
-.message-bubble {
-  display: inline-block;
-
-  max-width: min(600px, 85vw);
-
-  padding: 9px 12px;
-
-  color: var(--text-main);
-  background: var(--message-other);
-
-  border: 1px solid var(--border);
-
-  border-radius: 12px;
-
-  font-size: 14px;
-  line-height: 1.45;
-
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.message-text {
-  white-space: pre-wrap;
-
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-
-/* =========================================================
-   MESSAGE TIME
-========================================================= */
-
-.message-time {
-  margin-top: 4px;
-
-  color: var(--text-muted);
-
-  font-size: 10px;
 }
 
 .group-message.mine .message-time {
   text-align: right;
 }
 
-.group-message.theirs .message-time {
-  text-align: left;
-}
 
-
-/* =========================================================
+/* ============================================================
    PRIVATE MESSAGE
-========================================================= */
+============================================================ */
 
 .private-message {
   width: 100%;
 
   display: flex;
+  align-items: flex-end;
 
-  margin-bottom: 9px;
+  margin-bottom: 10px;
+}
+
+.private-message .message-content {
+  max-width: 82vw;
+  min-width: 0;
+}
+
+.private-message .message-bubble {
+  display: inline-block;
+
+  padding: 9px 12px;
+
+  font-size: 14px;
+  line-height: 1.45;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .private-message.mine {
@@ -938,37 +653,207 @@ img {
   justify-content: flex-start;
 }
 
-.private-message .message-bubble {
-  max-width: min(650px, 78%);
-}
-
 .private-message.mine .message-bubble {
-  color: #ffffff;
-
+  color: #fff;
   background: var(--message-me);
 
   border: 0;
-
+  border-radius: 12px;
   border-bottom-right-radius: 4px;
 }
 
 .private-message.theirs .message-bubble {
   color: var(--text-main);
-
   background: var(--message-other);
 
   border: 1px solid var(--border);
-
+  border-radius: 12px;
   border-bottom-left-radius: 4px;
 }
 
+.private-message .message-time {
+  margin-top: 3px;
 
-/* =========================================================
+  color: var(--text-muted);
+
+  font-size: 10px;
+}
+
+.private-message.mine .message-time {
+  text-align: right;
+}
+
+.private-message.theirs .message-time {
+  text-align: left;
+}
+
+
+/* ============================================================
+   MESSAGE FORM
+============================================================ */
+
+.message-form,
+#groupMessageForm,
+#messageForm {
+  width: 100%;
+
+  display: flex !important;
+  align-items: center;
+
+  flex: 0 0 auto;
+
+  gap: 8px;
+
+  padding: 8px 10px;
+
+  background: var(--bg-surface);
+
+  border-top: 1px solid var(--border);
+
+  visibility: visible !important;
+  opacity: 1 !important;
+
+  position: relative;
+  z-index: 100;
+
+  padding-bottom: calc(
+    8px + env(safe-area-inset-bottom)
+  );
+}
+
+.message-input,
+#groupMessageInput,
+#messageInput {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  min-height: 44px;
+
+  display: block !important;
+
+  flex: 1 1 auto;
+
+  padding: 0 14px;
+
+  color: var(--text-main);
+  background: var(--bg-surface-2);
+
+  border: 1px solid var(--border);
+  border-radius: 22px;
+
+  font-size: 14px;
+
+  pointer-events: auto !important;
+
+  opacity: 1 !important;
+}
+
+.message-input::placeholder,
+#groupMessageInput::placeholder,
+#messageInput::placeholder {
+  color: var(--text-muted);
+}
+
+.message-input:focus,
+#groupMessageInput:focus,
+#messageInput:focus {
+  border-color: var(--accent);
+  background: var(--bg-surface-3);
+}
+
+.send-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #fff;
+  background: var(--accent);
+
+  border-radius: 50%;
+
+  font-size: 17px;
+  font-weight: 700;
+
+  flex-shrink: 0;
+}
+
+.send-btn:hover {
+  background: var(--accent-hover);
+}
+
+.send-btn:active {
+  transform: scale(.96);
+}
+
+
+/* ============================================================
+   GROUP CHAT FORM - FORCE VISIBLE
+============================================================ */
+
+#groupChat {
+  min-height: 0;
+}
+
+#groupChat.active-chat {
+  height: 100%;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+#groupChat #groupMessages {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#groupChat #groupMessageForm {
+  flex: 0 0 auto;
+
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+
+/* ============================================================
+   PRIVATE CHAT
+============================================================ */
+
+#privateChat {
+  min-height: 0;
+}
+
+#privateChat.active-chat {
+  height: 100%;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+#privateChat #messagesBox {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#privateChat #messageForm {
+  flex: 0 0 auto;
+
+  display: flex !important;
+}
+
+
+/* ============================================================
    EMPTY CHAT
-========================================================= */
+============================================================ */
 
 .empty-chat {
-  flex: 1 1 auto;
+  flex: 1;
 
   min-height: 0;
 
@@ -978,461 +863,109 @@ img {
 
   padding: 30px;
 
+  color: var(--text-muted);
+
   text-align: center;
-
-  color: var(--text-muted);
-
-  background: var(--bg-main);
-}
-
-.empty-chat h3 {
-  margin-bottom: 6px;
-
-  color: var(--text-secondary);
-
-  font-size: 17px;
-}
-
-.empty-chat p {
-  color: var(--text-muted);
-
-  font-size: 13px;
 }
 
 
-/* =========================================================
-   PUBLIC GROUP CHAT COMPOSER
-   NEVER HIDE
-========================================================= */
-
-#groupMessageForm {
-  position: relative;
-
-  z-index: 50;
-
-  width: 100%;
-
-  flex: 0 0 auto;
-
-  display: flex !important;
-  align-items: center;
-
-  gap: 8px;
-
-  padding: 10px 12px;
-
-  background: var(--bg-surface);
-
-  border-top: 1px solid var(--border);
-
-  visibility: visible;
-  opacity: 1;
-
-  padding-bottom:
-    max(
-      10px,
-      env(safe-area-inset-bottom)
-    );
-}
-
-
-/* =========================================================
-   PUBLIC GROUP INPUT
-========================================================= */
-
-#groupMessageInput {
-  display: block !important;
-
-  flex: 1 1 auto;
-
-  width: 100%;
-  min-width: 0;
-
-  height: 44px;
-
-  padding: 0 14px;
-
-  color: var(--text-main);
-
-  background: var(--bg-main);
-
-  border: 1px solid var(--border);
-
-  border-radius: 11px;
-
-  font-size: 14px;
-
-  visibility: visible;
-  opacity: 1;
-
-  pointer-events: auto;
-
-  -webkit-appearance: none;
-  appearance: none;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-#groupMessageInput::placeholder {
-  color: var(--text-muted);
-}
-
-#groupMessageInput:focus {
-  border-color: var(--accent);
-
-  box-shadow:
-    0 0 0 3px rgba(99, 102, 241, 0.12);
-}
-
-
-/* =========================================================
-   PRIVATE MESSAGE FORM
-========================================================= */
-
-#messageForm {
-  position: relative;
-
-  z-index: 50;
-
-  width: 100%;
-
-  flex: 0 0 auto;
-
-  display: flex !important;
-  align-items: center;
-
-  gap: 8px;
-
-  padding: 10px 12px;
-
-  background: var(--bg-surface);
-
-  border-top: 1px solid var(--border);
-
-  visibility: visible;
-  opacity: 1;
-
-  padding-bottom:
-    max(
-      10px,
-      env(safe-area-inset-bottom)
-    );
-}
-
-
-/* =========================================================
-   PRIVATE MESSAGE INPUT
-========================================================= */
-
-#messageInput {
-  display: block !important;
-
-  flex: 1 1 auto;
-
-  width: 100%;
-  min-width: 0;
-
-  height: 44px;
-
-  padding: 0 14px;
-
-  color: var(--text-main);
-
-  background: var(--bg-main);
-
-  border: 1px solid var(--border);
-
-  border-radius: 11px;
-
-  font-size: 14px;
-
-  visibility: visible;
-  opacity: 1;
-
-  pointer-events: auto;
-
-  -webkit-appearance: none;
-  appearance: none;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-#messageInput::placeholder {
-  color: var(--text-muted);
-}
-
-#messageInput:focus {
-  border-color: var(--accent);
-
-  box-shadow:
-    0 0 0 3px rgba(99, 102, 241, 0.12);
-}
-
-
-/* =========================================================
-   GENERIC MESSAGE FORM
-========================================================= */
-
-.message-form,
-.private-message-form {
-  position: relative;
-
-  z-index: 50;
-
-  width: 100%;
-
-  flex: 0 0 auto;
-
-  display: flex !important;
-  align-items: center;
-
-  gap: 8px;
-
-  padding: 10px 12px;
-
-  background: var(--bg-surface);
-
-  border-top: 1px solid var(--border);
-
-  visibility: visible;
-  opacity: 1;
-
-  padding-bottom:
-    max(
-      10px,
-      env(safe-area-inset-bottom)
-    );
-}
-
-
-/* =========================================================
-   GENERIC MESSAGE INPUT
-========================================================= */
-
-.message-input {
-  flex: 1 1 auto;
-
-  width: 100%;
-  min-width: 0;
-
-  height: 44px;
-
-  padding: 0 14px;
-
-  color: var(--text-main);
-
-  background: var(--bg-main);
-
-  border: 1px solid var(--border);
-
-  border-radius: 11px;
-
-  font-size: 14px;
-
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.message-input::placeholder {
-  color: var(--text-muted);
-}
-
-.message-input:focus {
-  border-color: var(--accent);
-
-  box-shadow:
-    0 0 0 3px rgba(99, 102, 241, 0.12);
-}
-
-
-/* =========================================================
-   SEND BUTTON
-========================================================= */
-
-.send-btn {
-  width: 44px;
-  height: 44px;
-
-  min-width: 44px;
-
-  flex: 0 0 44px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 0;
-
-  border-radius: 11px;
-
-  color: #ffffff;
-
-  background: var(--accent);
-
-  cursor: pointer;
-
-  font-size: 17px;
-  font-weight: 700;
-
-  transition:
-    background 0.2s ease,
-    transform 0.15s ease,
-    opacity 0.2s ease;
-}
-
-.send-btn:hover {
-  background: var(--accent-hover);
-}
-
-.send-btn:active {
-  transform: scale(0.94);
-}
-
-.send-btn:disabled {
-  opacity: 0.5;
-
-  cursor: not-allowed;
-}
-
-
-/* =========================================================
+/* ============================================================
    PROFILE PANEL
-========================================================= */
+============================================================ */
 
 .profile-panel {
-  position: absolute;
-
-  z-index: 100;
-
-  top: 12px;
-  right: 12px;
-
-  width: min(360px, calc(100% - 24px));
-
-  max-height: calc(100% - 24px);
-
-  overflow-y: auto;
-
-  padding: 20px;
-
-  background: var(--bg-surface);
-
-  border: 1px solid var(--border);
-
-  border-radius: 16px;
-
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.55);
-}
-
-
-/* =========================================================
-   PROFILE AVATAR
-========================================================= */
-
-#profileAvatar {
-  width: 92px;
-  height: 92px;
-
-  margin: 0 auto 14px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  overflow: hidden;
-
-  border-radius: 50%;
-
-  color: #ffffff;
-
-  background: var(--accent);
-
-  border: 2px solid var(--border-light);
-}
-
-#profileAvatarImage {
   width: 100%;
   height: 100%;
 
-  object-fit: cover;
+  display: flex;
+  flex-direction: column;
+
+  background: var(--bg-main);
+
+  position: absolute;
+  inset: 0;
+
+  z-index: 200;
+}
+
+.profile-panel.hidden {
+  display: none !important;
+}
+
+.profile-header {
+  width: 100%;
+  height: var(--header-height);
+  min-height: var(--header-height);
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 12px;
+
+  background: var(--bg-surface);
+
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-content {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  padding: 30px 20px;
+
+  overflow-y: auto;
+}
+
+#profileAvatar {
+  width: 100px;
+  height: 100px;
+  min-width: 100px;
+
+  margin-bottom: 15px;
+
+  border-radius: 50%;
 }
 
 #profileUsername {
-  margin-bottom: 18px;
-
-  text-align: center;
-
   color: var(--text-main);
 
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
 }
 
-
-/* =========================================================
-   PROFILE PHOTO
-========================================================= */
-
 #profilePhotoInput {
-  display: block;
-
-  width: 100%;
-
-  margin-bottom: 10px;
-
-  color: var(--text-secondary);
-
-  font-size: 13px;
+  margin-top: 20px;
 }
 
 #removeProfilePhoto {
-  width: 100%;
-  height: 42px;
+  margin-top: 10px;
+
+  padding: 10px 15px;
+
+  color: #fff;
+  background: var(--danger);
 
   border-radius: 9px;
-
-  color: #fca5a5;
-
-  background: rgba(239, 68, 68, 0.1);
-
-  cursor: pointer;
-}
-
-#removeProfilePhoto:hover {
-  background: rgba(239, 68, 68, 0.18);
 }
 
 
-/* =========================================================
+/* ============================================================
    PRIVATE INBOX
-========================================================= */
+============================================================ */
 
-.private-inbox {
+#privateInbox {
   width: 100%;
 
-  margin-top: 20px;
-  padding-top: 16px;
+  overflow-y: auto;
 
-  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
 }
 
-.private-inbox-title {
-  margin-bottom: 10px;
-
-  color: var(--text-secondary);
-
-  font-size: 12px;
-  font-weight: 700;
-
-  text-transform: uppercase;
-}
-
-.private-inbox-item {
+.inbox-item {
   width: 100%;
 
   display: flex;
@@ -1440,318 +973,179 @@ img {
 
   gap: 10px;
 
-  padding: 10px;
-
-  margin-bottom: 5px;
-
-  border-radius: 10px;
-
-  color: var(--text-main);
+  padding: 10px 12px;
 
   background: transparent;
 
-  cursor: pointer;
+  border-bottom: 1px solid var(--border);
 
   text-align: left;
-
-  transition:
-    background 0.2s ease;
 }
 
-.private-inbox-item:hover {
+.inbox-item:hover,
+.inbox-item:active {
   background: var(--bg-hover);
 }
 
-.private-inbox-avatar {
+.inbox-item .avatar {
   width: 40px;
   height: 40px;
-
   min-width: 40px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  overflow: hidden;
-
-  border-radius: 50%;
-
-  color: #ffffff;
-
-  background: var(--accent);
 }
 
-.private-inbox-avatar img {
-  width: 100%;
-  height: 100%;
-
-  object-fit: cover;
-}
-
-.private-inbox-content {
+.inbox-item-content {
   min-width: 0;
-
   flex: 1;
 }
 
-.private-inbox-username {
+.inbox-item-name {
+  overflow: hidden;
+
   color: var(--text-main);
 
   font-size: 13px;
   font-weight: 700;
 
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.private-inbox-preview {
-  margin-top: 2px;
+.inbox-item-message {
+  margin-top: 3px;
+
+  overflow: hidden;
 
   color: var(--text-muted);
 
   font-size: 12px;
 
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .unread-badge {
-  min-width: 20px;
-  height: 20px;
-
-  padding: 0 6px;
+  min-width: 19px;
+  height: 19px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  border-radius: 20px;
+  padding: 0 5px;
 
-  color: #ffffff;
-
+  color: #fff;
   background: var(--accent);
+
+  border-radius: 10px;
 
   font-size: 10px;
   font-weight: 700;
 }
 
 
-/* =========================================================
+/* ============================================================
    TOAST
-========================================================= */
+============================================================ */
 
 #toast {
-  position: fixed;
-
-  z-index: 1000;
-
-  left: 50%;
-  bottom: 24px;
-
-  transform: translateX(-50%);
-
-  max-width: calc(100% - 32px);
+  max-width: calc(100vw - 30px);
 
   padding: 10px 15px;
 
+  color: #fff;
+  background: var(--bg-surface-3);
+
+  border: 1px solid var(--border-light);
   border-radius: 10px;
 
-  color: #ffffff;
-
-  background: #202936;
-
-  border: 1px solid var(--border);
-
-  box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
 
   font-size: 13px;
 
-  pointer-events: none;
+  position: fixed;
+  left: 50%;
+  bottom: 25px;
+
+  transform: translate(-50%, 20px);
+
+  opacity: 0;
+  visibility: hidden;
+
+  transition:
+    opacity .2s ease,
+    transform .2s ease,
+    visibility .2s ease;
+
+  z-index: 9999;
+}
+
+#toast.show {
+  opacity: 1;
+  visibility: visible;
+
+  transform: translate(-50%, 0);
 }
 
 
-/* =========================================================
-   CALL UI REMOVED / HIDDEN
-========================================================= */
+/* ============================================================
+   CALL UI REMOVED
+============================================================ */
 
-#callPanel,
-#callModal,
+.call-ui,
+.call-controls,
+.voice-call,
+.video-call,
+#callScreen,
 #incomingCall,
 #outgoingCall,
 #videoCall,
-#voiceCall,
-.call-panel,
-.call-modal,
-.call-controls,
-.video-call,
-.voice-call,
-.call-button,
-.video-call-button,
-.voice-call-button {
+#voiceCall {
   display: none !important;
 }
 
 
-/* =========================================================
-   TABLET
-========================================================= */
+/* ============================================================
+   MOBILE
+============================================================ */
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
+
+  :root {
+    --header-height: 58px;
+  }
+
+  .auth-screen {
+    padding: 15px;
+  }
+
+  .auth-card {
+    padding: 24px 18px;
+    border-radius: 15px;
+  }
 
   .chat-header {
-    padding-left: 10px;
-    padding-right: 10px;
+    padding: 0 9px;
   }
 
-  .messages {
-    padding: 13px;
-  }
-
-  .message-bubble {
-    max-width: 88%;
-  }
-
-  .private-message .message-bubble {
-    max-width: 82%;
-  }
-
-  .my-profile-info {
+  #myUsername {
     display: none;
   }
 
-  .my-profile {
-    margin-right: 0;
-  }
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 700px) {
-
-  html,
-  body {
-    width: 100%;
-    height: 100%;
-
-    overflow: hidden;
-  }
-
-  #app {
-    width: 100%;
-    height: var(--app-height);
-
-    min-height: 0;
-
-    overflow: hidden;
-  }
-
-  #chatScreen,
-  .chat-screen {
-    width: 100%;
-    height: var(--app-height);
-
-    min-height: 0;
-
-    overflow: hidden;
-  }
-
-  .chat-area {
-    width: 100%;
-    height: 100%;
-
-    min-height: 0;
-
-    overflow: hidden;
-  }
-
-  .active-chat {
-    width: 100%;
-    height: 100%;
-
-    min-height: 0;
-
-    overflow: hidden;
-  }
-
-
-  /* -------------------------------------------------------
-     HEADER
-  ------------------------------------------------------- */
-
-  .chat-header {
-    height: 58px;
-    min-height: 58px;
-
-    flex-basis: 58px;
-
-    padding: 7px 8px;
-  }
-
-  .chat-username,
-  #chatUsername,
-  #groupChatName {
-    font-size: 14px;
-  }
-
-  .chat-status,
-  #chatStatus,
-  #groupChatStatus {
-    font-size: 11px;
-  }
-
-  .avatar {
-    width: 36px;
-    height: 36px;
-
-    min-width: 36px;
-  }
-
-  #chatAvatar {
-    width: 36px;
-    height: 36px;
-
-    min-width: 36px;
-  }
-
-  .my-avatar {
-    width: 36px;
-    height: 36px;
-
-    min-width: 36px;
-  }
-
-  .icon-btn {
-    width: 36px;
-    height: 36px;
-
-    min-width: 36px;
-  }
-
-
-  /* -------------------------------------------------------
-     MESSAGE AREA
-  ------------------------------------------------------- */
-
-  .messages {
-    padding: 11px 10px;
+  .messages,
+  #groupMessages,
+  #messagesBox,
+  #messages {
+    padding: 12px 10px 10px;
   }
 
   .group-message {
     gap: 8px;
-
     margin-bottom: 13px;
   }
 
   .group-message .avatar {
     width: 34px;
     height: 34px;
-
     min-width: 34px;
   }
 
@@ -1759,371 +1153,180 @@ img {
     max-width: calc(100% - 42px);
   }
 
-  .message-bubble {
-    max-width: calc(100vw - 70px);
+  .group-message .message-bubble {
+    max-width: 78vw;
 
     padding: 8px 11px;
 
     font-size: 14px;
   }
 
-  .private-message .message-bubble {
-    max-width: 84%;
+  .group-message .message-sender {
+    font-size: 11px;
+    margin-bottom: 3px;
   }
 
-
-  /* -------------------------------------------------------
-     PUBLIC GROUP COMPOSER
-     NEVER HIDE
-  ------------------------------------------------------- */
-
-  #groupMessageForm {
-    position: relative;
-
-    z-index: 100;
-
-    display: flex !important;
-
-    visibility: visible !important;
-    opacity: 1 !important;
-
-    flex: 0 0 auto;
-
-    width: 100%;
-
-    min-height: 64px;
-
-    padding: 8px 9px;
-
-    padding-bottom:
-      max(
-        8px,
-        env(safe-area-inset-bottom)
-      );
+  .private-message .message-content {
+    max-width: 80vw;
   }
-
-  #groupMessageInput {
-    display: block !important;
-
-    visibility: visible !important;
-    opacity: 1 !important;
-
-    flex: 1 1 auto;
-
-    width: 100%;
-    min-width: 0;
-
-    height: 44px;
-
-    pointer-events: auto;
-  }
-
-
-  /* -------------------------------------------------------
-     PRIVATE COMPOSER
-  ------------------------------------------------------- */
-
-  #messageForm {
-    position: relative;
-
-    z-index: 100;
-
-    display: flex !important;
-
-    visibility: visible !important;
-    opacity: 1 !important;
-
-    flex: 0 0 auto;
-
-    width: 100%;
-
-    min-height: 64px;
-
-    padding: 8px 9px;
-
-    padding-bottom:
-      max(
-        8px,
-        env(safe-area-inset-bottom)
-      );
-  }
-
-  #messageInput {
-    display: block !important;
-
-    visibility: visible !important;
-    opacity: 1 !important;
-
-    height: 44px;
-
-    pointer-events: auto;
-  }
-
-
-  /* -------------------------------------------------------
-     GENERIC FORM
-  ------------------------------------------------------- */
 
   .message-form,
-  .private-message-form {
-    display: flex !important;
-
-    visibility: visible !important;
-    opacity: 1 !important;
-
-    flex: 0 0 auto;
-
-    width: 100%;
-
-    min-height: 64px;
-
-    padding: 8px 9px;
-
-    padding-bottom:
-      max(
-        8px,
-        env(safe-area-inset-bottom)
-      );
-  }
-
-
-  /* -------------------------------------------------------
-     SEND
-  ------------------------------------------------------- */
-
-  .send-btn {
-    width: 44px;
-    height: 44px;
-
-    min-width: 44px;
-  }
-
-
-  /* -------------------------------------------------------
-     PROFILE
-  ------------------------------------------------------- */
-
-  .profile-panel {
-    top: 8px;
-    right: 8px;
-
-    width: calc(100% - 16px);
-
-    max-height: calc(100% - 16px);
-  }
-}
-
-
-/* =========================================================
-   SMALL MOBILE
-========================================================= */
-
-@media (max-width: 520px) {
-
-  .group-header-right {
-    gap: 2px;
-  }
-
-  .header-actions {
-    gap: 2px;
-  }
-
-  .my-profile {
-    gap: 3px;
-  }
-
-  .icon-btn {
-    width: 34px;
-    height: 34px;
-
-    min-width: 34px;
-
-    font-size: 15px;
-  }
-
-  .my-avatar {
-    width: 34px;
-    height: 34px;
-
-    min-width: 34px;
-  }
-
-  #chatAvatar {
-    width: 34px;
-    height: 34px;
-
-    min-width: 34px;
-  }
-
-  .messages {
-    padding: 9px 8px;
-  }
-
-  .message-bubble {
-    max-width: calc(100vw - 62px);
-
-    font-size: 13px;
-  }
-
-  .private-message .message-bubble {
-    max-width: 88%;
-  }
-
-
   #groupMessageForm,
-  #messageForm,
-  .message-form,
-  .private-message-form {
-    gap: 6px;
+  #messageForm {
+    gap: 7px;
 
-    padding-left: 7px;
-    padding-right: 7px;
+    padding: 7px 8px;
+
+    padding-bottom: calc(
+      7px + env(safe-area-inset-bottom)
+    );
   }
 
-
+  .message-input,
   #groupMessageInput,
-  #messageInput,
-  .message-input {
-    height: 42px;
-
-    padding-left: 12px;
-    padding-right: 12px;
+  #messageInput {
+    height: 43px;
+    min-height: 43px;
 
     font-size: 14px;
   }
 
   .send-btn {
-    width: 42px;
-    height: 42px;
+    width: 43px;
+    height: 43px;
+    min-width: 43px;
+  }
 
-    min-width: 42px;
+  #profileAvatar {
+    width: 90px;
+    height: 90px;
+    min-width: 90px;
   }
 }
 
 
-/* =========================================================
+/* ============================================================
    VERY SMALL MOBILE
-========================================================= */
+============================================================ */
 
 @media (max-width: 360px) {
 
   .chat-header {
+    padding: 0 7px;
+  }
+
+  .group-message .message-bubble {
+    max-width: 74vw;
+  }
+
+  .private-message .message-content {
+    max-width: 76vw;
+  }
+
+  .message-form,
+  #groupMessageForm,
+  #messageForm {
     padding-left: 6px;
     padding-right: 6px;
   }
+}
 
-  .chat-user {
-    gap: 7px;
+
+/* ============================================================
+   ANDROID WEBVIEW / KEYBOARD
+============================================================ */
+
+@supports (height: 100dvh) {
+  html,
+  body,
+  #app {
+    height: 100dvh;
   }
 
-  .group-header-right {
-    gap: 0;
+  .auth-screen {
+    min-height: 100dvh;
+  }
+}
+
+@media (max-height: 500px) {
+
+  .chat-header {
+    height: 52px;
+    min-height: 52px;
   }
 
-  .icon-btn {
-    width: 32px;
-    height: 32px;
-
-    min-width: 32px;
+  .messages,
+  #groupMessages,
+  #messagesBox,
+  #messages {
+    padding-top: 8px;
+    padding-bottom: 7px;
   }
 
-  .my-avatar {
-    width: 32px;
-    height: 32px;
-
-    min-width: 32px;
-  }
-
-  #chatAvatar {
-    width: 32px;
-    height: 32px;
-
-    min-width: 32px;
-  }
-
-  .avatar {
-    width: 34px;
-    height: 34px;
-
-    min-width: 34px;
-  }
-
+  .message-form,
   #groupMessageForm,
   #messageForm {
-    min-height: 60px;
-
-    padding-top: 7px;
+    padding-top: 5px;
+    padding-bottom: 5px;
   }
 
+  .message-input,
   #groupMessageInput,
-  #messageInput {
-    height: 42px;
+  #messageInput,
+  .send-btn {
+    height: 40px;
+    min-height: 40px;
   }
 
   .send-btn {
-    width: 42px;
-    height: 42px;
-
-    min-width: 42px;
+    width: 40px;
+    min-width: 40px;
   }
 }
 
 
-/* =========================================================
-   ANDROID WEBVIEW / KEYBOARD
-========================================================= */
+/* ============================================================
+   PREVENT KEYBOARD FROM HIDING GROUP COMPOSER
+============================================================ */
 
-/*
-  Composer ကို position:fixed မသုံးထားပါ။
+#groupChat,
+#privateChat {
+  overflow: hidden;
+}
 
-  Flex layout ထဲမှာရှိတာကြောင့် WebView viewport
-  ကျသွားတဲ့အချိန်မှာ message area က flex:1 နဲ့
-  နေရာလျှော့ယူပြီး composer ကို အောက်မှာထားပေးပါတယ်။
-*/
+#groupChat .message-form,
+#privateChat .message-form {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  right: auto;
+}
 
-@supports (height: 100dvh) {
+#groupMessageForm *,
+#messageForm * {
+  pointer-events: auto;
+}
 
-  #app {
-    max-height: var(--app-height);
+
+/* ============================================================
+   SAFE AREA
+============================================================ */
+
+@supports (padding: max(0px)) {
+  .message-form,
+  #groupMessageForm,
+  #messageForm {
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
   }
-
-  #chatScreen,
-  .chat-screen {
-    max-height: var(--app-height);
-  }
 }
 
 
-/* =========================================================
-   INPUT / BUTTON TOUCH
-========================================================= */
-
-input,
-button {
-  -webkit-tap-highlight-color: transparent;
-}
-
-input {
-  touch-action: manipulation;
-}
-
-button {
-  touch-action: manipulation;
-}
-
-
-/* =========================================================
+/* ============================================================
    SELECTION
-========================================================= */
+============================================================ */
 
 ::selection {
-  color: #ffffff;
-
-  background:
-    rgba(99, 102, 241, 0.55);
+  color: #fff;
+  background: var(--accent);
 }
-
-
-/* =========================================================
-   END
-========================================================= */
