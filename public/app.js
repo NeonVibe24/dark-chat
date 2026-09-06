@@ -641,6 +641,11 @@ function renderGroupMessages(messages) {
 }
 
 
+/* =========================================================
+   GROUP MESSAGE
+   USERNAME IS NOW ABOVE MESSAGE TEXT
+========================================================= */
+
 function renderGroupMessage(message) {
   const sender =
     message?.user ||
@@ -724,15 +729,6 @@ function renderGroupMessage(message) {
                 ${avatarHtml}
               </button>
 
-              <button
-                type="button"
-                class="message-sender-name group-user-name"
-                data-user-id="${escapeHtml(senderId)}"
-                data-username="${escapeHtml(senderName)}"
-              >
-                ${escapeHtml(senderName)}
-              </button>
-
             </div>
           `
       }
@@ -742,7 +738,16 @@ function renderGroupMessage(message) {
         ${
           mine
             ? ""
-            : ""
+            : `
+              <button
+                type="button"
+                class="message-sender-name group-user-name"
+                data-user-id="${escapeHtml(senderId)}"
+                data-username="${escapeHtml(senderName)}"
+              >
+                ${escapeHtml(senderName)}
+              </button>
+            `
         }
 
         <div class="message-bubble">
